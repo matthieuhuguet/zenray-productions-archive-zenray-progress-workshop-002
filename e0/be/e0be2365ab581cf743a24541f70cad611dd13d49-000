@@ -1,0 +1,15 @@
+# T-01-4-6 — Infolettre visuelle
+
+Calibrage (référence du catalogue) : Sidebar design
+
+## Sources
+
+- `raw/` : trois états réels distincts de `sidebar.io` avec les entrées quotidiennes, les grands panneaux de date et le bloc d’inscription à la newsletter.
+- Le DOM observé de la version actuelle ne contient aucun élément `<img>` exploitable : l’expression visuelle repose ici sur la séparation orange/blanc, la date monumentale et les cartes textuelles de liens. Le HTML officiel a été vérifié avec `curl`.
+- `crops/` : cinq composants découpés localement : panneau de date, trois grilles de liens et inscription newsletter.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, états distincts sauvegardés immédiatement, source HTML vérifiée avec `curl`, puis crops locaux contrôlés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; les captures d’interface sont donc des rendus natifs réels, sans Microlink et sans image inventée. La version observée ne fournit pas les grandes images mentionnées par la signature privée ; cette divergence est conservée comme fait de calibration.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

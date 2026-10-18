@@ -1,0 +1,20 @@
+# Pourquoi ces fichiers sont ici — 2026-07-28
+
+Premier workflow de reproduction, abandonné. Il produisait des cadrages faux et personne ne
+pouvait le voir avant qu'un composant soit déjà écrit.
+
+**Le défaut, en une phrase : un crop isolé ne montre jamais qu'il a été pris au mauvais endroit.**
+Découpé et affiché seul, un rectangle faux paraît toujours plausible — c'est une image nette,
+avec du contenu, on la regarde et on la croit. L'erreur n'est visible que RELATIVEMENT à la
+capture entière. Toute la chaîne (compare.json → refs/ → compare.html → source-vs-rendu.html)
+regardait des crops isolés, donc elle ne pouvait pas attraper l'erreur qu'elle était censée
+attraper. Trois planches de contrôle et un script de vérification plus tard, le défaut était
+toujours là : on vérifiait la mauvaise chose, très soigneusement.
+
+Second défaut : quatre fichiers générés (spec, crops, planche de comparaison, planche de
+travail) pour une seule question — « est-ce que je découpe au bon endroit ? ». Chaque fichier
+coûtait des jetons et déplaçait la réponse d'un cran.
+
+Le workflow qui remplace : UNE image annotée par capture (la source voilée de blanc, les
+rectangles rouges dessinés dessus, le nom écrit dans chacun) + UN fichier `regions.json`.
+On valide sur l'annotation, on découpe ensuite. Rien d'autre.

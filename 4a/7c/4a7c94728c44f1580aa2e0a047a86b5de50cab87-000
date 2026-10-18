@@ -1,0 +1,25 @@
+# T-01-8-3 — Débat contradictoire
+
+Calibrage (référence du catalogue) : ProCon, surface officielle Britannica
+
+## Sources
+
+- Hub ProCon : https://www.britannica.com/procon
+- Débat thématique : https://www.britannica.com/procon/video-games-debate
+- Débat thématique de contrôle : https://www.britannica.com/procon/climate-change-debate
+
+ProCon a été retenu comme benchmark public de débat contradictoire : promesse non partisane, cartes de sujets, navigation latérale par sections, puis présentation structurée des arguments et sources.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; aucun overlay de consentement n’a été capturé.
+- Le test html2canvas a été effectué : l’environnement navigateur lecture seule expose `document.createElement` et `window.html2canvas` comme indisponibles. Les captures conservées sont donc les rendus natifs réels du navigateur.
+- La vérification `curl` des trois URL a renvoyé HTTP 403 depuis le shell ; les pages ont été ouvertes et inspectées dans le navigateur réel, qui a rendu les contenus correspondants.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.

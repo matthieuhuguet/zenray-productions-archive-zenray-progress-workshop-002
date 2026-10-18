@@ -1,0 +1,24 @@
+# T-01-6-2 — Magazine télé
+
+Calibrage (référence du catalogue) : Télé 7 Jours
+
+## Sources
+
+- Programme officiel : https://www.programme-television.org/
+- Rubrique Séries : https://www.programme-television.org/type/series
+- Actualités cinéma : https://www.programme-television.org/news/cinema
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Le premier état présentait un bouton de consentement visible : il a été cliqué réellement, puis la disparition du consentement a été vérifiée. Les deux autres états ne présentaient plus de bouton de consentement.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+
+Substitution : aucune.

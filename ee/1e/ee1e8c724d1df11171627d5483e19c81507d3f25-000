@@ -1,0 +1,26 @@
+# T-01-5-2 — Revue médicale
+
+Calibrage (référence du catalogue) : The Lancet
+
+Signature observée : structure imposée, résumé structuré, références numérotées.
+
+## Sources officielles vérifiées
+
+- `https://www.thelancet.com/` : page d'accueil officielle, navigation de journaux, hero de commission, cartes “Latest news” et “Latest series and commissions”.
+- `https://www.thelancet.com/journals/lancet/home` : surface officielle du journal The Lancet.
+- `https://www.thelancet.com/for-authors` : espace officiel de soumission et de publication.
+- `https://info.thelancet.com/alerts` : surface officielle des alertes et newsletters du groupe.
+- `raw/THELANCET__HOME__DOM__SNAPSHOT.html` : DOM réel de la page officielle conservé après chargement navigateur.
+
+## Références
+
+- `raw/THELANCET__HOME__TOP__NATIVE.jpg` : bandeau publicitaire, wordmark, navigation institutionnelle, recherche et hero bleu à cartes éditoriales.
+- `raw/THELANCET__HOME__MID__NATIVE.jpg` : cartes “Latest series and commissions”, images, catégories, dates et titres longs.
+- `raw/THELANCET__HOME__LOWER__NATIVE.jpg` : méga-navigation multi-colonnes des journaux, séries, multimédia et contacts.
+- Les cinq autres fichiers de `raw/` sont des assets réels référencés par les éléments `<img>` du DOM officiel : logo, deux images “Latest news” et deux visuels de séries.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, consentement limité aux cookies nécessaires, trois positions distinctes capturées avec le rendu natif, injection html2canvas tentée mais bloquée par l'évaluation en lecture seule (`document.createElement` indisponible). Le serveur The Lancet a répondu 403 aux tentatives `curl` avec et sans en-têtes navigateur ; les cinq assets ont donc été exportés depuis les éléments `<img>` officiels visibles, puis hashes et dimensions vérifiés. Aucun appel Microlink et aucune capture inventée n'ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

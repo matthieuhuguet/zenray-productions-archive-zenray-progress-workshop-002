@@ -1,0 +1,26 @@
+# T-01-7-6 — Journal scolaire
+
+Calibrage (référence du catalogue) : Campus Times
+
+## Sources
+
+- Journal étudiant officiel : https://www.campustimes.org/
+- Rubrique News : https://www.campustimes.org/section/news/
+- Présentation du journal : https://www.campustimes.org/about/
+
+Campus Times est le journal étudiant de l’Université de Rochester ; sa surface publique a été retenue comme benchmark réel de journal scolaire pour le masthead, la une, les listes de nouvelles, le rail tendance et la page de présentation.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; aucune capture n’a été conservée sous consentement non vérifié.
+- La navigation vers un article individuel a expiré et a été exclue ; la page publique `about` du même journal a servi de troisième état stable.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

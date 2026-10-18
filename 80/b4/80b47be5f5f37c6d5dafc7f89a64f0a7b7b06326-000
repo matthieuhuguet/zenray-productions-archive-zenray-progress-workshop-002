@@ -1,0 +1,29 @@
+# T-01-5-3 — Revue juridique
+
+Calibrage (référence du catalogue) : Dalloz
+
+Signature observée : numérotation d'articles, renvois, marge de notes.
+
+## Sources officielles vérifiées
+
+- `https://www.dalloz.fr/dalloz` : portail Dalloz avec Dalloz Actualité, recherche, codes, jurisprudence et documentation.
+- `https://www.dalloz.fr/` : portail institutionnel Dalloz et espaces métiers.
+- `https://www.dalloz.fr/avocats` : environnement professionnel Avocats.
+- `raw/DALLOZ__PORTAL__SOURCE.html` : source HTML officielle du portail récupérée avec `curl`.
+
+## Références
+
+- `raw/DALLOZ__PORTAL__TOP__NATIVE.jpg` : wordmark Lefebvre Dalloz, bandeau rouge, navigation juridique, recherche et colonne Dalloz Actualité.
+- `raw/DALLOZ__PORTAL__MID__NATIVE.jpg` : articles à renvois de jurisprudence, tuiles “À feuilleter” et CTA d'édition.
+- `raw/DALLOZ__PORTAL__LOWER__NATIVE.jpg` : pied de page dense, contacts, autres sites, réseaux sociaux et accessibilité.
+- Les cinq autres fichiers de `raw/` sont des assets officiels téléchargés avec `curl` : logo Dalloz, visuels “Dalloz et vous” desktop/mobile, icônes Bibliothèque et Revues.
+
+## Contrôle des images
+
+Les trois URLs de vignettes Dalloz Actualité présentes dans le HTML ont été testées : elles renvoient une page HTML d'erreur de 244 octets, pas une image. Elles ont été exclues du pack. Les cinq assets conservés répondent en `image/*`, leurs dimensions et leurs hashes sont vérifiés.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, bandeau de consentement accepté avec “Agree and close”, trois positions distinctes recapturées après consentement, source HTML et cinq assets valides téléchargés avec `curl`, puis hashes et dimensions contrôlés. L'injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; aucune capture inventée et aucun appel Microlink n'ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

@@ -1,0 +1,24 @@
+# T-01-6-3 — Presse musicale
+
+Calibrage (référence du catalogue) : Rolling Stone
+
+## Sources
+
+- Édition Nouvelle-Zélande : https://nz.rollingstone.com/
+- Rubrique Music de l’édition Australie : https://au.rollingstone.com/music/
+- Article Music Features : https://au.rollingstone.com/music/music-features/menzies-interview-up-and-coming-aotearoa-artists-98869/
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; la page article a d’abord affiché une publicité vidéo flottante, fermée avec son bouton `×`, puis l’état a été recapturé sans la surcouche noire.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+
+Substitution : aucune.

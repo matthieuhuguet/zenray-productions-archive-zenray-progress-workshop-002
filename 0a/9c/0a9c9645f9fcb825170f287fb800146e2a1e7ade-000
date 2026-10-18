@@ -1,0 +1,25 @@
+# T-01-8-4 — Manifeste
+
+Calibrage (référence du catalogue) : Mozilla Manifesto
+
+## Sources
+
+- Page principale : https://www.mozilla.org/en-US/about/manifesto/
+- Principes : https://www.mozilla.org/en-US/about/manifesto/#principles-01
+- Engagements : https://www.mozilla.org/en-US/about/manifesto/#commitment-01
+
+Le Mozilla Manifesto a été retenu comme benchmark public de texte collectif : titre manifeste, introduction institutionnelle, principes numérotés et engagements structurés en séquences lisibles.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; aucun overlay de consentement n’a été capturé.
+- Le test html2canvas a été effectué : l’environnement navigateur lecture seule expose `document.createElement` et `window.html2canvas` comme indisponibles. Les captures conservées sont donc les rendus natifs réels du navigateur.
+- La vérification `curl` des trois URL a renvoyé HTTP 200.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.

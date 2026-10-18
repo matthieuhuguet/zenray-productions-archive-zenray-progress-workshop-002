@@ -1,0 +1,25 @@
+# T-01-7-5 — Journal d’association
+
+Calibrage (référence du catalogue) : Croix-Rouge française
+
+## Sources
+
+- Site officiel : https://www.croix-rouge.fr/
+- Actualités : https://www.croix-rouge.fr/actualite
+- Article de dossier : https://www.croix-rouge.fr/incendies/evacuations-massives-et-flammes-indomptables-que-faisons-nous-en-gironde-et-dans-les-landes
+
+La surface publique de la Croix-Rouge française a été retenue comme benchmark de journal associatif : identité, appel à soutien, fil d’actualité et dossier d’action de terrain.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Le consentement réel a été traité sur l’état initial ; sa disparition a été vérifiée avant la capture finale. L’état Actualités a été recapturé à son rendu principal après constat d’un premier viewport placé sur le pied de page.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

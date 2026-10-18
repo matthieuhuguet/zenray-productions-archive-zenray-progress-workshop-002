@@ -1,0 +1,25 @@
+# T-01-8-1 — Tribune signée
+
+Calibrage (référence du catalogue) : The Guardian Opinion
+
+## Sources
+
+- Opinion : https://www.theguardian.com/commentisfree
+- Columnistes : https://www.theguardian.com/uk/columnists
+- Tribune : https://www.theguardian.com/commentisfree/2026/jul/25/christopher-nolan-odyssey-homer-epic-film-classics
+
+The Guardian a été retenu comme benchmark public de tribune signée : identité Opinion, colonne de chroniqueurs, une éditoriale et article signé.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; les modules de soutien et publicités du site ne sont pas des overlays de consentement et ne recouvrent pas les crops retenus.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

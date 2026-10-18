@@ -1,0 +1,267 @@
+{
+  "calibrationMedia": "DS2",
+  "probes": [
+    {
+      "role": "menu",
+      "text": "New Game",
+      "image": "DS2__GUID__01.jpg",
+      "refAspect": 6.5,
+      "refDensity": 0.3203125,
+      "refInkHeight": 16,
+      "warning": "sonde peu discriminante : 6.5 de chasse, ~13 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Hind",
+        "weight": "400",
+        "archetype": "grotesque",
+        "margin": 0.010224917369688558,
+        "decisive": false,
+        "dominantArchetype": "grotesque",
+        "dominantShare": 0.8,
+        "rival": "Schibsted Grotesk 400 (display)"
+      },
+      "calibration": null,
+      "ranking": [
+        {
+          "family": "Hind",
+          "weight": "400",
+          "total": 0.9060372393894416,
+          "ratio": 0.9811320754716981,
+          "weightMatch": 0.9431423611111112,
+          "overlap": 0.7159817143896836,
+          "rows": 0.9857332939943234
+        },
+        {
+          "family": "Schibsted Grotesk",
+          "weight": "400",
+          "total": 0.895812322019753,
+          "ratio": 0.9541284403669725,
+          "weightMatch": 0.9310416666666667,
+          "overlap": 0.7273746273006478,
+          "rows": 0.9817552959965596
+        },
+        {
+          "family": "Open Sans",
+          "weight": "400",
+          "total": 0.8927750346485565,
+          "ratio": 0.9454545454545454,
+          "weightMatch": 0.98980044345898,
+          "overlap": 0.6891633683635867,
+          "rows": 0.9474999385588262
+        },
+        {
+          "family": "Plus Jakarta Sans",
+          "weight": "400",
+          "total": 0.8838637850897889,
+          "ratio": 0.9719626168224299,
+          "weightMatch": 0.9862859712230215,
+          "overlap": 0.6093611117133132,
+          "rows": 0.9651006564523652
+        },
+        {
+          "family": "Rubik",
+          "weight": "400",
+          "total": 0.8775626787034213,
+          "ratio": 0.9811320754716981,
+          "weightMatch": 0.8636724960254373,
+          "overlap": 0.6885414435639323,
+          "rows": 0.9740864492732304
+        },
+        {
+          "family": "Manrope",
+          "weight": "400",
+          "total": 0.8751337912306942,
+          "ratio": 0.9711538461538461,
+          "weightMatch": 0.953268876611418,
+          "overlap": 0.5999391145516222,
+          "rows": 0.9795196485739202
+        },
+        {
+          "family": "Chakra Petch",
+          "weight": "400",
+          "total": 0.8653006054008527,
+          "ratio": 0.9719626168224299,
+          "weightMatch": 0.9154841402337228,
+          "overlap": 0.5976796795550298,
+          "rows": 0.9788182304387605
+        },
+        {
+          "family": "Source Sans 3",
+          "weight": "400",
+          "total": 0.8637897065076255,
+          "ratio": 0.9811320754716981,
+          "weightMatch": 0.884771986970684,
+          "overlap": 0.6083123425692695,
+          "rows": 0.9808159847169515
+        },
+        {
+          "family": "Figtree",
+          "weight": "400",
+          "total": 0.8635830892150126,
+          "ratio": 0.9719626168224299,
+          "weightMatch": 0.9970454545454545,
+          "overlap": 0.5618086838821563,
+          "rows": 0.8912175914683962
+        },
+        {
+          "family": "Instrument Sans",
+          "weight": "400",
+          "total": 0.860243897425575,
+          "ratio": 0.9903846153846154,
+          "weightMatch": 0.9945536348567369,
+          "overlap": 0.527266176377085,
+          "rows": 0.8876955282166951
+        },
+        {
+          "family": "Bricolage Grotesque",
+          "weight": "400",
+          "total": 0.8597025767884988,
+          "ratio": 0.9122807017543859,
+          "weightMatch": 0.9318181818181818,
+          "overlap": 0.6766073637953838,
+          "rows": 0.921986298473816
+        },
+        {
+          "family": "Lato",
+          "weight": "400",
+          "total": 0.8557827015015922,
+          "ratio": 0.9903846153846154,
+          "weightMatch": 0.9983424106085721,
+          "overlap": 0.503015179871075,
+          "rows": 0.8920579233137671
+        }
+      ]
+    },
+    {
+      "role": "invite",
+      "text": "Use Toilet/Shower",
+      "image": "DS2__GUID__12.jpg",
+      "refAspect": 6.84375,
+      "refDensity": 0.39325842696629215,
+      "refInkHeight": 26,
+      "warning": "sonde peu discriminante : 6.8 de chasse, ~10 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Teko",
+        "weight": "400",
+        "archetype": "condense",
+        "margin": 0,
+        "decisive": false,
+        "invalid": true,
+        "reason": "aucune candidate ne dépasse 31 % de superposition. La sonde ne correspond pas à son texte : vérifier le rectangle (une seule ligne ? pas de puce ni d'icône ?) et l'orthographe exacte, accents compris.",
+        "dominantArchetype": "condense",
+        "dominantShare": 0,
+        "rival": null
+      },
+      "calibration": null,
+      "ranking": [
+        {
+          "family": "Teko",
+          "weight": "400",
+          "total": 0.7119190098310644,
+          "ratio": 0.9417808219178082,
+          "weightMatch": 0.9033692148634677,
+          "overlap": 0.30684624358022633,
+          "rows": 0.5316123836593869
+        },
+        {
+          "family": "Fjalla One",
+          "weight": "400",
+          "total": 0.7092304684226335,
+          "ratio": 0.910958904109589,
+          "weightMatch": 0.9381766381766381,
+          "overlap": 0.253718209489188,
+          "rows": 0.6161409337854726
+        },
+        {
+          "family": "Passion One",
+          "weight": "400",
+          "total": 0.7031358011596331,
+          "ratio": 0.8439306358381503,
+          "weightMatch": 0.8234196454149029,
+          "overlap": 0.3916631348009274,
+          "rows": 0.6932625570821525
+        },
+        {
+          "family": "Pathway Gothic One",
+          "weight": "400",
+          "total": 0.7007653493681063,
+          "ratio": 1,
+          "weightMatch": 0.8653846153846153,
+          "overlap": 0.26559660811629315,
+          "rows": 0.45346695661919456
+        },
+        {
+          "family": "Chau Philomene One",
+          "weight": "400",
+          "total": 0.6905735433389937,
+          "ratio": 0.9943246311010215,
+          "weightMatch": 0.8550862545275953,
+          "overlap": 0.27298539355443024,
+          "rows": 0.4036134028875319
+        },
+        {
+          "family": "Antonio",
+          "weight": "400",
+          "total": 0.6839898079548432,
+          "ratio": 0.9563318777292577,
+          "weightMatch": 0.966360646752535,
+          "overlap": 0.30815653246788083,
+          "rows": 0.20429570629666066
+        },
+        {
+          "family": "Yanone Kaffeesatz",
+          "weight": "400",
+          "total": 0.6727926701578953,
+          "ratio": 0.9851598173515982,
+          "weightMatch": 0.8947089947089947,
+          "overlap": 0.2814668563630557,
+          "rows": 0.22628514211215608
+        },
+        {
+          "family": "Khand",
+          "weight": "400",
+          "total": 0.6553694844937381,
+          "ratio": 0.9885844748858448,
+          "weightMatch": 0.6568306693306692,
+          "overlap": 0.2558999790007592,
+          "rows": 0.5412150413389023
+        },
+        {
+          "family": "Oswald",
+          "weight": "400",
+          "total": 0.6475074190705276,
+          "ratio": 0.8848484848484849,
+          "weightMatch": 0.9848340714012355,
+          "overlap": 0.2870292557382215,
+          "rows": 0.13229745059129044
+        },
+        {
+          "family": "Pragati Narrow",
+          "weight": "400",
+          "total": 0.6437068955045725,
+          "ratio": 0.8513119533527697,
+          "weightMatch": 0.8632433618608734,
+          "overlap": 0.28095773046573636,
+          "rows": 0.39798292499633825
+        },
+        {
+          "family": "Archivo Narrow",
+          "weight": "400",
+          "total": 0.6415001076727591,
+          "ratio": 0.8480154888673765,
+          "weightMatch": 0.8683559050531527,
+          "overlap": 0.27076795705529666,
+          "rows": 0.3994248069471
+        },
+        {
+          "family": "Saira Condensed",
+          "weight": "400",
+          "total": 0.638716142091098,
+          "ratio": 0.8929663608562691,
+          "weightMatch": 0.7534391534391534,
+          "overlap": 0.3096707199614736,
+          "rows": 0.40266964960831336
+        }
+      ]
+    }
+  ]
+}

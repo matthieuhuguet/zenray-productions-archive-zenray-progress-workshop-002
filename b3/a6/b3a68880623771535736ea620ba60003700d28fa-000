@@ -1,0 +1,26 @@
+# T-01-5-7 — Revue scientifique grand public
+
+Calibrage (référence du catalogue) : Pour la Science
+
+## Sources
+
+- Site officiel : https://www.pourlascience.fr/
+- Rubrique vérifiée : https://www.pourlascience.fr/physique/
+- Article vérifié : https://www.pourlascience.fr/sd/physique/la-physique-intuitionniste-rapproche-les-mondes-classique-et-quantique-29420.php
+- Images natives observées dans le DOM puis téléchargées avec `curl -L -A 'Mozilla/5.0'` depuis `medias.pourlascience.fr` : une image héro et une couverture.
+
+## Répartition
+
+- `raw/` : 5 images, dont 3 captures natives réelles du navigateur et 2 assets natifs officiels.
+- `crops/` : 3 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bandeau ou bouton de consentement visible sur les trois états vérifiés ; aucune capture n’a été conservée avant acceptation.
+- Une surcouche d’abonnement visible a été fermée avec son bouton `×`, puis l’état utile a été vérifié avant les captures.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et conservés dans le dossier de calibrage.
+
+Substitution : aucune.

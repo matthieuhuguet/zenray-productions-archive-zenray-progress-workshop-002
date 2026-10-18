@@ -1,0 +1,27 @@
+# T-01-5-4 — Presse informatique
+
+Calibrage (référence du catalogue) : Ars Technica
+
+Signature observée : captures d'écran annotées, tableaux comparatifs.
+
+## Sources officielles vérifiées
+
+- `https://arstechnica.com/home/` : surface “Home”, most-read, navigation et identité Orbiting HQ.
+- `https://arstechnica.com/features/` : rubrique Features avec liste éditoriale dense et vignettes CDN.
+- `https://arstechnica.com/about-us/` : mission éditoriale et historique.
+- `https://arstechnica.com/subscribe/` : offres Ars Pro, vue Classic et vue Neutron Star.
+- `https://arstechnica.com/rss-feeds/` : surfaces de distribution et flux thématiques.
+- `raw/ARS__HOME__SOURCE.html` et `raw/ARS__FEATURES__SOURCE.html` : sources HTML officielles récupérées avec `curl`.
+
+## Références
+
+- `raw/ARS__HOME__TOP__NATIVE.jpg` : wordmark ars TECHNICA, navigation sombre, Orbiting HQ, “Most Read” et image Starship.
+- `raw/ARS__HOME__MID__NATIVE.jpg` : numérotation éditoriale, liste dense, séparation et bascule vers le pied de page.
+- `raw/ARS__HOME__LOWER__NATIVE.jpg` : pied de page noir, promesse éditoriale, colonnes de liens, politique et réseaux sociaux.
+- Les cinq autres fichiers de `raw/` sont des assets officiels du CDN Ars Technica observés dans le DOM de Home/Features : Starship, musée, horloge électronique, véhicule connecté et calibration ECU.
+
+Total : 8/8
+
+Méthode : pages officielles réelles ouvertes dans le navigateur, injection html2canvas tentée mais bloquée par l'évaluation en lecture seule (`document.createElement` indisponible), trois positions natives distinctes capturées et cinq assets téléchargés directement avec `curl` depuis le CDN observé. Les positions finales sont contrôlées à `scrollY=0`, `250` et `535`; hashes et dimensions vérifiés. Aucun appel Microlink et aucune capture inventée n'ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

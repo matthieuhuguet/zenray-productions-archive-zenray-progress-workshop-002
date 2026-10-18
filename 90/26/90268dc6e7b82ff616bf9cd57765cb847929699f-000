@@ -1,0 +1,25 @@
+# T-01-8-5 — Lettre ouverte
+
+Calibrage (référence du catalogue) : The Guardian, Letters
+
+## Sources
+
+- Rubrique Lettres : https://www.theguardian.com/tone/letters
+- Exemple de lettre publiée : https://www.theguardian.com/politics/2026/jul/24/our-blueprint-for-andy-burnhams-success
+- Archive de la rubrique : https://www.theguardian.com/tone/letters/all
+
+The Guardian Letters a été retenu comme benchmark public de courrier ouvert : invitation à écrire, cartes éditoriales de lettres publiées, datation, rubrique dédiée et article développé.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; le module de soutien du Guardian est un module d’acquisition, pas un overlay de cookies. Il a été réduit quand son bouton « Collapse banner » était présent pour conserver le contenu éditorial visible.
+- Le test html2canvas a été effectué : l’environnement navigateur lecture seule expose `document.createElement` et `window.html2canvas` comme indisponibles. Les captures conservées sont donc les rendus natifs réels du navigateur.
+- La vérification `curl` des trois URL a renvoyé HTTP 200.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.

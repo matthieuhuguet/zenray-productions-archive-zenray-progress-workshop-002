@@ -1,0 +1,6 @@
+# doublons — mêmes octets qu'une capture de raw_v2
+
+Vérifié au md5 : ces huit fichiers sont bit à bit identiques à `raw_v2/DS2__OFFICIAL__01` à `08`.
+Deux campagnes de collecte ont ramassé les mêmes images sous deux nommages. Les garder dans le
+lot de travail ferait compter deux fois les mêmes composants et gonflerait artificiellement la
+couverture. La version conservée est celle de `raw_v2/`, qui porte le nommage courant.

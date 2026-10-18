@@ -1,0 +1,25 @@
+# T-01-7-4 — Petites annonces
+
+Calibrage (référence du catalogue) : leboncoin
+
+## Sources
+
+- Site officiel : https://www.leboncoin.fr/
+- Catégorie voitures : https://www.leboncoin.fr/c/voitures
+- Catégorie vêtements : https://www.leboncoin.fr/c/vetements
+
+Le site officiel leboncoin a été retenu comme benchmark de journal d’annonces : dépôt, recherche, rail de catégories, filtres et listes de véhicules ou vêtements.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Le consentement réel a été traité sur l’état initial ; sa disparition a été vérifiée avant la capture finale.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

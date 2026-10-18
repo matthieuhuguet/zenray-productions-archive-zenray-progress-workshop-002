@@ -1,0 +1,26 @@
+# T-01-6-4 — Presse cinéma
+
+Calibrage (référence du catalogue) : Première
+
+## Sources
+
+- Boutique officielle du magazine : https://boutique.premiere.fr/
+- Catalogue des numéros : https://boutique.premiere.fr/6-numeros-premiere
+- Fiche d’un numéro : https://boutique.premiere.fr/accueil/340-n569.html
+
+La page éditoriale `premiere.fr` était protégée par un interstitiel de sécurité ; la boutique officielle publique a été retenue comme surface vérifiable de couverture, de catalogue et de fiche produit. L’interstitiel n’a pas été contourné.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; aucune capture n’a été conservée sous consentement non vérifié.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+
+Substitution : surface boutique officielle du même média, documentée ci-dessus en raison de l’interstitiel éditorial.

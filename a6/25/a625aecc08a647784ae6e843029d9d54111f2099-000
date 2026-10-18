@@ -1,0 +1,25 @@
+# T-01-8-8 — Dossier polémique
+
+Calibrage (référence du catalogue) : ProPublica, séries d’enquêtes
+
+## Sources
+
+- Index des séries : https://www.propublica.org/series
+- Série d’enquête : https://www.propublica.org/series/life-of-the-mother
+- Enquête principale : https://www.propublica.org/article/georgia-abortion-ban-amber-thurman-death
+
+ProPublica a été retenu comme benchmark public de contre-enquête : index de séries, dossier thématique avec angle et promesse, puis enquête principale avec titre argumenté, preuve documentaire et image éditoriale.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux. Le bandeau newsletter a été fermé par son bouton visuellement identifié « × » avant la capture finale de l’index ; ce n’était pas un overlay de cookies.
+- Le test html2canvas a été effectué : l’environnement navigateur lecture seule expose `document.createElement` et `window.html2canvas` comme indisponibles. Les captures conservées sont donc les rendus natifs réels du navigateur.
+- La vérification `curl` des trois URL a renvoyé HTTP 200.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.

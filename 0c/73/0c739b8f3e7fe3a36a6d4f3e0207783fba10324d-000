@@ -1,0 +1,27 @@
+# T-01-5-6 — Presse industrielle
+
+Calibrage (référence du catalogue) : revue métier
+
+Benchmark principal : Automation World, publication spécialisée dans l’automatisation industrielle et la fabrication discrète ou par lots.
+
+## Famille 01 — Presse
+
+- `raw/` : 3 captures natives réelles du site officiel après suppression vérifiée du bandeau de consentement : accueil avec module Podcasts, page Products, article Emerson sur le détecteur de flamme Rosemount.
+- `raw/` : 2 assets natifs extraits du HTML officiel et téléchargés avec `curl` : produit Rosemount et logo Automation World.
+- `crops/` : 3 composants découpés localement depuis les captures : produit terminal, titre avec spécification, tableau d’épisodes.
+
+Total : 8/8
+
+Méthode : tentative html2canvas sur le DOM réel, bloquée par le navigateur intégré en lecture seule (`document.createElement` indisponible), puis captures natives réelles vérifiées visuellement. Assets extraits du HTML officiel et téléchargés avec `curl -L -A 'Mozilla/5.0'`. Microlink interdit.
+
+Consentement : le bouton visible `Accept All` a été cliqué. La première capture prise alors que le bandeau était encore présent a été supprimée ; aucune image voilée par le consentement n’est comptée.
+
+## Sources vérifiées
+
+- https://www.automationworld.com/
+- https://www.automationworld.com/products
+- https://www.automationworld.com/factory/digital-transformation/news/55393193/emerson-expands-flame-detection-portfolio-for-broader-application-flexibility
+- https://img.automationworld.com/files/base/ebm/automationworld/image/2026/07/6a624c0b5660a0d12cc32955-rosemount_965_flame_detector_lflarge.png
+- https://img.officer.com/files/base/ebm/automationworld/image/website/logos/1675805836288-awlogo.png
+
+Substitution : aucune.

@@ -1,0 +1,27 @@
+# T-01-5-8 — Note technique interne
+
+Calibrage (référence du catalogue) : mémo d'ingénierie
+
+Benchmark public retenu pour cet archétype : RFC Editor, dépôt officiel des RFC de l'IETF.
+
+## Sources
+
+- Accueil : https://www.rfc-editor.org/
+- Index numéroté : https://www.rfc-editor.org/rfc-index.html
+- Document technique : https://www.rfc-editor.org/rfc/rfc9110
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton ou bandeau de consentement visible sur les trois pages finales ; aucune capture n’a été conservée sous consentement non vérifié.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Une URL d’index intermédiaire a renvoyé 404 et une autre a été bloquée par le navigateur ; aucune de ces pages n’a été comptée. Elles ont été remplacées par l’index officiel valide `rfc-index.html`.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+
+Substitution : aucune ; le benchmark est une source publique concrète pour l’archétype privé « mémo d'ingénierie ».

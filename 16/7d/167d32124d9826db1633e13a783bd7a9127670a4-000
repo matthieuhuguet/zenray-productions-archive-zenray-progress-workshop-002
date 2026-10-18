@@ -1,0 +1,26 @@
+# T-01-6-6 — Presse sportive quotidienne
+
+Calibrage (référence du catalogue) : L’Équipe
+
+## Sources
+
+- Site officiel : https://www.lequipe.fr/
+- Rubrique football : https://www.lequipe.fr/Football/
+- Rubrique enquête : https://www.lequipe.fr/Enquete
+
+La surface publique de L’Équipe a été retenue comme référence pour le rail de sujets, les cartes sportives, la une football, le fil chronologique et l’enquête.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Le bouton de consentement réel `oui, j’accepte` a été cliqué sur l’état initial et sa disparition vérifiée.
+- Les états finaux ont été recapturés après fermeture de la barre d’abonnement visible via `ignorer`.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

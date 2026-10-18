@@ -1,0 +1,25 @@
+# T-01-4-8 — Infolettre d'annonce
+
+Calibrage (référence du catalogue) : Basecamp Signal v Noise
+
+Signature observée : une seule information, un seul bouton.
+
+## Sources officielles vérifiées
+
+- `https://signalvnoise.com/archives/` : archive officielle Signal v. Noise.
+- `https://signalvnoise.com/` : état officiel de fermeture.
+- `https://signalvnoise.com/writing/` : index rédactionnel.
+- `https://basecamp.com/?source=SvN` : lien Basecamp observé dans la navigation.
+- `raw/SIGNALVNOISE__ARCHIVES__SOURCE.html` : source HTML officielle récupérée avec `curl`.
+
+## Références
+
+- `raw/` : trois états natifs réels de l'archive officielle, avec son titre, son index chronologique et ses entrées éditoriales.
+- Le DOM observé ne contient aucun élément `<img>` exploitable : la preuve visuelle repose sur la hiérarchie éditoriale, les filets, le motif de tête et les liens. L'état d'archive est conservé tel qu'observé.
+- `crops/` : cinq composants découpés localement selon les zones réellement observées.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, trois positions distinctes capturées avec le rendu natif, source HTML vérifiée avec `curl`, puis crops locaux contrôlés. L'injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; aucune capture inventée et aucun appel Microlink n'ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

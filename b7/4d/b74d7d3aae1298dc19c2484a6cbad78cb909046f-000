@@ -1,0 +1,25 @@
+# T-01-8-6 — Critique culturelle
+
+Calibrage (référence du catalogue) : The New Yorker, Books & Culture
+
+## Sources
+
+- Rubrique Books & Culture : https://www.newyorker.com/culture
+- Critic’s Notebook : https://www.newyorker.com/culture/critics-notebook/whoopi-goldberg-was-and-always-will-be-the-whole-show
+- Critique cinéma : https://www.newyorker.com/culture/the-current-cinema/christopher-nolan-has-always-been-making-the-odyssey
+
+The New Yorker Books & Culture a été retenu comme benchmark public de critique culturelle : rubrique éditoriale, catégories de critique explicites, signature d’auteur, illustration ou photographie, audio et corps d’article.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; les messages d’abonnement et de paywall sont des modules éditoriaux du site, pas des overlays de cookies.
+- Le test html2canvas a été effectué : l’environnement navigateur lecture seule expose `document.createElement` et `window.html2canvas` comme indisponibles. Les captures conservées sont donc les rendus natifs réels du navigateur.
+- La vérification `curl` des trois URL a renvoyé HTTP 200.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.

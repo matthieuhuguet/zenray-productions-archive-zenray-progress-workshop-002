@@ -1,0 +1,27 @@
+# T-01-5-1 — Revue d'ingénierie
+
+Calibrage (référence du catalogue) : IEEE Spectrum
+
+Signature observée : schémas légendés, colonnes serrées, encadrés techniques.
+
+## Sources officielles vérifiées
+
+- `https://spectrum.ieee.org/` : page d'accueil IEEE Spectrum, avec navigation par topics, modules éditoriaux et issue promotionnelle.
+- `https://spectrum.ieee.org/about` : mission éditoriale et périmètre institutionnel.
+- `https://spectrum.ieee.org/topic/robotics/` : page de rubrique spécialisée.
+- `https://spectrum.ieee.org/Newsletters/` : surface newsletter officielle.
+- `https://spectrum.ieee.org/magazine/` : archive des éditions du magazine.
+- `raw/IEEESPECTRUM__HOME__SOURCE.html` : source HTML de la page d'accueil récupérée avec `curl`.
+
+## Références
+
+- `raw/IEEESPECTRUM__HOME__TOP__NATIVE.jpg` : en-tête, logo, recherche, topic rail, headline hero et colonne de récits associés.
+- `raw/IEEESPECTRUM__HOME__MID__NATIVE.jpg` : module sponsorisé, chapeau de rubrique, titre technique long, date et CTA webinar, puis article secondaire en grille.
+- `raw/IEEESPECTRUM__HOME__LOWER__NATIVE.jpg` : zone sombre de l'édition, CTA PDF, liste de contenus et couverture verticale.
+- Les cinq autres fichiers de `raw/` sont des images officielles téléchargées directement depuis les URLs `spectrum.ieee.org/media-library/` observées dans le DOM réel : cellule sodium-ion, rover martien, robot humanoïde, patch biomédical et visuel d'article IA.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, interstitiel publicitaire fermé par son contrôle visible, cookie banner fermé par son contrôle visible, trois positions distinctes capturées avec le rendu natif, cinq assets image téléchargés avec `curl`, puis hashes et dimensions vérifiés. L'injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; aucune capture inventée et aucun appel Microlink n'ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

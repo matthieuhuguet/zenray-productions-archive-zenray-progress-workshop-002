@@ -1,0 +1,27 @@
+# T-01-5-5 — Revue d'architecture
+
+Calibrage (référence du catalogue) : Detail
+
+Signature observée : plans, coupes, échelle, légende en pied.
+
+## Sources officielles vérifiées
+
+- `https://www.detail.de/en/de_en/` : plateforme DETAIL avec projets, rubriques, publicité, navigation et articles de construction.
+- `https://www.detail.de/en/de_en/ueber-uns` : présentation éditoriale et historique de DETAIL.
+- `https://www.detail.de/de_en/detail-epaper` : surface ePaper officielle.
+- `https://www.detail.de/en/de_en/detailshop-detail-magazin` : surface officielle du magazine.
+- `https://www.detail.de/social-media-home` : réseaux sociaux officiels.
+- `raw/DETAIL__HOME__DOM__SNAPSHOT.html` : DOM réel conservé après chargement navigateur.
+
+## Références
+
+- `raw/DETAIL__HOME__TOP__NATIVE.jpg` : navigation flottante, wordmark DETAIL, recherche, ad system et grand visuel d'ouverture.
+- `raw/DETAIL__HOME__MID__NATIVE.jpg` : composition de projets en deux colonnes, photographie dominante, titre, chapeau, texte et tags en pied.
+- `raw/DETAIL__HOME__LOWER__NATIVE.jpg` : suite éditoriale avec espace négatif, titre de projet décalé et hiérarchie de légende.
+- Les cinq autres fichiers de `raw/` sont des images officielles téléchargées avec `curl` depuis le CDN DETAIL : projet de Tas, monographie Herzog & de Meuron, visuel newsletter, Terminal 3 de Francfort et couverture DETAIL 6.2026.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, trois positions distinctes capturées avec le rendu natif, cinq assets images validés et téléchargés directement avec `curl` depuis le CDN officiel. Le serveur HTML DETAIL répond 403 à `curl`, donc le DOM réel a été conservé en repli ; l’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible). Aucun appel Microlink et aucune capture inventée n’ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

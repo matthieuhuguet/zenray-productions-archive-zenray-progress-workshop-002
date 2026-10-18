@@ -1,0 +1,25 @@
+# T-01-7-2 — Journal municipal
+
+Calibrage (référence du catalogue) : Ville de Paris
+
+## Sources
+
+- Site officiel : https://www.paris.fr/
+- Actualité municipale : https://www.paris.fr/pages/les-regles-d-or-a-respecter-pour-une-baignade-reussie-35778
+- Dossier public : https://www.paris.fr/dossiers/tout-ce-que-vous-devez-savoir-sur-la-baignade-dans-la-seine-247
+
+Le site officiel de la Ville de Paris a été retenu comme benchmark concret de journal municipal : identité institutionnelle, accès rapides, fil d’information, article focus et dossier thématique.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; aucune capture n’a été conservée sous consentement non vérifié.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

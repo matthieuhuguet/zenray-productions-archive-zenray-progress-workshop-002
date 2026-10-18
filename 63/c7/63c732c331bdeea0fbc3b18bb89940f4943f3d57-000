@@ -1,0 +1,25 @@
+# T-01-6-7 — Presse jeunesse
+
+Calibrage (référence du catalogue) : Phosphore
+
+## Sources
+
+- Site officiel : https://www.phosphore.com/
+- Rubrique actualité : https://www.phosphore.com/actu/
+- Article de référence : https://www.phosphore.com/actu/gamers-et-footballeurs-qui-influence-qui/
+
+La surface publique de Phosphore a été retenue comme référence pour la couverture, la marque Bayard Jeunesse, l’entrée actualité, les cartes et la page article.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- La boîte réelle « Bienvenue chez Bayard Jeunesse Gestion du consentement » a été traitée avec le bouton visible `Continuer sans accepter` ; sa disparition a été vérifiée avant les captures finales.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

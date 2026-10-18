@@ -1,0 +1,24 @@
+# T-01-4-7 — Infolettre à chapitres
+
+Calibrage (référence du catalogue) : Stratechery
+
+Signature observée : sommaire cliquable, texte long, note de fin.
+
+## Sources officielles vérifiées
+
+- `https://stratechery.com/` : accueil, navigation, rubrique Stratechery Plus et article mis en avant.
+- `https://stratechery.com/about/` : présentation éditoriale.
+- `https://stratechery.com/category/daily-email/` : archive des Daily Emails réservée aux membres.
+- `https://stratechery.com/2026/openai-hacks-hugging-face-what-happened-alignment-and-paper-clips/` : article long observé depuis l’accueil.
+- `raw/STRATECHERY__HOME__SOURCE.html` : source HTML officielle récupérée avec `curl`.
+
+## Références
+
+- `raw/` : trois états natifs réels de l’accueil et deux assets officiels téléchargés avec `curl` : logo SVG et visuel d’article.
+- `crops/` : trois composants découpés localement : en-tête/navigation, colonne long format et bloc de citation/note.
+
+Total : 8/8
+
+Méthode : site officiel réel ouvert dans le navigateur, trois positions distinctes capturées avec le rendu natif, assets DOM réels téléchargés avec `curl`, puis crops locaux contrôlés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; aucune capture inventée et aucun appel Microlink n’ont été utilisés.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

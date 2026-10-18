@@ -1,0 +1,26 @@
+# T-01-6-8 — Presse potin en ligne
+
+Calibrage (référence du catalogue) : Konbini
+
+## Sources
+
+- Site officiel : https://www.konbini.com/
+- Rubrique vidéos : https://www.konbini.com/categorie/videos/
+- Article de référence : https://www.konbini.com/popculture/pourquoi-les-influenceurs-ne-pourront-pas-voir-lodyssee-avant-tout-le-monde/
+
+La surface publique de Konbini a été retenue comme référence pour le masthead, la une, les playlists vidéo, le lecteur intégré et le rail des derniers articles.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; aucune capture n’a été conservée sous consentement non vérifié.
+- L’article initialement visé a expiré lors de la navigation et n’a pas été conservé ; l’article public documenté ci-dessus a été vérifié et utilisé à sa place.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

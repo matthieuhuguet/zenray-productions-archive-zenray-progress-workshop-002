@@ -1,0 +1,9 @@
+{
+  "theme": "T-04-1-1--revelation-cinematique",
+  "calibrationMedia": "DS2",
+  "note": "Interface de JEU : texte clair sur fond sombre, invert. Le rendu 3D derriere le texte rend le seuillage plus fragile que sur du papier.",
+  "probes": [
+    { "role": "menu", "image": "raw_v2/DS2__GUID__01.jpg", "rect": [1386, 748, 112, 26], "text": "New Game", "invert": true },
+    { "role": "invite", "image": "raw_v2/DS2__GUID__12.jpg", "rect": [1063, 388, 180, 26], "text": "Use Toilet/Shower", "invert": true }
+  ]
+}

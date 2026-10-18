@@ -1,0 +1,553 @@
+{
+  "note": "Une entree par composant. `rect` est la zone de la capture d'origine qui montre ce composant. VERIFIER les rects avec --dump AVANT de lire la comparaison : un rect faux produit une planche d'apparence serieuse contre une zone qui n'est pas le composant.",
+  "compare": [
+    {
+      "name": "planche-de-signes",
+      "html": "components/00-icons.html",
+      "selector": ".zrm-sheet",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__05.jpg",
+      "rect": [
+        895,
+        700,
+        130,
+        125
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "ecran-titre",
+      "html": "components/01-title-screen.html",
+      "selector": ".zrm-title-screen",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__01.jpg",
+      "rect": [
+        1150,
+        350,
+        660,
+        330
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "menu-principal",
+      "html": "components/02-menu-list.html",
+      "selector": ".zrm-menu",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__01.jpg",
+      "rect": [
+        1030,
+        735,
+        880,
+        140
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "ligne-invite",
+      "html": "components/03-prompt-line.html",
+      "selector": ".zrm-prompt-stack",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__12.jpg",
+      "rect": [
+        690,
+        378,
+        610,
+        110
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "roue-de-dialogue",
+      "html": "components/04-dialogue-wheel.html",
+      "selector": ".zrm-wheel",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__05.jpg",
+      "rect": [
+        230,
+        630,
+        1460,
+        250
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true,
+      "compared": true,
+      "iterations": 13
+    },
+    {
+      "name": "coin-ath",
+      "html": "components/05-hud-corner.html",
+      "selector": ".zrm-hud",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__23.jpg",
+      "rect": [
+        105,
+        805,
+        190,
+        200
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "carton-chapitre",
+      "html": "components/06-chapter-card.html",
+      "selector": ".zrm-chapter",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__04.jpg",
+      "rect": [
+        160,
+        490,
+        520,
+        80
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "carte-objectif",
+      "html": "components/07-objective-card.html",
+      "selector": ".zrm-obj",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__21.jpg",
+      "rect": [
+        0,
+        112,
+        530,
+        85
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "blocs-recit",
+      "html": "components/08-beats.html",
+      "selector": ".zrm-beats",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__06.png",
+      "rect": [
+        222,
+        222,
+        670,
+        490
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "barre-actions",
+      "html": "components/09-footer-prompts.html",
+      "selector": ".zrm-actions",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__08.jpg",
+      "rect": [
+        1295,
+        1000,
+        560,
+        45
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "cadre-ecran",
+      "html": "components/10-screen-frame.html",
+      "selector": ".zrm-frame",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        0,
+        0,
+        1920,
+        1080
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "titre-ecran",
+      "html": "components/11-screen-title.html",
+      "selector": ".zrm-screen-title",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        170,
+        95,
+        520,
+        75
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "liste-categories",
+      "html": "components/12-category-list.html",
+      "selector": ".zrm-cat-list",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        155,
+        230,
+        590,
+        590
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "jauges",
+      "html": "components/13-gauges.html",
+      "selector": ".zrm-gauges",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__14.jpg",
+      "rect": [
+        1640,
+        450,
+        270,
+        555
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "panneau-details",
+      "html": "components/14-detail-panel.html",
+      "selector": ".zrm-detail",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        1355,
+        200,
+        375,
+        610
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "bandeau-jauges",
+      "html": "components/15-status-bar.html",
+      "selector": ".zrm-statusbar",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        180,
+        915,
+        790,
+        110
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "ecran-bilan",
+      "html": "components/16-results-screen.html",
+      "selector": ".zrm-results",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__18.png",
+      "rect": [
+        178,
+        100,
+        1105,
+        465
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "liste-reglages",
+      "html": "components/17-settings-list.html",
+      "selector": ".zrm-settings",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__02.jpg",
+      "rect": [
+        78,
+        138,
+        890,
+        765
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "marqueurs-monde",
+      "html": "components/18-world-marker.html",
+      "selector": ".zrm-markers",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__21.jpg",
+      "rect": [
+        1330,
+        430,
+        90,
+        75
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "boutons",
+      "html": "components/19-buttons.html",
+      "selector": ".zrm-btns",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        195,
+        840,
+        330,
+        55
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "invites",
+      "html": "components/20-prompts.html",
+      "selector": ".zrm-prompts",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        720,
+        585,
+        490,
+        335
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "cartes",
+      "html": "components/21-cards.html",
+      "selector": ".zrm-cards",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__19.png",
+      "rect": [
+        1370,
+        228,
+        350,
+        205
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "tableaux",
+      "html": "components/22-tables.html",
+      "selector": ".zrm-tables",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__04.png",
+      "rect": [
+        155,
+        230,
+        590,
+        340
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "ecran-carte",
+      "html": "components/23-map-screen.html",
+      "selector": ".zrm-map",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__07.jpg",
+      "rect": [
+        78,
+        20,
+        900,
+        165
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "notifications",
+      "html": "components/24-notifications.html",
+      "selector": ".zrm-notifs",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__21.jpg",
+      "rect": [
+        80,
+        538,
+        500,
+        130
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "surcouches",
+      "html": "components/25-overlays.html",
+      "selector": ".zrm-overlays",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__17.jpg",
+      "rect": [
+        355,
+        258,
+        1210,
+        690
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "graphes-radar",
+      "html": "components/26-radar.html",
+      "selector": ".zrm-radar-wrap",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__11.jpg",
+      "rect": [
+        485,
+        270,
+        910,
+        600
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "codec",
+      "html": "components/27-codec.html",
+      "selector": ".zrm-story",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__10.png",
+      "rect": [
+        275,
+        190,
+        620,
+        650
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "ecrans-ouverture",
+      "html": "components/28-title-screens.html",
+      "selector": ".zrm-open",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__23.png",
+      "rect": [
+        415,
+        235,
+        1095,
+        560
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "planche-edition",
+      "html": "components/29-edition-sheet.html",
+      "selector": ".zrm-sheet-ed",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__OFFICIAL__01.jpg",
+      "rect": [
+        830,
+        125,
+        915,
+        190
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "grilles-materiaux",
+      "html": "components/30-inventory-grids.html",
+      "selector": ".zrm-grids",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__16.jpg",
+      "rect": [
+        980,
+        715,
+        765,
+        220
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "grappe-ath",
+      "html": "components/31-hud-cluster.html",
+      "selector": ".zrm-hudc",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__21.jpg",
+      "rect": [
+        105,
+        795,
+        200,
+        210
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "effets",
+      "html": "components/32-effects.html",
+      "selector": ".zrm-fx",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__23.png",
+      "rect": [
+        200,
+        490,
+        1550,
+        120
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "listes-commandes",
+      "html": "components/33-lists-extra.html",
+      "selector": ".zrm-lists",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS2__GUID__09.jpg",
+      "rect": [
+        38,
+        100,
+        810,
+        400
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "panneaux-annexes",
+      "html": "components/34-panels-extra.html",
+      "selector": ".zrm-panels",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__20.png",
+      "rect": [
+        1090,
+        150,
+        745,
+        435
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    },
+    {
+      "name": "elements-scene",
+      "html": "components/35-scene-extras.html",
+      "selector": ".zrm-scene",
+      "ref": "../../../../docs/zenraymedia/references-jpeg/T-04-1-1--revelation-cinematique--DeathStranding2OnTheBeach/raw_v2/DS1__IIG__01.png",
+      "rect": [
+        545,
+        480,
+        760,
+        240
+      ],
+      "width": 1500,
+      "height": 950,
+      "rectChecked": true
+    }
+  ],
+  "etats": {
+    "ecrit": "le fichier existe, dimensions supposees",
+    "cadre": "crop de reference VERIFIE a l'oeil",
+    "compare": "la boucle a tourne, l'ecart est nomme",
+    "valide": "Matthieu l'a regarde et l'a dit bon"
+  }
+}

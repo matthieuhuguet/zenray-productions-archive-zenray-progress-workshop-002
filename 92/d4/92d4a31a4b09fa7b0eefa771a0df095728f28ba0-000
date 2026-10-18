@@ -1,0 +1,25 @@
+# T-01-8-2 — Éditorial du directeur
+
+Calibrage (référence du catalogue) : The Guardian view
+
+## Sources
+
+- Série éditoriale : https://www.theguardian.com/profile/editorial
+- Opinion : https://www.theguardian.com/commentisfree
+- Lettres : https://www.theguardian.com/tone/letters
+
+The Guardian view a été retenu comme benchmark public d’éditorial : série de vues éditoriales, mise en page Opinion et exemple de courrier des lecteurs associé au même écosystème de presse.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; les modules de soutien et publicités du site ne sont pas des overlays de consentement et ne recouvrent pas les crops retenus.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+

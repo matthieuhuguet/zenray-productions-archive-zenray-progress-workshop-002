@@ -1,0 +1,25 @@
+# T-01-8-7 — Billet d’humeur
+
+Calibrage (référence du catalogue) : The New Yorker, Humor & Cartoons
+
+## Sources
+
+- Rubrique Humor & Cartoons : https://www.newyorker.com/humor
+- Billet Shouts & Murmurs : https://www.newyorker.com/humor/shouts-murmurs/ill-pay-twenty-thousand-dollars-to-skip-your-jazz-show
+- Second billet de contrôle : https://www.newyorker.com/humor/shouts-murmurs/the-saddest-happy-hours-in-nyc
+
+The New Yorker Humor & Cartoons a été retenu comme benchmark public de billet d’humeur : rubrique dédiée, série « Shouts & Murmurs », titre à forte voix, signature, date et traitement visuel distinct du journalisme factuel.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Aucun bouton de consentement visible sur les trois états finaux ; les publicités et messages d’abonnement sont des modules du site, pas des overlays de cookies.
+- Le test html2canvas a été effectué : l’environnement navigateur lecture seule expose `document.createElement` et `window.html2canvas` comme indisponibles. Les captures conservées sont donc les rendus natifs réels du navigateur.
+- La vérification `curl` des trois URL a renvoyé HTTP 200.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.

@@ -1,0 +1,15 @@
+# T-01-4-5 — Infolettre courte quotidienne
+
+Calibrage (référence du catalogue) : Morning Brew
+
+## Sources
+
+- `raw/` : trois états réels de la page officielle `morningbrew.com/about` : identité éditoriale, CTA newsletter et réseau de marques en pied de page.
+- `raw/` contient le logo natif téléchargé par `curl` depuis l’URL CDN observée dans le DOM et l’image newsletter native exportée depuis l’asset observé par le navigateur.
+- `crops/` : trois composants découpés localement : en-tête institutionnel, CTA avec téléphone et réseau de marques du pied de page.
+
+Total : 8/8
+
+Méthode : page officielle About réelle ouverte dans le navigateur, consentement traité, états distincts sauvegardés immédiatement, logo téléchargé avec `curl`, asset newsletter exporté depuis l’inventaire réel de la page après refus 403 du téléchargement direct, puis crops locaux contrôlés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; les captures d’interface sont des rendus natifs réels, sans Microlink et sans image inventée. La page Subscribe est restée sur un interstitiel Cloudflare non contourné.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

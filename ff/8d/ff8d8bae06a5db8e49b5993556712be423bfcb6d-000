@@ -1,0 +1,24 @@
+# T-01-6-1 — Couverture people
+
+Calibrage (référence du catalogue) : Voici
+
+## Sources
+
+- Accueil officiel : https://www.voici.fr/
+- Rubrique Célébrités : https://www.voici.fr/celebrites
+- Rubrique TV : https://www.voici.fr/television
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Les deux premiers états ne présentaient pas de bouton de consentement visible. Le troisième présentait un bouton de consentement visible : il a été cliqué réellement, puis son absence a été vérifiée avant la capture.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+
+Substitution : aucune.

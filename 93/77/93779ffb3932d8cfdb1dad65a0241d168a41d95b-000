@@ -1,0 +1,2025 @@
+{
+  "note": "Chaque entree porte son image d'origine. Une image sans entree est une image NON REGARDEE, pas une image sans composant — c'est la distinction que --check fait respecter.",
+  "types": [
+    "icon",
+    "component",
+    "effect",
+    "motion"
+  ],
+  "images": [
+    {
+      "image": "raw/DS2__01__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "gabarit-edition-duplique",
+          "type": "component",
+          "note": "DOUBLON haute definition d'une planche marketing deja relevee dans raw_v2 : raw/ et raw_v2/ se recoupent sur les OFFICIAL",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__02__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "gabarit-edition-duplique",
+          "type": "component",
+          "note": "DOUBLON haute definition d'une planche marketing deja relevee dans raw_v2 : raw/ et raw_v2/ se recoupent sur les OFFICIAL",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__03__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "gabarit-edition-duplique",
+          "type": "component",
+          "note": "DOUBLON haute definition d'une planche marketing deja relevee dans raw_v2 : raw/ et raw_v2/ se recoupent sur les OFFICIAL",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__04__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__05__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__06__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__07__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__08__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__09__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__10__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__11__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__12__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__13__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__14__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__15__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__16__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw/DS2__17__OFFICIAL.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__01.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "carte-holographique",
+          "type": "component",
+          "note": "Carte projetee sur une TABLE, en vert, vue en perspective : pastilles CONNECT / CONNECTION REFUSED, cercles et croix rouges posees sur les villes",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        },
+        {
+          "name": "pastille-etat-reseau",
+          "type": "component",
+          "note": "Libelle en capitales espacees sous un cercle, deux etats opposes : accepte / refuse",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__02.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "carte-destinataire",
+          "type": "component",
+          "note": "Logo d'affiliation + ville + nom, en bas du panneau de details",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "mention-classifiee",
+          "type": "component",
+          "note": "[TOP SECRET] entre crochets, precede d'un glyphe, sur une ligne a part",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "silhouette-vide",
+          "type": "icon",
+          "note": "Contour de personnage en trace fin quand aucune vignette n'est disponible",
+          "status": "fait",
+          "part": "00-icons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__03.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-titre-ds1",
+          "type": "component",
+          "note": "Titre en capitales tres espacees, menu vertical CENTRE, entree active surlignee",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        },
+        {
+          "name": "vague-menu",
+          "type": "effect",
+          "note": "Onde bleue horizontale traversant le menu a hauteur de l'entree active — la meme grammaire que l'ecran de difficulte",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        },
+        {
+          "name": "pied-version-copyright",
+          "type": "component",
+          "note": "Version de jeu puis deux lignes de copyright, centrees, tres attenuees",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__04.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "cadre-ecran",
+          "type": "effect",
+          "note": "Tirets et crochets tres fins aux quatre coins et sur les bords de l'ECRAN entier. Signature DS1 : le cadre n'appartient a aucun panneau, il encadre la vue",
+          "status": "fait",
+          "part": "10-screen-frame.html"
+        },
+        {
+          "name": "tableau-colonnes",
+          "type": "component",
+          "note": "En-tetes NAME / LIKES / WEIGHT, lignes groupees par categorie avec compteur xN",
+          "status": "fait",
+          "part": "12-category-list.html"
+        },
+        {
+          "name": "panneau-details",
+          "type": "component",
+          "note": "Encadre DETAILS avec crochets d'angle, vignette, badge de niveau, barres de degat, paragraphe",
+          "status": "fait",
+          "part": "14-detail-panel.html"
+        },
+        {
+          "name": "badge-niveau",
+          "type": "component",
+          "note": "LEVEL + chiffre, dans un petit cadre en haut a droite de la vignette",
+          "status": "fait",
+          "part": "14-detail-panel.html"
+        },
+        {
+          "name": "paragraphe-glyphes",
+          "type": "component",
+          "note": "Texte descriptif avec glyphes de manette INLINE dans la phrase",
+          "status": "fait",
+          "part": "14-detail-panel.html"
+        },
+        {
+          "name": "bandeau-jauges",
+          "type": "component",
+          "note": "Bas d'ecran : plusieurs jauges cote a cote (batterie, sang) + poids courant/max",
+          "status": "fait",
+          "part": "15-status-bar.html"
+        },
+        {
+          "name": "statut-connexion",
+          "type": "component",
+          "note": "OFFLINE en rouge, coin haut droit, tres petit",
+          "status": "fait",
+          "part": "24-notifications.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__05.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "cadre-ecran",
+          "type": "effect",
+          "note": "Tirets et crochets tres fins aux quatre coins et sur les bords de l'ECRAN entier. Signature DS1 : le cadre n'appartient a aucun panneau, il encadre la vue",
+          "status": "fait",
+          "part": "10-screen-frame.html"
+        },
+        {
+          "name": "carte-couverture",
+          "type": "component",
+          "note": "Carte d'un pays en degrade bleu, zones couvertes plus claires, sur fond sombre",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "annonce-evenement",
+          "type": "component",
+          "note": "NEW STRAND ESTABLISHED en capitales tres espacees, centre sous la carte",
+          "status": "fait",
+          "part": "24-notifications.html"
+        },
+        {
+          "name": "compteurs-entete",
+          "type": "component",
+          "note": "Deux ou trois compteurs alignes en haut a droite, icone + valeur + fraction",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__06.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "cadre-ecran",
+          "type": "effect",
+          "note": "Tirets et crochets tres fins aux quatre coins et sur les bords de l'ECRAN entier. Signature DS1 : le cadre n'appartient a aucun panneau, il encadre la vue",
+          "status": "fait",
+          "part": "10-screen-frame.html"
+        },
+        {
+          "name": "carte-profil",
+          "type": "component",
+          "note": "Portrait encadre + code + note en gros chiffres + rang, colonne de gauche",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "bandeau-titre-section",
+          "type": "component",
+          "note": "Overall Rating : barre pleine largeur sous le portrait",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "tableau-statistiques",
+          "type": "component",
+          "note": "Lignes libelle / delta en cyan / valeur, alignees en colonnes",
+          "status": "fait",
+          "part": "22-tables.html"
+        },
+        {
+          "name": "radar-octogonal",
+          "type": "component",
+          "note": "Graphe a 8 branches rempli en vert, icones aux sommets, valeurs a l'exterieur",
+          "status": "fait",
+          "part": "26-radar.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__07.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "saisie-champ",
+          "type": "component",
+          "note": "Libelles Month / Day au-dessus, valeurs en gros chiffres, champ actif SOULIGNE",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "paragraphe-centre",
+          "type": "component",
+          "note": "Deux lignes de consigne centrees, au-dessus du champ",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "fond-anime",
+          "type": "effect",
+          "note": "Voiles verticaux cyan ondulants en arriere-plan, tres sombres",
+          "status": "fait",
+          "part": "27-codec.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__08.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "bandeau-episode",
+          "type": "component",
+          "note": "Numero et titre d'episode en petit, objectif en dessous plus gros, haut-gauche",
+          "status": "fait",
+          "part": "24-notifications.html"
+        },
+        {
+          "name": "notification-ligne",
+          "type": "component",
+          "note": "Icone + texte sur une ligne, sans fond, apparait au bord gauche",
+          "status": "fait",
+          "part": "20-prompts.html"
+        },
+        {
+          "name": "marqueur-hexagonal",
+          "type": "component",
+          "note": "Hexagone allonge avec libelle au centre et QUEUE descendante vers l'objet vise",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        },
+        {
+          "name": "invite-contextuelle",
+          "type": "component",
+          "note": "Glyphe + libelle, ancre pres de l'objet dans la scene",
+          "status": "fait",
+          "part": "20-prompts.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__09.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "compteur-geant",
+          "type": "component",
+          "note": "Pourcentage en tres gros chiffres au trace evide, pose dans la scene",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "etiquette-etat",
+          "type": "component",
+          "note": "CONNECTED sur fond cyan plein, petite, en capitales espacees",
+          "status": "fait",
+          "part": "24-notifications.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__10.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-codec",
+          "type": "component",
+          "note": "Nom du canal en capitales espacees, portrait en polygones, statut de connexion",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "portrait-polygonal",
+          "type": "effect",
+          "note": "Visage reconstruit en facettes colorees : l'effet de transmission degradee",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "carte-miniature",
+          "type": "component",
+          "note": "Silhouette de pays en fil de fer, tres estompee, en fond de panneau",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__11.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "cadre-ecran",
+          "type": "effect",
+          "note": "Tirets et crochets tres fins aux quatre coins et sur les bords de l'ECRAN entier. Signature DS1 : le cadre n'appartient a aucun panneau, il encadre la vue",
+          "status": "fait",
+          "part": "10-screen-frame.html"
+        },
+        {
+          "name": "liste-fabrication",
+          "type": "component",
+          "note": "Vignette + nom + cout en deux ressources, cartes alignees horizontalement",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        },
+        {
+          "name": "badge-nouveau",
+          "type": "component",
+          "note": "New precede d'un point d'exclamation cercle, sur fond clair",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        },
+        {
+          "name": "panneau-aide",
+          "type": "component",
+          "note": "Liste d'invites en haut a droite, encadree, une ligne par action",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "bloc-cout",
+          "type": "component",
+          "note": "Required / Available en deux lignes, valeurs negatives en ROUGE",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__12.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "menu-deroulant",
+          "type": "component",
+          "note": "Barre bleue avec chevron a droite, ouvre une liste sous elle",
+          "status": "fait",
+          "part": "25-overlays.html"
+        },
+        {
+          "name": "ligne-active-orange",
+          "type": "component",
+          "note": "La ligne selectionnee passe en ORANGE plein, pas en bleu : c'est l'accent d'ALERTE",
+          "status": "fait",
+          "part": "25-overlays.html"
+        },
+        {
+          "name": "invites-inline",
+          "type": "component",
+          "note": "Select / Select Multiple affiches DANS la ligne active, pas en pied d'ecran",
+          "status": "fait",
+          "part": "20-prompts.html"
+        },
+        {
+          "name": "bouton-avec-aide",
+          "type": "component",
+          "note": "Confirm avec une ligne d'explication en dessous, plus petite et estompee",
+          "status": "fait",
+          "part": "19-buttons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__13.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "roue-equipement",
+          "type": "component",
+          "note": "Grand cercle fin avec compteur, nom d'objet et description au centre, objets disposes autour",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        },
+        {
+          "name": "chevrons-selection",
+          "type": "icon",
+          "note": "Chevrons haut/bas et gauche/droite disposes autour de la roue",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "invites-coin",
+          "type": "component",
+          "note": "Equip / Drop empiles en haut a gauche de la roue, glyphe apres le libelle",
+          "status": "fait",
+          "part": "20-prompts.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__14.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "encart-ordre",
+          "type": "component",
+          "note": "Numero d'ordre entre crochets + titre, avec case a cocher et sous-ligne d'objectif",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "panneau-stats-2col",
+          "type": "component",
+          "note": "Deux colonnes de libelles avec petite barre sous chacun, sans valeur chiffree",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "ligne-actions-carte",
+          "type": "component",
+          "note": "Manage Cargo / Place Marker / Plot Route sur une ligne, glyphes inline",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "avatar-joueur",
+          "type": "component",
+          "note": "Vignette carree d'un autre joueur, posee sur la carte",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        },
+        {
+          "name": "rail-icones-compteur",
+          "type": "component",
+          "note": "Rail d'icones a gauche avec un compteur accole a l'une d'elles",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__15.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "logo-scene",
+          "type": "effect",
+          "note": "Logo circulaire trace en lignes fines DANS la scene, avec texte en arc autour",
+          "status": "fait",
+          "part": "32-effects.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__16.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "carton-studio",
+          "type": "component",
+          "note": "Logo de studio centre sur noir plein, aucun autre element",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__17.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "bandes-cinema",
+          "type": "effect",
+          "note": "Bandes noires haut et bas : le plan passe en 2.35:1 pendant les cinematiques",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__18.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-bilan",
+          "type": "component",
+          "note": "Titre Results, ligne de commande avec icone etoile, numero de position #1/1",
+          "status": "fait",
+          "part": "16-results-screen.html"
+        },
+        {
+          "name": "tableau-evaluation",
+          "type": "component",
+          "note": "Colonnes DETAILS / LIKES, lignes surlignees JAUNE quand l'objectif est atteint",
+          "status": "fait",
+          "part": "16-results-screen.html"
+        },
+        {
+          "name": "section-bonus",
+          "type": "component",
+          "note": "Titres de section en cyan (Additional Likes, Simultaneous Delivery) avec lignes dessous",
+          "status": "fait",
+          "part": "16-results-screen.html"
+        },
+        {
+          "name": "barre-note-medaillon",
+          "type": "component",
+          "note": "Barre en degrade jaune se terminant par un MEDAILLON circulaire grave (AWESOME)",
+          "status": "fait",
+          "part": "16-results-screen.html"
+        },
+        {
+          "name": "blocs-gain",
+          "type": "component",
+          "note": "Deux blocs cote a cote : points gagnes et likes recus, chiffres en chasse fixe",
+          "status": "fait",
+          "part": "16-results-screen.html"
+        },
+        {
+          "name": "invite-auto-skip",
+          "type": "component",
+          "note": "Next + Auto-Skip On, en pied, le second avec un glyphe de bascule",
+          "status": "fait",
+          "part": "16-results-screen.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__19.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "titre-avec-lieu",
+          "type": "component",
+          "note": "Nom du lieu en petit AU-DESSUS du titre d'ecran, plus clair",
+          "status": "fait",
+          "part": "11-screen-title.html"
+        },
+        {
+          "name": "menu-vertical-sous-titre",
+          "type": "component",
+          "note": "Entree active sur fond bleu plein AVEC sous-titre explicatif ; inactives estompees, sans fond",
+          "status": "fait",
+          "part": "33-lists-extra.html"
+        },
+        {
+          "name": "carte-contact",
+          "type": "component",
+          "note": "Portrait + nom + role + etoiles + code d'affiliation, colonne de droite",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "bloc-statut-3lignes",
+          "type": "component",
+          "note": "Order(s) Available / In Progress / Awaiting Redeployment, valeurs alignees",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__20.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "panneau-filtre",
+          "type": "component",
+          "note": "Sections avec case Show/Hide, rangees d'icones bascules, ligne d'aide en pied",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "bouton-reglages-defaut",
+          "type": "component",
+          "note": "Default Settings avec glyphe, aligne a droite du titre de panneau",
+          "status": "fait",
+          "part": "19-buttons.html"
+        },
+        {
+          "name": "icone-bascule",
+          "type": "icon",
+          "note": "Icone dans un carre arrondi, etat actif = fond bleu plein",
+          "status": "fait",
+          "part": "00-icons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__21.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "titre-sur-paysage",
+          "type": "component",
+          "note": "Titre du jeu en capitales tres espacees, pose sur un plan de paysage, sans fond",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__22.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-pause",
+          "type": "component",
+          "note": "Libelle Pause en capitales espacees, deux boutons cote a cote, l'actif sur fond bleu",
+          "status": "fait",
+          "part": "19-buttons.html"
+        },
+        {
+          "name": "bouton-paire",
+          "type": "component",
+          "note": "Continue / Skip : rectangles accoles, actif en bleu plein, inactif transparent",
+          "status": "fait",
+          "part": "19-buttons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__23.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-difficulte",
+          "type": "component",
+          "note": "Titre centre entre deux filets, paragraphe de consigne, liste verticale centree",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        },
+        {
+          "name": "vague-lumineuse",
+          "type": "effect",
+          "note": "Onde horizontale bleue traversant la liste a hauteur de l'entree active",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        },
+        {
+          "name": "titre-filigrane",
+          "type": "effect",
+          "note": "Le titre du jeu en tres grand derriere la liste, presque efface",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        },
+        {
+          "name": "description-choix",
+          "type": "component",
+          "note": "Paragraphe descriptif en bas, change avec l'entree survolee",
+          "status": "fait",
+          "part": "28-title-screens.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS1__IIG__24.png",
+      "seen": true,
+      "elements": [
+        {
+          "name": "liste-joueurs",
+          "type": "component",
+          "note": "En-tetes PLAYER / LIKES, lignes avec pastille et valeur alignee a droite",
+          "status": "fait",
+          "part": "33-lists-extra.html"
+        },
+        {
+          "name": "carte-profil-grade",
+          "type": "component",
+          "note": "Portrait + Porter Grade + numero + rang textuel, superposes sur la vignette",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "tableau-valeurs-unites",
+          "type": "component",
+          "note": "Libelle a gauche, valeur a droite avec UNITE entre crochets, filet fin entre lignes",
+          "status": "fait",
+          "part": "22-tables.html"
+        },
+        {
+          "name": "ligne-derniere-connexion",
+          "type": "component",
+          "note": "Last Login Date + horodatage, en bas du tableau, sans filet",
+          "status": "fait",
+          "part": "22-tables.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__01.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-titre",
+          "type": "component",
+          "note": "Titre de jeu en capitales, graisse 200, interlettrage 0.42em, aligne a droite",
+          "status": "fait",
+          "part": "01-title-screen.html"
+        },
+        {
+          "name": "menu-principal",
+          "type": "component",
+          "note": "Liste verticale, actif en clair + halo, interligne 2.1, aucun fond de selection",
+          "status": "fait",
+          "part": "02-menu-list.html"
+        },
+        {
+          "name": "filet-lumineux",
+          "type": "effect",
+          "note": "Degrade horizontal cyan sous le titre, s'eteint aux deux bouts",
+          "status": "fait",
+          "part": "32-effects.html"
+        },
+        {
+          "name": "mention-version",
+          "type": "component",
+          "note": "Ligne minuscule centree en bas, interlettrage large",
+          "status": "fait",
+          "part": "01-title-screen.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__02.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "barre-onglets-icones",
+          "type": "component",
+          "note": "Rangee d'icones en haut avec glyphes L1/R1 de part et d'autre, l'onglet actif porte son libelle",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "liste-reglages",
+          "type": "component",
+          "note": "Libelle a gauche, valeur a droite, une ligne par reglage, filet tres fin entre elles",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "curseur-valeur",
+          "type": "component",
+          "note": "Barre horizontale avec poignee et valeur chiffree a droite",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "selecteur-chevron",
+          "type": "component",
+          "note": "Valeur encadree de chevrons gauche/droite quand plusieurs choix",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "ligne-desactivee",
+          "type": "component",
+          "note": "Reglage indisponible : libelle ET valeur en gris, sans chevron",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "panneau-aide-droite",
+          "type": "component",
+          "note": "Titre du reglage survole sur bandeau bleu + description dessous",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "pied-restore",
+          "type": "component",
+          "note": "Restore Defaults / Back avec glyphes, aligne a droite",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "titre-filigrane-options",
+          "type": "effect",
+          "note": "L'ecran-titre reste visible DERRIERE le menu, tres attenue : les options ne masquent pas la scene",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__03.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "bandeau-groupe-reglages",
+          "type": "component",
+          "note": "Barre bleue portant le nom d'un groupe (General), pleine largeur de la colonne",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__04.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "carton-distribution",
+          "type": "component",
+          "note": "Nom d'acteur en capitales tres espacees, bas-gauche, sur plan cinematique sans fond",
+          "status": "fait",
+          "part": "06-chapter-card.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__05.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "roue-de-dialogue",
+          "type": "component",
+          "note": "4 options autour d'une croix directionnelle : la POSITION porte le sens",
+          "status": "fait",
+          "part": "04-dialogue-wheel.html"
+        },
+        {
+          "name": "capsule-dialogue",
+          "type": "component",
+          "note": "Barre translucide bleue, trame fine, degrade vertical, coins coupes",
+          "status": "fait",
+          "part": "04-dialogue-wheel.html"
+        },
+        {
+          "name": "crochet-angle",
+          "type": "icon",
+          "note": "Marque en L blanche fine, HORS du cadre, aux 4 coins. N'enferme jamais",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "anneau-directionnel",
+          "type": "component",
+          "note": "Cercle fin + 8 encoches radiales exterieures",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "glyphe-dpad",
+          "type": "icon",
+          "note": "Croix directionnelle, 4 chevrons pleins + carre central",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "halo-cyan",
+          "type": "effect",
+          "note": "Lueur diffuse derriere les elements actifs, toujours plus claire que la source",
+          "status": "fait",
+          "part": "04-dialogue-wheel.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__06.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "bloc-narration",
+          "type": "component",
+          "note": "Paragraphe de narration bas-gauche, 4 lignes, sans fond, ombre portee seule",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "carton-personnage",
+          "type": "component",
+          "note": "Nom de personnage en capitales tres espacees, centre-droit",
+          "status": "fait",
+          "part": "06-chapter-card.html"
+        },
+        {
+          "name": "compteur-page",
+          "type": "component",
+          "note": "Numero de page x/y en bas-centre, chasse fixe, tres estompe",
+          "status": "fait",
+          "part": "27-codec.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__07.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ecran-carte",
+          "type": "component",
+          "note": "Carte plein ecran : titre, sous-lieu, action Plot a route, compteurs en haut",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "encart-minimap",
+          "type": "component",
+          "note": "Vignette de carte detaillee en haut a droite, cadre fin",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "rail-icones",
+          "type": "component",
+          "note": "Colonne d'icones a gauche, verticale, espacee, sans libelles",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "invite-carte",
+          "type": "component",
+          "note": "Place Marker / Draw Route : glyphes + libelles en bas de carte",
+          "status": "fait",
+          "part": "20-prompts.html"
+        },
+        {
+          "name": "panneau-cargaison",
+          "type": "component",
+          "note": "Cargo Load : jauge radiale de capacite + poids courant/max en chasse fixe",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "compteur-ressource",
+          "type": "component",
+          "note": "Chiral Crystals : icone + valeur, aligne a droite",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        },
+        {
+          "name": "ligne-sous-titre",
+          "type": "component",
+          "note": "Nom de locuteur en petit au-dessus, replique en dessous, centres",
+          "status": "fait",
+          "part": "27-codec.html"
+        },
+        {
+          "name": "marqueur-destination",
+          "type": "component",
+          "note": "Pastille de destination sur la carte avec libelle de lieu",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__08.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "liste-categories",
+          "type": "component",
+          "note": "Categories repliables avec compteur xN sur fond plein, lignes indentees dessous",
+          "status": "fait",
+          "part": "12-category-list.html"
+        },
+        {
+          "name": "ligne-objet",
+          "type": "component",
+          "note": "Icone + nom + puce de taille + poids aligne a droite",
+          "status": "fait",
+          "part": "12-category-list.html"
+        },
+        {
+          "name": "carte-detail-cargo",
+          "type": "component",
+          "note": "Vignette + provenance + description longue + deux barres de degat",
+          "status": "fait",
+          "part": "14-detail-panel.html"
+        },
+        {
+          "name": "vue-conteneurs-3d",
+          "type": "component",
+          "note": "Rendu 3D des conteneurs a droite, sur fond de scene",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        },
+        {
+          "name": "pied-actions-4",
+          "type": "component",
+          "note": "Quatre invites en bas a droite : Select Multiple / Open-Close / Select / Back",
+          "status": "fait",
+          "part": "20-prompts.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__09.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "liste-commandes",
+          "type": "component",
+          "note": "Cases a cocher a gauche, ligne selectionnee surlignee, numero + libelle + valeur",
+          "status": "fait",
+          "part": "33-lists-extra.html"
+        },
+        {
+          "name": "panneau-description",
+          "type": "component",
+          "note": "Titre + paragraphe + lien Corpus, colonne de droite",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "bloc-objectifs",
+          "type": "component",
+          "note": "Deux lignes d'objectif sur fond kaki : Average Contents Damage / Exceptional Quantity",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "jauge-poids",
+          "type": "component",
+          "note": "Barre horizontale avec pourcentage a gauche et poids courant/max a droite",
+          "status": "fait",
+          "part": "13-gauges.html"
+        },
+        {
+          "name": "ligne-tri",
+          "type": "component",
+          "note": "List Order: Sorted by Classification, avec chevrons de reglage",
+          "status": "fait",
+          "part": "33-lists-extra.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__10.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ligne-livraison",
+          "type": "component",
+          "note": "Icone ronde + libelle + barre de degat chiffree + bouton Returnable",
+          "status": "fait",
+          "part": "33-lists-extra.html"
+        },
+        {
+          "name": "grille-cargaison",
+          "type": "component",
+          "note": "Grille de vignettes 3x3 : objets a gauche, emplacements verrouilles a droite",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        },
+        {
+          "name": "emplacement-verrouille",
+          "type": "icon",
+          "note": "Cadenas centre dans une case vide",
+          "status": "fait",
+          "part": "00-icons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__11.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "graphe-radar-pentagone",
+          "type": "component",
+          "note": "Pentagone rempli vert translucide, icones aux sommets, axes etiquetes avec valeur et delta",
+          "status": "fait",
+          "part": "26-radar.html"
+        },
+        {
+          "name": "note-globale",
+          "type": "component",
+          "note": "Deux gros chiffres en chasse fixe, aligne a droite, tres espaces",
+          "status": "fait",
+          "part": "26-radar.html"
+        },
+        {
+          "name": "etiquette-rang",
+          "type": "component",
+          "note": "Icone + libelle de rang sous la note",
+          "status": "fait",
+          "part": "26-radar.html"
+        },
+        {
+          "name": "valeur-axe",
+          "type": "component",
+          "note": "Chiffre + libelle + delta (+506) + qualificatif (Brave, Adept, Silent)",
+          "status": "fait",
+          "part": "26-radar.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__12.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "ligne-invite",
+          "type": "component",
+          "note": "Glyphe + libelle sur un trait qui TRAVERSE l'ecran et s'eteint aux bouts",
+          "status": "fait",
+          "part": "03-prompt-line.html"
+        },
+        {
+          "name": "glyphe-manette",
+          "type": "icon",
+          "note": "Cercle porteur de diametre constant + forme (croix, cercle, carre, triangle)",
+          "status": "fait",
+          "part": "00-icons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__13.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "titre-ecran",
+          "type": "component",
+          "note": "Titre de panneau en capitales espacees, aligne a gauche, tres grand",
+          "status": "fait",
+          "part": "11-screen-title.html"
+        },
+        {
+          "name": "liste-menu-riche",
+          "type": "component",
+          "note": "Icone + libelle + description + chevron. Actif : fond clair + crochets",
+          "status": "fait",
+          "part": "33-lists-extra.html"
+        },
+        {
+          "name": "carte-proprietaire",
+          "type": "component",
+          "note": "Vignette + nom + lieu + note en etoiles + puce de niveau",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "barre-durabilite",
+          "type": "component",
+          "note": "Jauge horizontale fine avec pourcentage aligne a droite",
+          "status": "fait",
+          "part": "13-gauges.html"
+        },
+        {
+          "name": "bandeau-materiaux",
+          "type": "component",
+          "note": "Rangee de pastilles circulaires avec compteur sous chacune",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        },
+        {
+          "name": "pied-actions",
+          "type": "component",
+          "note": "Confirm / Back avec glyphes, aligne a droite",
+          "status": "fait",
+          "part": "09-footer-prompts.html"
+        },
+        {
+          "name": "puce-niveau",
+          "type": "component",
+          "note": "Petite etiquette rectangulaire bleue, Lv1",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "etoiles-notation",
+          "type": "icon",
+          "note": "Rangee d'etoiles pleines et vides",
+          "status": "fait",
+          "part": "00-icons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__14.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "liste-inventaire",
+          "type": "component",
+          "note": "Lignes : icone + nom + puce de taille (S/M/L) + poids. En-tetes de categorie sur fond plein",
+          "status": "fait",
+          "part": "12-category-list.html"
+        },
+        {
+          "name": "puce-taille",
+          "type": "icon",
+          "note": "Carre avec lettre S/M/L",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "carte-detail-objet",
+          "type": "component",
+          "note": "Vignette + titre + destination + description longue + barres de degat",
+          "status": "fait",
+          "part": "14-detail-panel.html"
+        },
+        {
+          "name": "jauge-radiale",
+          "type": "component",
+          "note": "Anneau de progression avec pourcentage au centre (Cargo Capacity 46%)",
+          "status": "fait",
+          "part": "05-hud-corner.html"
+        },
+        {
+          "name": "jauge-verticale",
+          "type": "component",
+          "note": "Colonne jaune graduee avec valeur haute et valeur courante",
+          "status": "fait",
+          "part": "13-gauges.html"
+        },
+        {
+          "name": "etiquette-charge",
+          "type": "component",
+          "note": "Heavily Loaded : mention d'etat au-dessus de la jauge",
+          "status": "fait",
+          "part": "13-gauges.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__15.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "barre-onglets",
+          "type": "component",
+          "note": "Onglets a icones, actif souligne d'un trait plein",
+          "status": "fait",
+          "part": "17-settings-list.html"
+        },
+        {
+          "name": "menu-contextuel",
+          "type": "component",
+          "note": "Popup ancre : liste courte avec icone, actif en fond clair",
+          "status": "fait",
+          "part": "25-overlays.html"
+        },
+        {
+          "name": "carte-description-bas",
+          "type": "component",
+          "note": "Bandeau bas : nom entre guillemets + description sur 3 lignes",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "vignette-objet",
+          "type": "component",
+          "note": "Miniature d'objet sur fond sombre avec cadre fin",
+          "status": "fait",
+          "part": "21-cards.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__16.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "selecteur-numerique",
+          "type": "component",
+          "note": "Chevrons gauche/droite encadrant une valeur en chasse fixe, avec fraction /max dessous",
+          "status": "fait",
+          "part": "19-buttons.html"
+        },
+        {
+          "name": "rangee-materiaux",
+          "type": "component",
+          "note": "Six pastilles carrees : icone, valeur, /max. La pastille active est surlignee",
+          "status": "fait",
+          "part": "30-inventory-grids.html"
+        },
+        {
+          "name": "bouton-pleine-largeur",
+          "type": "component",
+          "note": "Bouton bleu occupant toute la largeur du panneau, libelle centre",
+          "status": "fait",
+          "part": "19-buttons.html"
+        },
+        {
+          "name": "encart-aide",
+          "type": "component",
+          "note": "Une ligne d'explication sous le bouton, texte clair sans fond",
+          "status": "fait",
+          "part": "34-panels-extra.html"
+        },
+        {
+          "name": "personnage-3d",
+          "type": "component",
+          "note": "Rendu du personnage avec sa cargaison, colonne centrale, sur fond de scene",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__17.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "modale-confirmation",
+          "type": "component",
+          "note": "Dialogue superpose qui ASSOMBRIT le panneau dessous au lieu de le masquer",
+          "status": "fait",
+          "part": "25-overlays.html"
+        },
+        {
+          "name": "grille-emplacements",
+          "type": "component",
+          "note": "Grille d'emplacements vides marques d'une icone circulaire estompee",
+          "status": "fait",
+          "part": "25-overlays.html"
+        },
+        {
+          "name": "chevrons-separateurs",
+          "type": "icon",
+          "note": "Double chevron centre, marque la separation entre deux zones d'un meme panneau",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "paire-boutons",
+          "type": "component",
+          "note": "Deux boutons cote a cote, l'actif surligne : Recycle into Materials / Cancel",
+          "status": "fait",
+          "part": "19-buttons.html"
+        },
+        {
+          "name": "bandeau-section",
+          "type": "component",
+          "note": "Barre bleue pleine largeur portant le titre d'une section de panneau",
+          "status": "fait",
+          "part": "25-overlays.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__18.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "invites-carte-4",
+          "type": "component",
+          "note": "Quatre invites en bas : Reset Orientation / Center on Sam / Switch Map Info / Zoom",
+          "status": "fait",
+          "part": "20-prompts.html"
+        },
+        {
+          "name": "etiquette-menu",
+          "type": "component",
+          "note": "Libelle Ring Menu accole au rail d'icones, apparait au survol",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__19.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "selecteur-globe",
+          "type": "component",
+          "note": "Mini-globe avec chevrons L1/R1 de part et d'autre, en haut a gauche",
+          "status": "fait",
+          "part": "19-buttons.html"
+        },
+        {
+          "name": "etiquette-distance",
+          "type": "component",
+          "note": "Valeur en metres dans un cartouche sombre, posee dans la scene",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        },
+        {
+          "name": "bandeau-destination",
+          "type": "component",
+          "note": "Barre bleue avec nom de destination, ancree sur un marqueur de la carte",
+          "status": "fait",
+          "part": "23-map-screen.html"
+        },
+        {
+          "name": "invites-destination",
+          "type": "component",
+          "note": "Select Destination / Embark, sous le bandeau",
+          "status": "fait",
+          "part": "20-prompts.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__20.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "roue-armes",
+          "type": "component",
+          "note": "Roue multi-anneaux : categories en peripherie, arme selectionnee au centre",
+          "status": "fait",
+          "part": "35-scene-extras.html"
+        },
+        {
+          "name": "graphe-radar",
+          "type": "component",
+          "note": "Polygone de statistiques, remplissage magenta translucide, axes etiquetes",
+          "status": "fait",
+          "part": "26-radar.html"
+        },
+        {
+          "name": "carte-arme",
+          "type": "component",
+          "note": "Vignette + nom + niveau + compteur de munitions + fleches de carrousel",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "fleche-carrousel",
+          "type": "icon",
+          "note": "Chevron dans un cercle fin, gauche et droite",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "compteur-munitions",
+          "type": "component",
+          "note": "01 / 30 / 120 en chasse fixe avec separateurs",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "bloc-description",
+          "type": "component",
+          "note": "Paragraphe libre sur fond estompe, aligne a gauche",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "etiquette-mode",
+          "type": "component",
+          "note": "Icones + libelle : Close/Mid-Range Weapon, While Aiming",
+          "status": "fait",
+          "part": "21-cards.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__21.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "suivi-objectif",
+          "type": "component",
+          "note": "Coin haut gauche : ligne de titre + sous-ligne avec case a cocher",
+          "status": "fait",
+          "part": "07-objective-card.html"
+        },
+        {
+          "name": "pile-notifications",
+          "type": "component",
+          "note": "Liste de notifications a puce, empilees, texte court",
+          "status": "fait",
+          "part": "24-notifications.html"
+        },
+        {
+          "name": "releve-poids",
+          "type": "component",
+          "note": "Deux valeurs superposees en chasse fixe : charge / capacite",
+          "status": "fait",
+          "part": "15-status-bar.html"
+        },
+        {
+          "name": "grappe-ath",
+          "type": "component",
+          "note": "Coin bas gauche : icones outils en couronne + barre d'endurance",
+          "status": "fait",
+          "part": "05-hud-corner.html"
+        },
+        {
+          "name": "barre-endurance",
+          "type": "component",
+          "note": "Barre horizontale fine bleue sous la grappe",
+          "status": "fait",
+          "part": "05-hud-corner.html"
+        },
+        {
+          "name": "balise-monde",
+          "type": "component",
+          "note": "Marqueur de distance dans la scene (505m) avec chevron",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__22.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "carte-tutoriel",
+          "type": "component",
+          "note": "Bandeau bas gauche : titre + invite + explication sur 2 lignes",
+          "status": "fait",
+          "part": "21-cards.html"
+        },
+        {
+          "name": "barre-vie-ennemi",
+          "type": "component",
+          "note": "Petite barre segmentee, rouge et cyan, dans la scene",
+          "status": "fait",
+          "part": "31-hud-cluster.html"
+        },
+        {
+          "name": "voile-bas",
+          "type": "effect",
+          "note": "Degrade sombre montant, sur lequel se pose le texte de bas d'ecran",
+          "status": "fait",
+          "part": "32-effects.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__23.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "boussole-distance",
+          "type": "component",
+          "note": "Losange avec reticule et fleche de cap, valeur en metres dessous, coin haut gauche",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        },
+        {
+          "name": "grappe-outils-croix",
+          "type": "component",
+          "note": "Quatre icones d'outils disposees en CROIX autour d'un centre vide, coin bas gauche",
+          "status": "fait",
+          "part": "31-hud-cluster.html"
+        },
+        {
+          "name": "barre-endurance-fine",
+          "type": "component",
+          "note": "Barre bleue tres fine sous la grappe, avec un petit glyphe de botte a gauche",
+          "status": "fait",
+          "part": "15-status-bar.html"
+        },
+        {
+          "name": "jauge-cargaison-segmentee",
+          "type": "component",
+          "note": "Barre SEGMENTEE en cases posee dans la scene, cases pleines a gauche, vides a droite",
+          "status": "fait",
+          "part": "13-gauges.html"
+        },
+        {
+          "name": "marqueur-losange",
+          "type": "icon",
+          "note": "Petit losange bleu avec lettre au centre et chevron dessous, pose au sol dans le monde",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "etiquette-objet-monde",
+          "type": "component",
+          "note": "Cartouche allonge tres estompe accole a un objet de la scene",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__GUID__24.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "vue-scan",
+          "type": "component",
+          "note": "Vue de scan : marqueurs de ressources poses DANS le monde, avec libelle et distance",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        },
+        {
+          "name": "invites-verticales",
+          "type": "component",
+          "note": "Colonne d'invites a gauche : glyphe + libelle, empilees, sans fond",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        },
+        {
+          "name": "chevrons-navigation",
+          "type": "icon",
+          "note": "Grands chevrons gauche/droite aux bords de l'ecran, pour changer de page",
+          "status": "fait",
+          "part": "00-icons.html"
+        },
+        {
+          "name": "barre-progression-scan",
+          "type": "component",
+          "note": "Barre bleue courte en bas a gauche, sous la grappe d'icones",
+          "status": "fait",
+          "part": "13-gauges.html"
+        },
+        {
+          "name": "etiquette-flottante",
+          "type": "component",
+          "note": "Nom de lieu et distance ancres sur un point du monde, avec petit reticule",
+          "status": "fait",
+          "part": "18-world-marker.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__01.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "bandeau-plateforme",
+          "type": "component",
+          "note": "Bande PS5 en BIAIS dans le coin haut gauche, bleu, avec logo",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "titre-produit",
+          "type": "component",
+          "note": "Titre en capitales tres espacees avec exposant TM, sous-titre dessous, centre",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "etiquette-edition",
+          "type": "component",
+          "note": "Nom d'edition dans un cadre fin, sous le titre",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "bloc-date",
+          "type": "component",
+          "note": "AVAILABLE FROM + date en gros + mention d'acces anticipe, aligne a gauche",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "grille-contenus",
+          "type": "component",
+          "note": "Objets alignes avec legende sous chacun, en petites capitales",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "encadre-bonus",
+          "type": "component",
+          "note": "PRE-ORDER BONUS CONTENT : titre centre + crochets d'angle ouverts autour du groupe",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "jaquette",
+          "type": "component",
+          "note": "Visuel de boite avec bandeau d'edition en haut, ombre portee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "bloc-classification",
+          "type": "component",
+          "note": "Pave ESRB : lettre dans un carre + liste de descripteurs a droite",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "pied-logos",
+          "type": "component",
+          "note": "Logos aligne a droite en bas : editeur et studio",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        },
+        {
+          "name": "crochet-groupe",
+          "type": "icon",
+          "note": "Crochet horizontal ouvert qui regroupe plusieurs objets sous un meme titre",
+          "status": "fait",
+          "part": "00-icons.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__02.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "variante-edition",
+          "type": "component",
+          "note": "Meme gabarit que OFFICIAL_01, edition et contenus differents : le gabarit est REUTILISE tel quel",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__03.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "variante-edition-standard",
+          "type": "component",
+          "note": "Meme gabarit, sans encadre d'objets en jeu : la grille se reduit sans que la mise en page bouge",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__04.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__05.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__06.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__07.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    },
+    {
+      "image": "raw_v2/DS2__OFFICIAL__08.jpg",
+      "seen": true,
+      "elements": [
+        {
+          "name": "pied-mention-legale",
+          "type": "component",
+          "note": "Ligne minuscule en bas a gauche : Captured on PS5 + copyright, tres estompee",
+          "status": "fait",
+          "part": "29-edition-sheet.html"
+        }
+      ]
+    }
+  ],
+  "coverageNote": "Le champ `part` dit quel fichier de parts/ couvre l'element. Un element sans `part` n'est pas construit — c'est verifiable, pas declaratif."
+}

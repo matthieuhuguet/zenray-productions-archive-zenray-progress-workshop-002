@@ -1,0 +1,25 @@
+# T-01-7-1 — Quotidien gratuit du matin
+
+Calibrage (référence du catalogue) : 20 Minutes
+
+## Sources
+
+- Site officiel : https://www.20minutes.fr/
+- Actualité générale : https://www.20minutes.fr/actu-generale/
+- Régions : https://www.20minutes.fr/locales/
+
+La surface publique de 20 Minutes a été retenue comme référence pour le masthead, la une, le direct, les rails thématiques et les pages Actualité et Régions.
+
+## Répartition
+
+- `raw/` : 3 captures natives réelles du navigateur.
+- `crops/` : 5 découpes locales issues exclusivement des captures sauvegardées.
+- Total utile : **8/8**.
+
+## Contrôles
+
+- Le dialogue réel « Bienvenue chez 20 Minutes Gestion du consentement » a été traité avec `Accepter et fermer` ; sa disparition a été vérifiée avant la capture finale.
+- L’injection html2canvas a été tentée ; le navigateur intégré lecture seule renvoie `TypeError: document.createElement is not a function`. Les captures conservées sont les rendus natifs réels du navigateur.
+- Microlink n’a pas été utilisé.
+- Les 8 fichiers sont distincts, lisibles et vérifiés visuellement.
+
