@@ -1,0 +1,23 @@
+{
+  "theme": "T-01-1-2--une-de-rupture",
+  "note": "Rects en coordonnees image d'origine (x,y,w,h). Verifier avec: node scripts/zrm-crop.mjs --probe <ce fichier>",
+  "probes": [
+    {
+      "role": "titre-une",
+      "image": "raw/LIBE__01__HOME_TOP.jpg",
+      "rect": [
+        3132,
+        1042,
+        262,
+        40
+      ],
+      "text": "de Jordan Bardella",
+      "known": {
+        "family": "Anton",
+        "weight": "400",
+        "source": "what-the-google-font (Matthieu, 2026-07-25)"
+      }
+    }
+  ],
+  "calibrationMedia": "LIBE"
+}

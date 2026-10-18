@@ -1,0 +1,317 @@
+[
+  {
+    "id": "header-full",
+    "name": "Header masthead complet",
+    "group": "Global",
+    "reference": "assets/reference/header-full.jpg",
+    "file": "components/header-full.html",
+    "standalone": true,
+    "alias": "header.html"
+  },
+  {
+    "id": "header-compact",
+    "name": "Header compact sticky",
+    "group": "Global",
+    "reference": "assets/reference/live-article-body.jpg",
+    "file": "components/header-compact.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "nav-primary",
+    "name": "Navigation principale",
+    "group": "Global",
+    "reference": "assets/reference/header-full.jpg",
+    "file": "components/nav-primary.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "nav-topic",
+    "name": "Navigation contextuelle",
+    "group": "Global",
+    "reference": "assets/reference/live-hero-fire.jpg",
+    "file": "components/nav-topic.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "breaking-ticker",
+    "name": "Ticker d’actualité",
+    "group": "Homepage",
+    "reference": "assets/reference/breaking-ticker.jpg",
+    "file": "components/breaking-ticker.html",
+    "standalone": true,
+    "alias": "ticker.html"
+  },
+  {
+    "id": "home-live-hero",
+    "name": "Hero live homepage",
+    "group": "Homepage",
+    "reference": "assets/reference/home-hero.jpg",
+    "file": "components/home-live-hero.html",
+    "standalone": true,
+    "alias": "hero-live-home.html"
+  },
+  {
+    "id": "home-related-link-grid",
+    "name": "Grille de liens liés",
+    "group": "Homepage",
+    "reference": "assets/reference/home-hero.jpg",
+    "file": "components/home-related-link-grid.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "card-horizontal",
+    "name": "Carte article horizontale",
+    "group": "Cards",
+    "reference": "assets/reference/home-mid-list.jpg",
+    "file": "components/card-horizontal.html",
+    "standalone": true,
+    "alias": "card-h.html"
+  },
+  {
+    "id": "rail-feature",
+    "name": "Carte feature de rail",
+    "group": "Rail",
+    "reference": "assets/reference/home-mid-list.jpg",
+    "file": "components/rail-feature.html",
+    "standalone": true,
+    "alias": "rail-feature-card.html"
+  },
+  {
+    "id": "mini-list-card",
+    "name": "Carte compacte avec vignette",
+    "group": "Cards",
+    "reference": "assets/reference/home-mini-list.jpg",
+    "file": "components/mini-list-card.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "module-most-read",
+    "name": "Module Les plus lus",
+    "group": "Rail",
+    "reference": "assets/reference/section-page.jpg",
+    "file": "components/module-most-read.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "module-service-commerce",
+    "name": "Module service / commerce",
+    "group": "Rail",
+    "reference": "assets/reference/home-mid-list.jpg",
+    "file": "components/module-service-commerce.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "module-ad-placeholder",
+    "name": "Emplacement publicitaire",
+    "group": "Rail",
+    "reference": "assets/reference/home-mid-list.jpg",
+    "file": "components/module-ad-placeholder.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "article-hero",
+    "name": "Hero article standard",
+    "group": "Article",
+    "reference": "assets/reference/article-hero.jpg",
+    "file": "components/article-hero.html",
+    "standalone": true,
+    "alias": "article-hero.html"
+  },
+  {
+    "id": "article-main-image",
+    "name": "Image principale article",
+    "group": "Article",
+    "reference": "assets/reference/article-hero.jpg",
+    "file": "components/article-main-image.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "article-body",
+    "name": "Corps d’article longform",
+    "group": "Article",
+    "reference": "assets/reference/article-body.jpg",
+    "file": "components/article-body.html",
+    "standalone": true,
+    "alias": "article-body.html"
+  },
+  {
+    "id": "article-read-also",
+    "name": "Renvoi Lire aussi",
+    "group": "Article",
+    "reference": "assets/reference/article-body.jpg",
+    "file": "components/article-read-also.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "related-grid",
+    "name": "Grille de recirculation",
+    "group": "Article",
+    "reference": "assets/reference/article-related-grid.jpg",
+    "file": "components/related-grid.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "edition-of-day",
+    "name": "Édition du jour",
+    "group": "Rail",
+    "reference": "assets/reference/article-related.jpg",
+    "file": "components/edition-of-day.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "games-card",
+    "name": "Carte jeux",
+    "group": "Rail",
+    "reference": "assets/reference/article-related-grid.jpg",
+    "file": "components/games-card.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-hero",
+    "name": "Hero de direct",
+    "group": "Live",
+    "reference": "assets/reference/live-hero-fire.jpg",
+    "file": "components/live-hero.html",
+    "standalone": true,
+    "alias": "hero-live.html"
+  },
+  {
+    "id": "live-main-media",
+    "name": "Média principal live",
+    "group": "Live",
+    "reference": "assets/reference/live-hero-fire.jpg",
+    "file": "components/live-main-media.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-question-form",
+    "name": "Formulaire de question",
+    "group": "Live",
+    "reference": "assets/reference/live-questions-rail.jpg",
+    "file": "components/live-question-form.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-question-thread",
+    "name": "Questions des lecteurs",
+    "group": "Live",
+    "reference": "assets/reference/live-questions-rail.jpg",
+    "file": "components/live-question-thread.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-update-card",
+    "name": "Carte mise à jour live",
+    "group": "Live",
+    "reference": "assets/reference/live-update-cards.jpg",
+    "file": "components/live-update-card.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-facts-bar",
+    "name": "Barre faits essentiels",
+    "group": "Live",
+    "reference": "assets/reference/live-questions-rail.jpg",
+    "file": "components/live-facts-bar.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-related-list",
+    "name": "Liste Pour approfondir",
+    "group": "Live",
+    "reference": "assets/reference/live-questions-rail.jpg",
+    "file": "components/live-related-list.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "live-context-box",
+    "name": "Bloc contexte live",
+    "group": "Live",
+    "reference": "assets/reference/live-article-body.jpg",
+    "file": "components/live-context-box.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "section-header",
+    "name": "En-tête de rubrique",
+    "group": "Section",
+    "reference": "assets/reference/section-page.jpg",
+    "file": "components/section-header.html",
+    "standalone": true,
+    "alias": "section-header.html"
+  },
+  {
+    "id": "section-article-card",
+    "name": "Carte de rubrique",
+    "group": "Section",
+    "reference": "assets/reference/section-page.jpg",
+    "file": "components/section-article-card.html",
+    "standalone": true,
+    "alias": "section-card.html"
+  },
+  {
+    "id": "kiosk-main-cover",
+    "name": "Couverture principale kiosque",
+    "group": "Kiosk",
+    "reference": "assets/reference/kiosk-page.jpg",
+    "file": "components/kiosk-main-cover.html",
+    "standalone": true,
+    "alias": "kiosk-cover.html"
+  },
+  {
+    "id": "kiosk-previous-strip",
+    "name": "Carrousel éditions précédentes",
+    "group": "Kiosk",
+    "reference": "assets/reference/kiosk-page.jpg",
+    "file": "components/kiosk-previous-strip.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "kiosk-special-strip",
+    "name": "Carrousel hors-séries",
+    "group": "Kiosk",
+    "reference": "assets/reference/kiosk-page.jpg",
+    "file": "components/kiosk-special-strip.html",
+    "standalone": true,
+    "alias": null
+  },
+  {
+    "id": "menu-drawer",
+    "name": "Drawer de navigation",
+    "group": "Overlay",
+    "reference": "assets/reference/menu-open.jpg",
+    "file": "components/menu-drawer.html",
+    "standalone": true,
+    "alias": "menu-drawer.html"
+  },
+  {
+    "id": "sticky-support-banner",
+    "name": "Bandeau sticky de soutien",
+    "group": "Global",
+    "reference": "assets/reference/article-hero.jpg",
+    "file": "components/sticky-support-banner.html",
+    "standalone": true,
+    "alias": null
+  }
+]

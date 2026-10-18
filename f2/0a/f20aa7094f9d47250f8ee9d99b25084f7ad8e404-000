@@ -1,0 +1,30 @@
+# ZenRayMedia — Le Monde Final V2 Offline
+
+Cette version corrige le problème signalé :
+
+- aucun appel réseau externe ;
+- aucun `remote-sandbox` dans les fichiers ;
+- aucun `iframe` distant ;
+- final HTML autonome ;
+- composants autonomes, un fichier par composant ;
+- crops et visuels basés sur les screenshots locaux fournis.
+
+## Fichiers principaux
+
+- `ZenRayMedia_LeMonde_Final.html`
+- `studio.html`
+- `component-lab.html`
+- `components/`
+- `assets/`
+- `component-registry.json`
+
+## Aliases rapides
+
+- `components/header.html`
+- `components/ticker.html`
+- `components/hero-live.html`
+- `components/hero-live-home.html`
+- `components/card-h.html`
+- `components/article-hero.html`
+- `components/article-body.html`
+- `components/menu-drawer.html`

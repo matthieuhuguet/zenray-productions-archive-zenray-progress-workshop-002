@@ -1,0 +1,41 @@
+{
+  "theme": "T-01-1-3--quotidien-de-reference-sobre",
+  "note": "Rects en coordonnees image d'origine (x,y,w,h). Verifier AVANT detection : node scripts/zrm-crop.mjs --probe <ce fichier>. Sondes COURTES sur le plus gros texte disponible : Le Figaro est capture a une definition ou son corps de texte descend a 12-17px, sous le seuil de discrimination.",
+  "probes": [
+    {
+      "role": "titre-article",
+      "image": "raw/FIGARO__17__ARTICLE_TOP.jpg",
+      "rect": [
+        1254,
+        425,
+        120,
+        42
+      ],
+      "text": "Bordeaux",
+      "known": {
+        "family": "Merriweather",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "note": "La capture est en Georgia, police propriétaire non embarquable. Merriweather est le substitut retenu et validé à l'oeil."
+      }
+    },
+    {
+      "role": "menu-rubrique",
+      "image": "raw/FIGARO__04__MENU_OPEN.jpg",
+      "rect": [
+        18,
+        818,
+        230,
+        32
+      ],
+      "text": "Patrimoine et Bourse",
+      "known": {
+        "family": "Source Sans 3",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "note": "Identifiée Source Sans Pro ; Google a renommé la famille en Source Sans 3."
+      }
+    }
+  ],
+  "calibrationMedia": "FIGARO"
+}

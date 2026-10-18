@@ -1,0 +1,142 @@
+{
+  "probes": [
+    {
+      "role": "titre-une",
+      "text": "de Jordan Bardella",
+      "image": "LIBE__01__HOME_TOP.jpg",
+      "refAspect": 9.1484375,
+      "refDensity": 0.5718998350577298,
+      "refInkHeight": 27,
+      "warning": "sonde peu discriminante : 9.1 de chasse, ~14 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Anton",
+        "weight": "400",
+        "archetype": "condense",
+        "margin": 0.0539840856274626,
+        "decisive": true,
+        "dominantArchetype": "condense",
+        "dominantShare": 0.8,
+        "rival": "Passion One 400 (display)"
+      },
+      "calibration": {
+        "family": "Anton",
+        "weight": "400",
+        "source": "what-the-google-font (Matthieu, 2026-07-25)",
+        "rank": 1,
+        "rankAnyWeight": 1,
+        "agrees": true,
+        "installed": true
+      },
+      "ranking": [
+        {
+          "family": "Anton",
+          "weight": "400",
+          "total": 0.847503794506584,
+          "ratio": 0.9350982066609735,
+          "weightMatch": 0.9238381950932558,
+          "overlap": 0.6397711616193874,
+          "rows": 0.8621138866472166
+        },
+        {
+          "family": "Antonio",
+          "weight": "700",
+          "total": 0.8351690172650038,
+          "ratio": 0.8983774551665243,
+          "weightMatch": 0.8518166829650836,
+          "overlap": 0.6927445338850634,
+          "rows": 0.8973106916278901
+        },
+        {
+          "family": "Passion One",
+          "weight": "400",
+          "total": 0.7935197088791214,
+          "ratio": 0.8851095993953136,
+          "weightMatch": 0.9856146093548108,
+          "overlap": 0.6623156496819739,
+          "rows": 0.4783252288771029
+        },
+        {
+          "family": "Oswald",
+          "weight": "700",
+          "total": 0.7709207951152077,
+          "ratio": 0.9718189581554227,
+          "weightMatch": 0.875088489774515,
+          "overlap": 0.6021174466767313,
+          "rows": 0.40988450431998785
+        },
+        {
+          "family": "Teko",
+          "weight": "700",
+          "total": 0.7649954952071443,
+          "ratio": 0.8485507246376811,
+          "weightMatch": 0.9749223267625479,
+          "overlap": 0.61879152428783,
+          "rows": 0.46382852547574327
+        },
+        {
+          "family": "Bebas Neue",
+          "weight": "400",
+          "total": 0.7545669453251015,
+          "ratio": 0.9632792485055508,
+          "weightMatch": 0.970604759995241,
+          "overlap": 0.4348695068045546,
+          "rows": 0.44033761098806473
+        },
+        {
+          "family": "Saira Condensed",
+          "weight": "700",
+          "total": 0.7509704117953473,
+          "ratio": 0.9436379163108455,
+          "weightMatch": 0.8516263776328908,
+          "overlap": 0.6063851060851481,
+          "rows": 0.37462846771361086
+        },
+        {
+          "family": "Antonio",
+          "weight": "400",
+          "total": 0.749553985187138,
+          "ratio": 0.8582408198121264,
+          "weightMatch": 0.7322315500984456,
+          "overlap": 0.5424921626751402,
+          "rows": 0.8699251337299823
+        },
+        {
+          "family": "Asap Condensed",
+          "weight": "700",
+          "total": 0.7448591105287337,
+          "ratio": 0.9632792485055508,
+          "weightMatch": 0.9001291129981096,
+          "overlap": 0.5010014254524459,
+          "rows": 0.38285825959434655
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "total": 0.7241350418288204,
+          "ratio": 0.9840336134453781,
+          "weightMatch": 0.8277075233413489,
+          "overlap": 0.4461640036973458,
+          "rows": 0.4083693024217626
+        },
+        {
+          "family": "Fjalla One",
+          "weight": "400",
+          "total": 0.7214524386873183,
+          "ratio": 0.8667805294619982,
+          "weightMatch": 0.7859129424795025,
+          "overlap": 0.5501184637126943,
+          "rows": 0.5604760121837987
+        },
+        {
+          "family": "Teko",
+          "weight": "400",
+          "total": 0.7208782804665191,
+          "ratio": 0.8787361229718189,
+          "weightMatch": 0.8105621056548878,
+          "overlap": 0.5655151876116736,
+          "rows": 0.4620087607316146
+        }
+      ]
+    }
+  ]
+}

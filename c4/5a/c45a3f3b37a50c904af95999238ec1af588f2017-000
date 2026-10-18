@@ -1,0 +1,393 @@
+{
+  "probes": [
+    {
+      "role": "titre-article",
+      "text": "Bordeaux",
+      "image": "FIGARO__17__ARTICLE_TOP.jpg",
+      "refAspect": 5.6328125,
+      "refDensity": 0.4097393015248401,
+      "refInkHeight": 19,
+      "warning": "sonde peu discriminante : 5.6 de chasse, ~13 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Merriweather",
+        "weight": "700",
+        "archetype": "labeur",
+        "margin": 0.01903814991454622,
+        "decisive": false,
+        "dominantArchetype": "labeur",
+        "dominantShare": 0.6,
+        "rival": "Playfair Display 700 (didone)"
+      },
+      "ranking": [
+        {
+          "family": "Merriweather",
+          "weight": "700",
+          "total": 0.854927875941238,
+          "ratio": 0.9903846153846154,
+          "weightMatch": 0.9997444075255314,
+          "overlap": 0.4572949829838621,
+          "rows": 0.9602227528618285
+        },
+        {
+          "family": "Playfair Display",
+          "weight": "700",
+          "total": 0.8358897260266918,
+          "ratio": 0.9902912621359223,
+          "weightMatch": 0.9864096582029038,
+          "overlap": 0.4044432500223954,
+          "rows": 0.9438303814852947
+        },
+        {
+          "family": "Lato",
+          "weight": "700",
+          "total": 0.8320119040383415,
+          "ratio": 1,
+          "weightMatch": 0.9831932773109244,
+          "overlap": 0.3613900015606305,
+          "rows": 0.9724405621363518
+        },
+        {
+          "family": "Lora",
+          "weight": "700",
+          "total": 0.8204537315827038,
+          "ratio": 0.9549668874172186,
+          "weightMatch": 0.9731308411214953,
+          "overlap": 0.40267940950593056,
+          "rows": 0.948418388865473
+        },
+        {
+          "family": "Neuton",
+          "weight": "700",
+          "total": 0.8191198953483737,
+          "ratio": 0.9549668874172186,
+          "weightMatch": 0.9073103367792505,
+          "overlap": 0.4584082002840666,
+          "rows": 0.9563456699101194
+        },
+        {
+          "family": "PT Serif",
+          "weight": "700",
+          "total": 0.8187850461846904,
+          "ratio": 0.9388020833333334,
+          "weightMatch": 0.9710014519724328,
+          "overlap": 0.4142469010018679,
+          "rows": 0.9592815251629911
+        },
+        {
+          "family": "Mulish",
+          "weight": "700",
+          "total": 0.8133076847020355,
+          "ratio": 0.9474375821287779,
+          "weightMatch": 0.9895503716241076,
+          "overlap": 0.3620327803318009,
+          "rows": 0.9587249531199076
+        },
+        {
+          "family": "Host Grotesk",
+          "weight": "700",
+          "total": 0.8119025410557542,
+          "ratio": 0.963903743315508,
+          "weightMatch": 0.8799798237432667,
+          "overlap": 0.4339249509755044,
+          "rows": 0.973733581437558
+        },
+        {
+          "family": "Domine",
+          "weight": "700",
+          "total": 0.8095357713185111,
+          "ratio": 0.9549668874172186,
+          "weightMatch": 0.9530633682044246,
+          "overlap": 0.3750151523022841,
+          "rows": 0.9551848706387163
+        },
+        {
+          "family": "Nunito Sans",
+          "weight": "700",
+          "total": 0.8089105456445731,
+          "ratio": 0.9388020833333334,
+          "weightMatch": 0.9774177611264357,
+          "overlap": 0.36492961224993825,
+          "rows": 0.9649531542254194
+        },
+        {
+          "family": "Inconsolata",
+          "weight": "700",
+          "total": 0.8080329525568192,
+          "ratio": 0.9730094466936572,
+          "weightMatch": 0.9600393948283811,
+          "overlap": 0.32298166690852803,
+          "rows": 0.9781625385320801
+        },
+        {
+          "family": "Frank Ruhl Libre",
+          "weight": "700",
+          "total": 0.8057771688816927,
+          "ratio": 0.899002493765586,
+          "weightMatch": 0.9940134771970639,
+          "overlap": 0.40311204706511566,
+          "rows": 0.9456327666546182
+        }
+      ]
+    },
+    {
+      "role": "titre-une",
+      "text": "EN DIRECT",
+      "image": "FIGARO__01__HOME_TOP.jpg",
+      "refAspect": 6.6640625,
+      "refDensity": 0.4673333333333333,
+      "refInkHeight": 15,
+      "warning": "sonde peu discriminante : 6.7 de chasse, ~11 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Familjen Grotesk",
+        "weight": "400",
+        "archetype": "display",
+        "margin": 0,
+        "decisive": false,
+        "invalid": true,
+        "reason": "aucune candidate ne dépasse 32 % de superposition. La sonde ne correspond pas à son texte : vérifier le rectangle (une seule ligne ? pas de puce ni d'icône ?) et l'orthographe exacte, accents compris.",
+        "dominantArchetype": "display",
+        "dominantShare": 0,
+        "rival": null
+      },
+      "ranking": [
+        {
+          "family": "Familjen Grotesk",
+          "weight": "400",
+          "total": 0.7639848071282449,
+          "ratio": 1,
+          "weightMatch": 0.9087018544935807,
+          "overlap": 0.32154730707552703,
+          "rows": 0.7094834449064532
+        },
+        {
+          "family": "Open Sans",
+          "weight": "700",
+          "total": 0.7604451686947697,
+          "ratio": 0.9895591647331786,
+          "weightMatch": 0.9567702702702702,
+          "overlap": 0.378891612788497,
+          "rows": 0.5345599351564366
+        },
+        {
+          "family": "Lato",
+          "weight": "700",
+          "total": 0.7593659646221892,
+          "ratio": 1,
+          "weightMatch": 0.9828815977175464,
+          "overlap": 0.34688228811604604,
+          "rows": 0.5128332877586071
+        },
+        {
+          "family": "Source Sans 3",
+          "weight": "700",
+          "total": 0.7575385319718739,
+          "ratio": 1,
+          "weightMatch": 0.9211563731931669,
+          "overlap": 0.3792269320432156,
+          "rows": 0.5496180377518554
+        },
+        {
+          "family": "Alegreya",
+          "weight": "700",
+          "total": 0.7472186117515618,
+          "ratio": 0.9872685185185185,
+          "weightMatch": 0.9856950388334126,
+          "overlap": 0.3627503645153864,
+          "rows": 0.4304218628858705
+        },
+        {
+          "family": "Inconsolata",
+          "weight": "700",
+          "total": 0.7440431052627129,
+          "ratio": 0.9804597701149426,
+          "weightMatch": 0.9901820928085928,
+          "overlap": 0.30131808252129305,
+          "rows": 0.5200476126000771
+        },
+        {
+          "family": "Cabin",
+          "weight": "700",
+          "total": 0.7432040363517941,
+          "ratio": 0.9895591647331786,
+          "weightMatch": 0.9390053050397877,
+          "overlap": 0.363729457015835,
+          "rows": 0.4744975878751726
+        },
+        {
+          "family": "Karla",
+          "weight": "700",
+          "total": 0.7409165782686978,
+          "ratio": 0.9342825848849945,
+          "weightMatch": 0.9987616511318242,
+          "overlap": 0.36297437681735717,
+          "rows": 0.4898911104776962
+        },
+        {
+          "family": "Manrope",
+          "weight": "700",
+          "total": 0.7398592755194634,
+          "ratio": 1,
+          "weightMatch": 0.9346666666666666,
+          "overlap": 0.3323340523282029,
+          "rows": 0.48739397180497335
+        },
+        {
+          "family": "Nunito Sans",
+          "weight": "700",
+          "total": 0.7397670599092907,
+          "ratio": 0.9172043010752688,
+          "weightMatch": 0.9723985394390713,
+          "overlap": 0.3373245657081166,
+          "rows": 0.6087651883076639
+        },
+        {
+          "family": "Alegreya Sans",
+          "weight": "700",
+          "total": 0.7396679593367874,
+          "ratio": 0.9906213364595545,
+          "weightMatch": 0.9155540897097625,
+          "overlap": 0.3859489627132341,
+          "rows": 0.4504981898012952
+        },
+        {
+          "family": "Rubik",
+          "weight": "400",
+          "total": 0.732516719075841,
+          "ratio": 0.9704209328782708,
+          "weightMatch": 0.86699998615016,
+          "overlap": 0.3102487303034249,
+          "rows": 0.6570480897003331
+        }
+      ]
+    },
+    {
+      "role": "menu-rubrique",
+      "text": "Patrimoine et Bourse",
+      "image": "FIGARO__04__MENU_OPEN.jpg",
+      "refAspect": 12.0859375,
+      "refDensity": 0.4839080459770115,
+      "refInkHeight": 12,
+      "warning": "sonde peu discriminante : 12.1 de chasse, ~7 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Hind",
+        "weight": "700",
+        "archetype": "grotesque",
+        "margin": 0.014505953305780639,
+        "decisive": false,
+        "dominantArchetype": "grotesque",
+        "dominantShare": 0.4,
+        "rival": "Rajdhani 700 (technique)"
+      },
+      "ranking": [
+        {
+          "family": "Hind",
+          "weight": "700",
+          "total": 0.9044614532718844,
+          "ratio": 0.973568281938326,
+          "weightMatch": 0.9916466068325654,
+          "overlap": 0.6825484440207074,
+          "rows": 0.9677586125343479
+        },
+        {
+          "family": "Cabin",
+          "weight": "700",
+          "total": 0.8939260535695591,
+          "ratio": 0.9479166666666666,
+          "weightMatch": 0.9094437458277056,
+          "overlap": 0.7558838503380702,
+          "rows": 0.9721554746318796
+        },
+        {
+          "family": "Rajdhani",
+          "weight": "700",
+          "total": 0.8899554999661038,
+          "ratio": 0.9866071428571429,
+          "weightMatch": 0.9219626092717372,
+          "overlap": 0.6764944362977658,
+          "rows": 0.9668582571581869
+        },
+        {
+          "family": "IBM Plex Sans Condensed",
+          "weight": "700",
+          "total": 0.8838659363291268,
+          "ratio": 0.9793148028442146,
+          "weightMatch": 0.9083419758455722,
+          "overlap": 0.6718509882889089,
+          "rows": 0.9737167620002101
+        },
+        {
+          "family": "Pragati Narrow",
+          "weight": "700",
+          "total": 0.8826026658389252,
+          "ratio": 0.9308338720103426,
+          "weightMatch": 0.9860561273862937,
+          "overlap": 0.6551106055513904,
+          "rows": 0.9767941826725616
+        },
+        {
+          "family": "Lato",
+          "weight": "700",
+          "total": 0.879381049123696,
+          "ratio": 0.966875,
+          "weightMatch": 0.8759699129057799,
+          "overlap": 0.7053103029870454,
+          "rows": 0.971031634336597
+        },
+        {
+          "family": "Teko",
+          "weight": "700",
+          "total": 0.8754176418916502,
+          "ratio": 0.993577392421323,
+          "weightMatch": 0.8263225112589904,
+          "overlap": 0.6992006178798996,
+          "rows": 0.9752318150630976
+        },
+        {
+          "family": "Instrument Sans",
+          "weight": "700",
+          "total": 0.8749169095198229,
+          "ratio": 0.9181008902077151,
+          "weightMatch": 0.9438798520701164,
+          "overlap": 0.6859697820919834,
+          "rows": 0.9741279293773185
+        },
+        {
+          "family": "Sora",
+          "weight": "700",
+          "total": 0.8743817287120825,
+          "ratio": 0.900990099009901,
+          "weightMatch": 0.9295008925805167,
+          "overlap": 0.7242907500932109,
+          "rows": 0.9705818892679011
+        },
+        {
+          "family": "Passion One",
+          "weight": "400",
+          "total": 0.8663740091409761,
+          "ratio": 0.9586296056884293,
+          "weightMatch": 0.8381709456798081,
+          "overlap": 0.7084403905447071,
+          "rows": 0.9613387539593138
+        },
+        {
+          "family": "Rubik",
+          "weight": "700",
+          "total": 0.8658114502389629,
+          "ratio": 0.8686131386861314,
+          "weightMatch": 0.9920064858406703,
+          "overlap": 0.6710378830039897,
+          "rows": 0.9735717299176798
+        },
+        {
+          "family": "Plus Jakarta Sans",
+          "weight": "700",
+          "total": 0.8618049192793087,
+          "ratio": 0.9062683069712947,
+          "weightMatch": 0.9148604513064132,
+          "overlap": 0.6755173596873666,
+          "rows": 0.9801103939394045
+        }
+      ]
+    }
+  ]
+}
