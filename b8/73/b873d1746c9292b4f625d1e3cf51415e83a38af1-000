@@ -1,0 +1,9 @@
+# T-01-3-4 — Carnet d'auteur
+
+Calibrage (référence du catalogue) : Substack essai
+
+## Sources
+- `raw/` (2 captures réelles, microlink.io) : ARTICLE__DESKTOP (essai réel, Culture Study d'Anne Helen Petersen), SUBSCRIBE_MODAL__DESKTOP
+- `crops/` (6 composants) : MASTHEAD, SUBSTACK_BANNER, TITLE_META, HERO_IMAGE, SUBSCRIBE_BANNER, SUBSCRIBE_FORM
+
+Total : 8/8

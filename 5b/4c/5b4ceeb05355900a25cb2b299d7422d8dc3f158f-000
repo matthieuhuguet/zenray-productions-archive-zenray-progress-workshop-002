@@ -1,0 +1,15 @@
+# T-01-4-1 — Infolettre de curation
+
+Calibrage (référence du catalogue) : Brief.me
+
+## Sources
+
+- `raw/` : états réels de `brief.me`, dont la page d’accueil et l’exemple officiel de newsletter `brief.me/exemple/briefme-quotidien/`.
+- `raw/` contient aussi le logo et une illustration éditoriale téléchargés depuis les URLs natives Brief.me avec `curl`.
+- `crops/` : trois composants découpés localement : en-tête d’inscription, cartes de promesse et tête de newsletter.
+
+Total : 8/8
+
+Méthode : pages officielles réelles ouvertes dans le navigateur, consentement traité, exemple newsletter vérifié, captures natives sauvegardées immédiatement, assets natifs téléchargés avec `curl`, puis crops locaux contrôlés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; les captures d’interface sont donc des rendus natifs réels, sans Microlink et sans image inventée.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

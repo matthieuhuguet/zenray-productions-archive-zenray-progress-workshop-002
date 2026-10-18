@@ -1,0 +1,14 @@
+# T-01-3-7 — Récit sombre
+
+Calibrage (référence du catalogue) : longform nocturne
+
+## Sources
+
+- `raw/` (5 états réels du Guardian Long Read) : série desktop existante, accueil haut, accueil milieu et article long avec bandeau de soutien.
+- `crops/` (3 composants découpés localement) : barre de navigation, en-tête de section et article principal.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, consentement traité, états distincts sauvegardés immédiatement et crops locaux vérifiés. L’injection html2canvas a été bloquée par le mode lecture seule du navigateur ; les trois nouveaux états sont des captures natives du rendu réel, sans Microlink et sans image inventée.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

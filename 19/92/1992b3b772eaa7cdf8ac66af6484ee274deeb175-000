@@ -1,0 +1,11 @@
+# T-01-3-3 — Enquête à preuves
+
+Calibrage (référence du catalogue) : ProPublica
+
+## Sources
+- `raw/` (2 captures réelles) : HOME_TOP__DESKTOP (html2canvas), RETINA__DESKTOP (microlink)
+- `crops/` (6 composants) : MASTHEAD, REPORTING_ON_NAV, LEAD_STORY_TEXT, EVIDENCE_IMAGE, SECOND_STORY, DONATE_CTA
+
+Total : 8/8
+
+Méthode : html2canvas via Claude Browser + microlink en complément.

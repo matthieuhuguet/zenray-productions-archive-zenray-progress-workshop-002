@@ -1,0 +1,15 @@
+# T-01-4-2 — Infolettre d’auteur
+
+Calibrage (référence du catalogue) : Dense Discovery
+
+## Sources
+
+- `raw/` : états réels de `densediscovery.com` et de l’édition officielle `densediscovery.com/issues/1`.
+- `raw/` contient aussi le logo et l’illustration de l’édition 1 téléchargés depuis les URLs natives Dense Discovery avec `curl`.
+- `crops/` : trois composants découpés localement : hero d’inscription, grille de catégories et artwork d’édition.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, édition historique vérifiée dans son iframe, captures natives sauvegardées immédiatement, assets natifs téléchargés avec `curl`, puis crops locaux contrôlés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; les captures d’interface sont donc des rendus natifs réels, sans Microlink et sans image inventée.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

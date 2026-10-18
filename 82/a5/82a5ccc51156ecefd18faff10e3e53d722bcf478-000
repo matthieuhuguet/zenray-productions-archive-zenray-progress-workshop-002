@@ -1,0 +1,11 @@
+# T-01-2-6 — Enquête longue
+
+Calibrage (référence du catalogue) : Mediapart
+
+## Sources
+- `raw/` (8 images réelles d'articles + 1 capture réelle du site, HOME_TOP__DESKTOP via html2canvas) : illustrations d'enquêtes récentes (juin-juillet 2026), fond sombre caractéristique visible
+- `crops/` (2 composants du site) : MASTHEAD, ARTICLE_GRID
+
+Total : 11/8 (au-delà du minimum)
+
+Méthode : extraction DOM des URLs d'images réelles via Claude Browser (curl direct, 0 quota) + capture de l'interface (html2canvas) ajoutée après correction de méthode.

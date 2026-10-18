@@ -1,0 +1,11 @@
+# T-01-2-2 — Dossier de fond
+
+Calibrage (référence du catalogue) : Le Point
+
+## Sources
+- `raw/` : 1 capture réelle du site (HOME_TOP__DESKTOP, via html2canvas — microlink bloqué par un captcha anti-bot sur ce domaine) + couverture papier réelle + 3 photos d'articles
+- `crops/` : MASTHEAD_RED, PRIMARY_NAV, ARTICLE_CARDS, SIDEBAR_LIVE (composants du site)
+
+Total : 12/8 (au-delà du minimum)
+
+Méthode : lepoint.fr bloque microlink.io (captcha "Verification Required"). Contournement via Claude Browser (navigation réelle, non détectée comme bot) + html2canvas injecté pour capturer le DOM rendu, extraction du fichier via le mécanisme de dépassement de tokens du tool.

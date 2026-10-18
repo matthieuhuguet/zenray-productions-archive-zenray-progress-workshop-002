@@ -1,0 +1,11 @@
+# T-01-1-7 — Édition du soir
+
+Calibrage (référence du catalogue) : Evening Standard
+
+## Sources
+- `raw/` (3 captures pleine page réelles, microlink.io) : HOME_TOP__DESKTOP, HOME_TOP__MOBILE, SECTION__DESKTOP (page News)
+- `crops/` (5 composants découpés localement via PIL) : MASTHEAD, PRIMARY_NAV, CARD_GRID_LEFT, HERO_FEATURE, HERO_MEDIA
+
+Total : 8/8
+
+Méthode : microlink.io (rendu Chromium réel, curl-able), 1 capture par état, composants découpés localement sans requête réseau supplémentaire.

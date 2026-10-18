@@ -1,0 +1,38 @@
+{
+  "theme": "T-01-1-4--quotidien-economique-saumon",
+  "calibrationMedia": "FT",
+  "probes": [
+    {
+      "role": "masthead",
+      "image": "raw/FT__01__HOME_TOP.jpg",
+      "rect": [
+        3220,
+        515,
+        310,
+        85
+      ],
+      "text": "TIMES",
+      "known": {
+        "family": "Bodoni Moda",
+        "weight": "400",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)"
+      }
+    },
+    {
+      "role": "titre-une",
+      "image": "raw/FT__01__HOME_TOP.jpg",
+      "rect": [
+        2084,
+        815,
+        238,
+        80
+      ],
+      "text": "Waymo",
+      "known": {
+        "family": "Playfair Display",
+        "weight": "400",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)"
+      }
+    }
+  ]
+}

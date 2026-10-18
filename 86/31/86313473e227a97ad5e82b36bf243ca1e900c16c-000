@@ -1,0 +1,11 @@
+# T-01-3-6 — Reportage photo
+
+Calibrage (référence du catalogue) : National Geographic
+
+## Sources
+- `raw/` (1 capture réelle, microlink.io) : section Photography (page dédiée, différente de T-01-2-7 qui utilisait la page d'accueil générale)
+- `crops/` (7 composants) : MASTHEAD_NAV, SECTION_HERO_BANNER, LEAD_PHOTO_CARD, SECONDARY_CARD, PHOTO_GRID_ROW, HERO_TITLE_TREATMENT, SUBSCRIBE_CTA
+
+Total : 8/8
+
+Note : ce jeu utilise la page /photography (section dédiée reportage), distincte de la page d'accueil déjà capturée pour T-01-2-7 (numéro spécial) — pas de doublon.

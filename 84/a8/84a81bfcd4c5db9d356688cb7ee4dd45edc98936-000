@@ -1,0 +1,14 @@
+# T-01-3-8 — Récit court
+
+Calibrage (référence du catalogue) : Vox explainer
+
+## Sources
+
+- `raw/` : états réels de `vox.com/today-explained`, de la rubrique `vox.com/explainers`, d’un article Vox vérifié et son image éditoriale téléchargée depuis la source native via `curl`.
+- `crops/` : trois composants découpés localement à partir des captures natives : navigation de marque, introduction éditoriale et liste d’explainers.
+
+Total : 8/8
+
+Méthode : pages officielles réelles ouvertes dans le navigateur, consentement traité, états distincts sauvegardés immédiatement, image native téléchargée avec `curl`, puis crops locaux vérifiés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; les captures d’interface sont donc des rendus natifs réels, sans Microlink et sans image inventée.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

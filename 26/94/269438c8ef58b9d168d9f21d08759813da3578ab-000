@@ -1,0 +1,11 @@
+# T-01-2-7 — Numéro spécial
+
+Calibrage (référence du catalogue) : National Geographic hors-série
+
+## Sources
+- `raw/` : 1 capture réelle du site (HOME_TOP__DESKTOP, html2canvas) + 6 couvertures historiques réelles (nationalgeographic.com, article "30 incredible covers")
+- `crops/` : MASTHEAD_NAV, LATEST_STORIES_SIDEBAR, HERO_FEATURE (composants du site)
+
+Total : 10/8 (au-delà du minimum)
+
+Méthode : capture de l'interface (html2canvas via Claude Browser) + couvertures papier réelles trouvées via extraction DOM d'un article dédié, curl direct.

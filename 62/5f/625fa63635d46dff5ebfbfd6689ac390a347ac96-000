@@ -1,0 +1,11 @@
+# T-01-3-2 — Lecture pure
+
+Calibrage (référence du catalogue) : Medium
+
+## Sources
+- `raw/` (2 captures réelles, microlink.io) : LANDING__DESKTOP (page d'accueil), ARTICLE_READING__DESKTOP (expérience de lecture réelle d'un article)
+- `crops/` (6 composants) : MASTHEAD_NAV, TITLE_META, ENGAGEMENT_BAR, HERO_IMAGE (article), LANDING_MASTHEAD, LANDING_HERO
+
+Total : 8/8
+
+Note : un thème existe déjà dans le code (`src/zenraymedia/themes/T-01-3-2.theme.js`, thème à tokens de démonstration "Lecture pure") — ces références servent à vérifier/enrichir sa fidélité si besoin, pas à le remplacer.

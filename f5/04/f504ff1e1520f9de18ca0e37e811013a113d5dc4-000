@@ -1,0 +1,9 @@
+# T-01-3-5 — Récit à chapitres
+
+Calibrage (référence du catalogue) : The Atlantic
+
+## Sources
+- `raw/` (1 capture réelle, html2canvas via Claude Browser) : HOME_TOP__DESKTOP
+- `crops/` (7 composants) : MASTHEAD_NAV, SECTION_HEADER, HERO_STORY, SIDEBAR_LIST, LEFT_COLUMN, SIGNATURE_STARS, SUBSCRIBE_CTA
+
+Total : 8/8

@@ -1,0 +1,11 @@
+# T-01-2-8 — Hebdo grand public
+
+Calibrage (référence du catalogue) : Paris Match
+
+## Sources
+- `raw/` (5) : HOME_TOP__DESKTOP (capture réelle du site, html2canvas) + 4 photos d'articles réelles (parismatch.com, curl direct)
+- `crops/` (3) : MASTHEAD, PRIMARY_NAV, HERO_PHOTO
+
+Total : 8/8
+
+Méthode : html2canvas via Claude Browser pour l'interface, extraction DOM + curl pour les photos d'articles réelles.

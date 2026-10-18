@@ -1,0 +1,12 @@
+# T-01-2-4 — Hebdo culturel
+
+Calibrage (référence du catalogue) : Les Inrockuptibles
+
+## Sources
+- `raw/` (8 couvertures réelles, lesinrocks.com + shop.lesinrocks.com, curl direct) : n41, n42, n46, n48, n50, n51, n52 (2 qualités)
+
+Total : 8/8
+
+Méthode : couvertures trouvées via extraction DOM (page shop/magazines, archive complète des numéros avec vraies images CDN), curl direct sans quota.
+
+Note : une capture de l'interface du site (lesinrocks.com, via microlink) a été tentée pour compléter, mais la page d'accueil du jour affichait une promotion de numéro « Sexe » avec nudité explicite en grand format — capture immédiatement écartée, non sauvegardée. Les 8 couvertures ci-dessus restent la référence pour ce thème.

@@ -1,0 +1,15 @@
+# T-01-4-3 — Veille technique
+
+Calibrage (référence du catalogue) : Hacker Newsletter
+
+## Sources
+
+- `raw/` : trois états réels distincts de `hackernewsletter.com`, centrés sur le mot-symbole, l’inscription, les liens de recommandation, les témoignages et le pied de page.
+- Le site ne contient aucun élément `<img>` exploitable : sa signature publique est textuelle et sans image. Le HTML officiel a été récupéré avec `curl` pour vérifier ce point ; aucun asset visuel n’a été inventé ou ajouté.
+- `crops/` : cinq composants découpés localement : intro mono, bande d’inscription, liens de référence, témoignages et gouvernance du pied de page.
+
+Total : 8/8
+
+Méthode : page officielle réelle ouverte dans le navigateur, états distincts sauvegardés immédiatement, source HTML vérifiée avec `curl`, puis crops locaux contrôlés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) ; les captures d’interface sont donc des rendus natifs réels, sans Microlink et sans image inventée. La contrainte de calibration « zéro image » est conservée.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.

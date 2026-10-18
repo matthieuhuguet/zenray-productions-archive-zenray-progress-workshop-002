@@ -1,0 +1,281 @@
+{
+  "calibrationMedia": "FT",
+  "probes": [
+    {
+      "role": "masthead",
+      "text": "TIMES",
+      "image": "FT__01__HOME_TOP.jpg",
+      "refAspect": 4.3515625,
+      "refDensity": 0.3432454471323729,
+      "refInkHeight": 65,
+      "warning": null,
+      "verdict": {
+        "family": "Libre Baskerville",
+        "weight": "400",
+        "archetype": "labeur",
+        "margin": 0.005926233114083801,
+        "decisive": false,
+        "dominantArchetype": "labeur",
+        "dominantShare": 0.6,
+        "rival": "Bodoni Moda 700 (didone)"
+      },
+      "calibration": {
+        "family": "Bodoni Moda",
+        "weight": "400",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "rank": 70,
+        "rankAnyWeight": 2,
+        "agrees": false,
+        "installed": true
+      },
+      "ranking": [
+        {
+          "family": "Libre Baskerville",
+          "weight": "400",
+          "total": 0.8839006593054101,
+          "ratio": 0.9703832752613241,
+          "weightMatch": 0.9653063765452901,
+          "overlap": 0.6780782323848674,
+          "rows": 0.8894690715427153
+        },
+        {
+          "family": "Bodoni Moda",
+          "weight": "700",
+          "total": 0.8779744261913263,
+          "ratio": 0.947935368043088,
+          "weightMatch": 0.9151110635209575,
+          "overlap": 0.7180406212664278,
+          "rows": 0.9193941745293276
+        },
+        {
+          "family": "Crimson Text",
+          "weight": "400",
+          "total": 0.8770618807100722,
+          "ratio": 0.9730700179533214,
+          "weightMatch": 0.9462942379128632,
+          "overlap": 0.6461623990320154,
+          "rows": 0.9224881012679339
+        },
+        {
+          "family": "Gelasio",
+          "weight": "400",
+          "total": 0.8743276742685278,
+          "ratio": 0.9856373429084381,
+          "weightMatch": 0.9631372711969027,
+          "overlap": 0.634669295462247,
+          "rows": 0.8660197505719138
+        },
+        {
+          "family": "Frank Ruhl Libre",
+          "weight": "700",
+          "total": 0.8655629274912816,
+          "ratio": 0.9892280071813285,
+          "weightMatch": 0.8020371213004477,
+          "overlap": 0.718899343999525,
+          "rows": 0.9273267243521568
+        },
+        {
+          "family": "Spectral",
+          "weight": "700",
+          "total": 0.8643514910233767,
+          "ratio": 0.9586919104991394,
+          "weightMatch": 0.9382029710677912,
+          "overlap": 0.6392846987456953,
+          "rows": 0.8962493659687086
+        },
+        {
+          "family": "PT Serif",
+          "weight": "400",
+          "total": 0.8597658186155338,
+          "ratio": 0.9084380610412927,
+          "weightMatch": 0.980392318405282,
+          "overlap": 0.6631756310294701,
+          "rows": 0.8728033992826231
+        },
+        {
+          "family": "Frank Ruhl Libre",
+          "weight": "400",
+          "total": 0.8589682136263853,
+          "ratio": 0.940754039497307,
+          "weightMatch": 0.9296151766810121,
+          "overlap": 0.6064041173979609,
+          "rows": 0.9713298418838976
+        },
+        {
+          "family": "Playfair Display",
+          "weight": "700",
+          "total": 0.8559153080144184,
+          "ratio": 0.9730700179533214,
+          "weightMatch": 0.8305824241899508,
+          "overlap": 0.654977737682973,
+          "rows": 0.9596717417501667
+        },
+        {
+          "family": "Literata",
+          "weight": "400",
+          "total": 0.8555759390671648,
+          "ratio": 0.9603448275862069,
+          "weightMatch": 0.9994293349890228,
+          "overlap": 0.629304544620466,
+          "rows": 0.7484785300641346
+        },
+        {
+          "family": "Cardo",
+          "weight": "700",
+          "total": 0.8515132711053413,
+          "ratio": 0.9858407079646018,
+          "weightMatch": 0.8534244723783042,
+          "overlap": 0.6415748850923597,
+          "rows": 0.8847945596670976
+        },
+        {
+          "family": "Libre Baskerville",
+          "weight": "700",
+          "total": 0.8506588206267669,
+          "ratio": 0.9298831385642737,
+          "weightMatch": 0.8560777361890197,
+          "overlap": 0.729516434145188,
+          "rows": 0.858674530304795
+        }
+      ]
+    },
+    {
+      "role": "titre-une",
+      "text": "Waymo",
+      "image": "FT__01__HOME_TOP.jpg",
+      "refAspect": 3.6328125,
+      "refDensity": 0.24265232974910395,
+      "refInkHeight": 62,
+      "warning": null,
+      "verdict": {
+        "family": "Playfair Display",
+        "weight": "400",
+        "archetype": "didone",
+        "margin": 0.0017640864667238798,
+        "decisive": false,
+        "dominantArchetype": "labeur",
+        "dominantShare": 0.8,
+        "rival": "Frank Ruhl Libre 400 (labeur)"
+      },
+      "calibration": {
+        "family": "Playfair Display",
+        "weight": "400",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "rank": 1,
+        "rankAnyWeight": 1,
+        "agrees": true,
+        "installed": true
+      },
+      "ranking": [
+        {
+          "family": "Playfair Display",
+          "weight": "400",
+          "total": 0.8813677098052966,
+          "ratio": 1,
+          "weightMatch": 0.9766617429837519,
+          "overlap": 0.6172132838283828,
+          "rows": 0.8859930206817523
+        },
+        {
+          "family": "Frank Ruhl Libre",
+          "weight": "400",
+          "total": 0.8796036233385727,
+          "ratio": 0.989247311827957,
+          "weightMatch": 0.9928728033860807,
+          "overlap": 0.591679273827534,
+          "rows": 0.9148602993025613
+        },
+        {
+          "family": "PT Serif",
+          "weight": "400",
+          "total": 0.8783703633266057,
+          "ratio": 0.9827956989247312,
+          "weightMatch": 0.9388393020086077,
+          "overlap": 0.6281137890960538,
+          "rows": 0.9510239728452299
+        },
+        {
+          "family": "Libre Baskerville",
+          "weight": "400",
+          "total": 0.877001480477077,
+          "ratio": 0.9607438016528925,
+          "weightMatch": 0.9446644241152886,
+          "overlap": 0.6827063599458728,
+          "rows": 0.8926563592218293
+        },
+        {
+          "family": "Zilla Slab",
+          "weight": "400",
+          "total": 0.8623518804276865,
+          "ratio": 0.9872611464968153,
+          "weightMatch": 0.9780819313753446,
+          "overlap": 0.5536851244453019,
+          "rows": 0.8924581013242641
+        },
+        {
+          "family": "Instrument Sans",
+          "weight": "400",
+          "total": 0.8568684414984933,
+          "ratio": 0.9789473684210527,
+          "weightMatch": 0.978983268495824,
+          "overlap": 0.49731323410528316,
+          "rows": 0.9677515793389867
+        },
+        {
+          "family": "Figtree",
+          "weight": "400",
+          "total": 0.854394464810962,
+          "ratio": 0.9957173447537473,
+          "weightMatch": 0.9330528113184535,
+          "overlap": 0.5193006993006993,
+          "rows": 0.9520334432824145
+        },
+        {
+          "family": "Alegreya",
+          "weight": "400",
+          "total": 0.8526637879571094,
+          "ratio": 0.9354838709677419,
+          "weightMatch": 0.9830537220479103,
+          "overlap": 0.6079194201662759,
+          "rows": 0.8500076504323547
+        },
+        {
+          "family": "Alegreya Sans",
+          "weight": "400",
+          "total": 0.8525925324455857,
+          "ratio": 0.967741935483871,
+          "weightMatch": 0.9878985811662352,
+          "overlap": 0.4930599216520772,
+          "rows": 0.957621528811019
+        },
+        {
+          "family": "Vollkorn",
+          "weight": "400",
+          "total": 0.8514342780149731,
+          "ratio": 0.967741935483871,
+          "weightMatch": 0.9970457902511078,
+          "overlap": 0.5446187668631958,
+          "rows": 0.848723075446949
+        },
+        {
+          "family": "Plus Jakarta Sans",
+          "weight": "400",
+          "total": 0.8491840596587618,
+          "ratio": 0.9872611464968153,
+          "weightMatch": 0.9702246754256394,
+          "overlap": 0.4806098773616175,
+          "rows": 0.9395601345870818
+        },
+        {
+          "family": "Gelasio",
+          "weight": "400",
+          "total": 0.849166928502423,
+          "ratio": 0.9956989247311828,
+          "weightMatch": 0.9536136975420326,
+          "overlap": 0.47374214557629685,
+          "rows": 0.9588889604461779
+        }
+      ]
+    }
+  ]
+}

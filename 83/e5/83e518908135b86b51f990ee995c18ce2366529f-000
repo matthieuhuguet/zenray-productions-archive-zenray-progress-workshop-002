@@ -1,0 +1,11 @@
+# T-01-2-1 — Couverture à portrait
+
+Calibrage (référence du catalogue) : Time
+
+## Sources
+- `raw/` : 1 capture pleine page réelle du site (TIME__HOME_TOP__DESKTOP, microlink.io) + 5 couvertures papier réelles (portrait, cadre rouge — SILENCE_BREAKERS_2017, TAYLOR_SWIFT_2023_A/B/C, AI_ARCHITECTS_2025)
+- `crops/` : composants d'interface du SITE (MASTHEAD, PRIMARY_NAV, HERO_COVER_STORY, SIDE_STORIES) + détails du cadre de couverture papier (MASTHEAD_BAND, LOGO_WORDMARK, RED_BORDER)
+
+Total : 12/8 (au-delà du minimum)
+
+Correction : ajout de la capture du site web réel (time.com, via microlink.io — le domaine direct n'est pas bloqué par Claude Browser mais economist.com l'est ; time.com a été capturé directement) en complément des couvertures papier, qui restent pertinentes pour cet archétype précis (« couverture à portrait »).

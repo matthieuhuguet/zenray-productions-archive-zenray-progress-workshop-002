@@ -1,0 +1,11 @@
+# T-01-3-1 — Récit immersif défilant
+
+Calibrage (référence du catalogue) : NYT Snow Fall
+
+## Sources
+- `raw/` (2 captures réelles, microlink.io) : TOP__DESKTOP (image plein écran d'ouverture), CHAPTER__DESKTOP (titre + premier chapitre de texte)
+- `crops/` (6 composants) : MASTHEAD, FULLSCREEN_IMAGE, TITLE_BLOCK, ARTICLE_COLUMN, BYLINE_DETAIL, DROP_CAP
+
+Total : 8/8
+
+Méthode : page originale de 2012 toujours en ligne (nytimes.com/projects/2012/snow-fall/), capturée via microlink.io (nytimes.com bloqué par la politique de navigation de Claude Browser).

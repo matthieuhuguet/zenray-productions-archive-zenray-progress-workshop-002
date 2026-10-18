@@ -1,0 +1,13 @@
+# T-01-1-8 — Une d'archive
+
+Calibrage (référence du catalogue) : France-Soir 1962
+
+## Sources
+- `raw/` (4 pages réelles du numéro du 15 juin 1955, Gallica/BnF) : PAGE1 (Une), PAGE2, PAGE3, PAGE4
+- `crops/` (4 découpes de détail de la Une) : MASTHEAD, HEADLINE_MAROC, PHOTO_MANS, PUB_PERRIER
+
+Total : 8/8
+
+Substitution : 1962 non numérisé sur Gallica pour France-Soir (collection publique disponible 1944-1955 uniquement, droits d'auteur au-delà). Substitué par le numéro du 15 juin 1955 — année la plus proche disponible, même titre, même identité visuelle d'époque (papier jauni, plomb, filets épais, photo en trame).
+
+Méthode : navigation Gallica via Claude Browser pour identifier l'ark de l'édition (bd6t5128718d), puis téléchargement direct des pages en haute résolution via curl (`f{N}.highres`) avec User-Agent + Referer (bloqué en accès direct sans ces en-têtes, 403 sinon).

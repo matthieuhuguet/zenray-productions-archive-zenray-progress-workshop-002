@@ -1,0 +1,11 @@
+# T-01-2-3 — Hebdo satirique
+
+Calibrage (référence du catalogue) : Le Canard enchaîné
+
+## Sources
+- `raw/` (9 images réelles) : COVER__2026-07-22 (Une du numéro, 341×258), ILLUSTRATION_1, ARTICLE_1 à 6, + HOME_TOP__DESKTOP (capture réelle du site via html2canvas, masthead+nav+bandeau de consentement visibles)
+- `crops/` (3 composants du site) : MASTHEAD, PRIMARY_NAV, CONSENT_MODAL
+
+Total : 12/8 (au-delà du minimum)
+
+Substitution : aucune sur le contenu. Résolution de la Une plafonnée par le CDN (341×258). Capture du site ajoutée après correction de méthode (interface web, pas seulement couverture papier) — html2canvas via Claude Browser, tronquée en fin de flux JPEG (dépassement de la limite de sortie du tool) mais exploitable (haut de page complet, rendu progressif).

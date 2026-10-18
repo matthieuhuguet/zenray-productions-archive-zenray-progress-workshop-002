@@ -1,0 +1,281 @@
+{
+  "calibrationMedia": "SUN",
+  "probes": [
+    {
+      "role": "titre-une",
+      "text": "their kids",
+      "image": "SUN__02__HOME_MID.jpg",
+      "refAspect": 5.546875,
+      "refDensity": 0.4386721680420105,
+      "refInkHeight": 31,
+      "warning": null,
+      "verdict": {
+        "family": "Familjen Grotesk",
+        "weight": "700",
+        "archetype": "display",
+        "margin": 0.027390415837106108,
+        "decisive": false,
+        "dominantArchetype": "grotesque",
+        "dominantShare": 0.4,
+        "rival": "Plus Jakarta Sans 700 (grotesque)"
+      },
+      "calibration": {
+        "family": "Rajdhani",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "rank": 4,
+        "rankAnyWeight": 4,
+        "agrees": false,
+        "installed": true
+      },
+      "ranking": [
+        {
+          "family": "Familjen Grotesk",
+          "weight": "700",
+          "total": 0.8515493725236942,
+          "ratio": 0.9861111111111112,
+          "weightMatch": 0.9908830148713649,
+          "overlap": 0.45272201340654394,
+          "rows": 0.9700615104355211
+        },
+        {
+          "family": "Plus Jakarta Sans",
+          "weight": "700",
+          "total": 0.8241589566865881,
+          "ratio": 0.9820193637621023,
+          "weightMatch": 0.9984046906492396,
+          "overlap": 0.41999693246306175,
+          "rows": 0.8390118239451803
+        },
+        {
+          "family": "Sora",
+          "weight": "700",
+          "total": 0.811535940166767,
+          "ratio": 0.9044585987261147,
+          "weightMatch": 0.9753790372848025,
+          "overlap": 0.41517296862429603,
+          "rows": 0.9822495275690156
+        },
+        {
+          "family": "Rajdhani",
+          "weight": "700",
+          "total": 0.8074802197503739,
+          "ratio": 0.9830985915492958,
+          "weightMatch": 0.927817314643558,
+          "overlap": 0.3943854000689916,
+          "rows": 0.885633560199887
+        },
+        {
+          "family": "Faustina",
+          "weight": "700",
+          "total": 0.8058861293052655,
+          "ratio": 0.9971910112359551,
+          "weightMatch": 0.9653109703080641,
+          "overlap": 0.35203196987961755,
+          "rows": 0.8502236021717388
+        },
+        {
+          "family": "Host Grotesk",
+          "weight": "700",
+          "total": 0.8056655260099934,
+          "ratio": 0.9766162310866575,
+          "weightMatch": 0.9973279179136384,
+          "overlap": 0.4116949353576088,
+          "rows": 0.7439608787456764
+        },
+        {
+          "family": "Schibsted Grotesk",
+          "weight": "700",
+          "total": 0.8001297433883796,
+          "ratio": 0.9712722298221614,
+          "weightMatch": 0.9946014883950117,
+          "overlap": 0.4238482753924206,
+          "rows": 0.7038134800251008
+        },
+        {
+          "family": "IBM Plex Sans Condensed",
+          "weight": "700",
+          "total": 0.7998738350244557,
+          "ratio": 0.9478873239436619,
+          "weightMatch": 0.9612361080296092,
+          "overlap": 0.43498327992197294,
+          "rows": 0.7937228310418568
+        },
+        {
+          "family": "Manrope",
+          "weight": "700",
+          "total": 0.7977619297348557,
+          "ratio": 0.9342105263157895,
+          "weightMatch": 0.9267895979329703,
+          "overlap": 0.38757969224606964,
+          "rows": 0.9479728198637961
+        },
+        {
+          "family": "Pragati Narrow",
+          "weight": "700",
+          "total": 0.79561090862307,
+          "ratio": 0.8901408450704226,
+          "weightMatch": 0.9401816958984436,
+          "overlap": 0.46081606803582736,
+          "rows": 0.8920811457656961
+        },
+        {
+          "family": "Hind",
+          "weight": "700",
+          "total": 0.7949919444589628,
+          "ratio": 0.9659863945578231,
+          "weightMatch": 0.9796005759837368,
+          "overlap": 0.37046137928804684,
+          "rows": 0.7958747836385256
+        },
+        {
+          "family": "Archivo Narrow",
+          "weight": "700",
+          "total": 0.7945828717127579,
+          "ratio": 0.8845070422535212,
+          "weightMatch": 0.9499187756497948,
+          "overlap": 0.45876316794934774,
+          "rows": 0.8855661401615991
+        }
+      ]
+    },
+    {
+      "role": "navigation",
+      "text": "Fabulous",
+      "image": "SUN__02__HOME_MID.jpg",
+      "refAspect": 5.234375,
+      "refDensity": 0.4633179114342366,
+      "refInkHeight": 17,
+      "warning": "sonde peu discriminante : 5.2 de chasse, ~11 px par signe. Viser une chasse < 12 et > 14 px par signe — un mot court sur du gros texte, pas une phrase entière.",
+      "verdict": {
+        "family": "Rajdhani",
+        "weight": "700",
+        "archetype": "technique",
+        "margin": 0.0006499031012954237,
+        "decisive": false,
+        "dominantArchetype": "grotesque",
+        "dominantShare": 0.4,
+        "rival": "IBM Plex Sans Condensed 700 (condense)"
+      },
+      "calibration": {
+        "family": "Rajdhani",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "rank": 1,
+        "rankAnyWeight": 1,
+        "agrees": true,
+        "installed": true
+      },
+      "ranking": [
+        {
+          "family": "Rajdhani",
+          "weight": "700",
+          "total": 0.9124644015291394,
+          "ratio": 0.9895522388059701,
+          "weightMatch": 0.9845505617977528,
+          "overlap": 0.7088769085147537,
+          "rows": 0.9517616691261562
+        },
+        {
+          "family": "IBM Plex Sans Condensed",
+          "weight": "700",
+          "total": 0.911814498427844,
+          "ratio": 0.9895522388059701,
+          "weightMatch": 0.9600049799246787,
+          "overlap": 0.7108801334336798,
+          "rows": 0.9849995767077666
+        },
+        {
+          "family": "Source Sans 3",
+          "weight": "700",
+          "total": 0.9111249213958604,
+          "ratio": 0.9463276836158192,
+          "weightMatch": 0.9806384403601458,
+          "overlap": 0.7509165716147955,
+          "rows": 0.9801431942439223
+        },
+        {
+          "family": "Host Grotesk",
+          "weight": "700",
+          "total": 0.9081772204751469,
+          "ratio": 0.9882005899705014,
+          "weightMatch": 0.9761927405294024,
+          "overlap": 0.6894027922996494,
+          "rows": 0.9727208718547238
+        },
+        {
+          "family": "Hind",
+          "weight": "700",
+          "total": 0.904357578266486,
+          "ratio": 0.9266943291839558,
+          "weightMatch": 0.9523108708572723,
+          "overlap": 0.7794343744942548,
+          "rows": 0.9805216780947982
+        },
+        {
+          "family": "Figtree",
+          "weight": "700",
+          "total": 0.9033414765051964,
+          "ratio": 0.9266943291839558,
+          "weightMatch": 0.9988571089308773,
+          "overlap": 0.7322336049044124,
+          "rows": 0.9748385522132631
+        },
+        {
+          "family": "Open Sans",
+          "weight": "700",
+          "total": 0.9021424425927451,
+          "ratio": 0.9178082191780822,
+          "weightMatch": 0.9423945174051797,
+          "overlap": 0.7884414949056644,
+          "rows": 0.9880037520180364
+        },
+        {
+          "family": "Lato",
+          "weight": "700",
+          "total": 0.8992551419937282,
+          "ratio": 0.9781021897810219,
+          "weightMatch": 0.9194243702089636,
+          "overlap": 0.7189302345452215,
+          "rows": 0.9822048292121619
+        },
+        {
+          "family": "Lora",
+          "weight": "700",
+          "total": 0.8983810021967038,
+          "ratio": 0.9781021897810219,
+          "weightMatch": 0.9961593328212445,
+          "overlap": 0.6812746597954746,
+          "rows": 0.9112449174611087
+        },
+        {
+          "family": "Alegreya Sans",
+          "weight": "700",
+          "total": 0.891986631007101,
+          "ratio": 0.9432835820895522,
+          "weightMatch": 0.9325623259289451,
+          "overlap": 0.7587471974998301,
+          "rows": 0.9267333094570922
+        },
+        {
+          "family": "Merriweather",
+          "weight": "700",
+          "total": 0.8914152645598207,
+          "ratio": 0.9776119402985075,
+          "weightMatch": 0.9368881892862414,
+          "overlap": 0.685506815576033,
+          "rows": 0.9576822282651629
+        },
+        {
+          "family": "Archivo Narrow",
+          "weight": "700",
+          "total": 0.8879416780132712,
+          "ratio": 0.9104477611940298,
+          "weightMatch": 0.9845505617977528,
+          "overlap": 0.7018278995189738,
+          "rows": 0.9846023084411946
+        }
+      ]
+    }
+  ]
+}

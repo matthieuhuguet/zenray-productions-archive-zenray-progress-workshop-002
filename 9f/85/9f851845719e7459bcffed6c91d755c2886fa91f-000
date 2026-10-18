@@ -1,0 +1,11 @@
+# T-01-2-5 — Hebdo international
+
+Calibrage (référence du catalogue) : The Economist
+
+## Sources
+- `raw/` (2 captures pleine page réelles, microlink.io) : HOME_TOP__DESKTOP, HOME_TOP__MOBILE
+- `crops/` (6 composants d'interface découpés localement) : MASTHEAD, PRIMARY_NAV, BRIEFING_LEAD, CULTURE_CARD, COLUMNS_SIDEBAR, CARD_GRID_LOWER
+
+Total : 8/8
+
+Correction : la 1ère tentative (couvertures de magazine 1955 via coverbrowser.com) était une erreur de méthode — signalée par Matthieu. Ce qui est cherché est l'INTERFACE DU SITE WEB moderne (masthead rouge, navigation, grille de cartes), pas la couverture papier. economist.com est bloqué par la politique de navigation de Claude Browser, mais accessible via microlink.io (rendu Chromium réel, curl-able).

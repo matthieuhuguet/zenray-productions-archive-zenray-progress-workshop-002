@@ -1,0 +1,15 @@
+# T-01-1-6 — Quotidien régional
+
+Calibrage (référence du catalogue) : Ouest-France
+
+## Sources
+- `raw/` (3 captures pleine page réelles, via microlink.io — vrai rendu navigateur, curl-able comme une image GUID) :
+  - OF__HOME_TOP__DESKTOP (1920×1080@2x, cookies acceptés)
+  - OF__HOME_TOP__MOBILE (390×844)
+  - OF__ARTICLE_TOP__DESKTOP (page article)
+- `crops/` (5 découpes de composants d'interface, extraites localement de la capture desktop via PIL, coordonnées mesurées) :
+  - MASTHEAD, PRIMARY_NAV, HERO_TAGS_TITLE, HERO_MEDIA, SIDEBAR_AD
+
+Total : 8/8
+
+Méthode : microlink.io effectue un vrai rendu Chromium et renvoie une URL d'image téléchargeable via curl (quota gratuit 25/jour, à ménager). Un seul appel par état (desktop/mobile/article), puis les composants d'UI (masthead, nav, hero, sidebar) sont découpés localement sans appel réseau supplémentaire — même esprit que les crops de T-01-1-1.

@@ -1,0 +1,41 @@
+{
+  "theme": "T-01-1-5--tabloid-daccroche",
+  "calibrationMedia": "SUN",
+  "note": "Texte CLAIR sur fond SOMBRE : invert obligatoire, sinon Otsu prend le fond pour l'encre.",
+  "probes": [
+    {
+      "role": "titre-une",
+      "image": "raw/SUN__02__HOME_MID.jpg",
+      "rect": [
+        1535,
+        110,
+        175,
+        38
+      ],
+      "text": "their kids",
+      "invert": true,
+      "known": {
+        "family": "Rajdhani",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)"
+      }
+    },
+    {
+      "role": "navigation",
+      "image": "raw/SUN__02__HOME_MID.jpg",
+      "rect": [
+        2062,
+        12,
+        102,
+        32
+      ],
+      "text": "Fabulous",
+      "invert": true,
+      "known": {
+        "family": "Rajdhani",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)"
+      }
+    }
+  ]
+}

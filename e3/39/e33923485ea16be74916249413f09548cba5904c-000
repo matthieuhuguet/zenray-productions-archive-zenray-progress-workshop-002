@@ -1,0 +1,15 @@
+# T-01-4-4 — Infolettre d’entreprise
+
+Calibrage (référence du catalogue) : Stripe Annual Letter
+
+## Sources
+
+- `raw/` : l’asset hero déclaré par la page officielle Stripe 2025, l’arrière-plan natif Stripe Sessions déclaré par le DOM et les pages 1 à 3 du PDF officiel de la lettre annuelle 2025 en français.
+- `raw/STRIPE__ANNUAL_LETTER__2025__OFFICIAL.pdf` conserve la source officielle ; les trois pages JPEG sont ses rendus contrôlés pour la référence visuelle.
+- `crops/` : trois composants découpés localement : en-tête institutionnel, tuiles de graphiques et section narrative.
+
+Total : 8/8
+
+Méthode : page officielle Stripe vérifiée, URLs d’assets relevées dans le DOM, assets téléchargés avec `curl`, PDF officiel téléchargé puis rendu localement avec Poppler et contrôlé visuellement, puis crops locaux vérifiés. L’injection html2canvas a été tentée mais le navigateur intégré expose une évaluation en lecture seule (`document.createElement` indisponible) et `Page.captureScreenshot` échoue sur cette page ; aucune capture inventée ni appel Microlink n’a été utilisé.
+
+État : thème complet selon le quota Presse actuel de 8 images utiles.
