@@ -1,0 +1,519 @@
+# MÉTA-PROMPT ZENRAYMEDIA — T-03-6-3 — Science-fiction
+
+> **Nature du livrable :** prompt privé de production d’un studio de microcomposants ZenRayMedia.  
+> **Calibrage privé obligatoire :** **espace**. Ce nom sert à la recherche et au contrôle qualité, mais ne doit jamais apparaître dans le nom public du thème, dans l’interface livrée ni dans un dépôt public.
+
+---
+
+## 0. Variables entièrement remplies
+
+```yaml
+THEME_ID: "T-03-6-3"
+PUBLIC_THEME_NAME: "Science-fiction"
+FAMILY_ID: "03"
+FAMILY_NAME: "Cinéma & trailer"
+SUBFAMILY_ID: "03-6"
+SUBFAMILY_NAME: "Blockbuster & franchise"
+PRIVATE_CALIBRATION_REF: "espace"
+PRIVATE_CALIBRATION_TYPE: "studio, festival, cinéaste, franchise ou grammaire de trailer"
+CALIBRATION_VISIBILITY: "private-only"
+CALIBRATION_PUBLICATION_RULE: "never render, never publish, never commit to a public repository"
+THEME_SIGNATURE: "Bleu-noir, typographie fine espacée, grondement"
+FAMILY_SYSTEM: "Surface : noir profond, aucune interface. Palette : deux couleurs maximum. Typographie : sans espacée, capitales, interlettrage large, apparition par fondu. Grille : centre optique, marges généreuses. Mouvement : coupes sur impact, respirations longues, accélération finale. Habillage : cartons, logos de studio, bloc de crédits final. Son : le son commande le montage, pas l'inverse."
+LANGUAGE: "fr-FR"
+PRIMARY_OUTPUT: "kit de cartons, transitions, titres, crédits et microcompositions Motion UI pour montage et trailer"
+ASSET_MINIMUM: 64
+ASSET_TARGET: 128
+ASSET_MAXIMUM: 256
+MIN_COMPONENT_PACKAGES: 36
+APP_SOURCE_OF_TRUTH: "ui-components-zenray-v14 / ZenRayMedia Core"
+HTML_NAMESPACE: ".zrm-theme-t-03-6-3"
+OUTPUT_ROOT: "themes/volume-a/t-03-6-3/"
+COPYRIGHT_MODE: "reference structurelle privée; reconstruction originale; provenance et droits obligatoires"
+```
+
+## 1. Mission exacte
+
+Tu es simultanément **directeur artistique spécialisé en Cinéma & trailer**, product designer senior, motion designer, front-end architect, asset librarian, chercheur média et QA engineer.
+
+Construis **un studio de composants consacré exclusivement au thème « Science-fiction »**, calibré avec précision sur **espace** et contraint par la signature :
+
+> **Bleu-noir, typographie fine espacée, grondement**
+
+Le résultat n’est **jamais** une page HTML générique et n’est **jamais** un template monolithique. Il s’agit d’une collection de microcomposants indépendants, stylisés, sérialisables et drag-and-dropables que ZenRayMedia peut combiner pour fabriquer des articles, vidéos, trailers, flyers, overlays ou compositions selon la famille.
+
+Le thème est hors sujet si remplacer **espace** par une autre référence ne change presque rien au résultat. La calibration doit modifier concrètement la grille, la densité, la typographie, le rythme, les composants, les ratios, les états, les assets et les règles de composition.
+
+## 2. Verrou de calibration — espace
+
+### 2.1 Recherche obligatoire
+
+Effectue une recherche web dédiée à **espace**, sans te contenter du nom ou d’une impression générale. Inspecte au minimum les surfaces suivantes :
+
+- teaser officiel
+- bande-annonce principale
+- cartons et titres
+- générique début/fin
+- poster/one-sheet
+- versions verticales
+- sound design
+- bloc de crédits et end slate
+
+Requêtes de départ déjà remplies :
+
+- `"espace" site officiel Science-fiction`
+- `"espace" Blockbuster & franchise design typography grid motion`
+- `"espace" exemples représentatifs Cinéma & trailer`
+- `"espace" mobile social video official`
+- `"espace" archive branding visual identity`
+- `"espace" accessibility responsive safe zones`
+
+Tu dois identifier les URL officielles ou institutionnelles réellement pertinentes. Ne fabrique aucune URL. Si une surface est inaccessible, marque-la `[NON VÉRIFIÉ]`.
+
+Si **espace** est un archétype générique plutôt qu’une entité nommée, identifie **trois réalisations professionnelles concrètes** correspondant exactement à cet archétype, puis choisis un benchmark principal et deux benchmarks de contrôle. Enregistre ce choix dans `calibration.private.json`; ne remplace jamais silencieusement la valeur source `espace`.
+
+### 2.2 Rapport de preuves
+
+Crée `research/calibration-evidence.private.md` avec **au moins 20 observations sourcées**, dont au moins 12 produisent directement un composant ou une règle.
+
+Colonnes obligatoires :
+
+| source_url | date_verified | capture_or_timestamp | observed_fact | measured_value | interpretation | abstracted_rule | resulting_component_id | confidence |
+|---|---|---|---|---|---|---|---|---|
+
+Distingue strictement :
+
+1. **fait observé** ;
+2. **interprétation** ;
+3. **décision originale ZenRayMedia**.
+
+### 2.3 Test d’irremplaçabilité
+
+Avant validation, réponds par écrit :
+
+- Quelles 12 décisions seraient différentes avec une autre référence que **espace** ?
+- Quels 8 composants portent le plus clairement l’ADN abstrait de **espace** ?
+- Quelles caractéristiques ont été volontairement rejetées pour éviter la copie ?
+- Pourquoi le thème reste publiquement nommé **« Science-fiction »** et non **« style espace »** ?
+
+Si les réponses sont vagues, verdict automatique : `NO-GO`.
+
+## 3. Système hérité de la famille
+
+Applique intégralement ce système, puis spécialise-le avec la sous-famille, la signature et la calibration :
+
+> Surface : noir profond, aucune interface. Palette : deux couleurs maximum. Typographie : sans espacée, capitales, interlettrage large, apparition par fondu. Grille : centre optique, marges généreuses. Mouvement : coupes sur impact, respirations longues, accélération finale. Habillage : cartons, logos de studio, bloc de crédits final. Son : le son commande le montage, pas l'inverse.
+
+Règle éditoriale et média de la famille :
+
+> Le son, la cadence, le contraste, la durée des plans et la typographie de carton commandent la composition. Les composants doivent s’assembler dans une timeline sans devenir un trailer monolithique.
+
+Le système familial est une contrainte de base. **espace** sert à viser le niveau professionnel et à choisir les détails spécifiques ; il ne remplace pas les règles de la famille.
+
+## 4. Studio de microcomposants — jamais une page unique
+
+### 4.1 Contrat de chaque composant
+
+Chaque composant doit vivre dans son propre dossier :
+
+```text
+components/<component-id>/
+  component.html
+  component.css
+  component.js
+  component.schema.json
+  component.manifest.json
+  preview.html
+  preview-data.json
+  component.svg              # si pertinent
+  motion.css                 # si pertinent
+  motion.timeline.json       # si pertinent
+  README.md
+```
+
+Chaque composant doit :
+
+- posséder une seule racine avec `data-zrm-component`;
+- être chargeable et supprimable sans effet de bord ;
+- fonctionner isolément dans `preview.html`;
+- exposer ses propriétés éditables dans `component.schema.json`;
+- définir ses slots, contraintes de taille, ratios et dépendances ;
+- supporter drag, drop, duplication, réordonnancement, verrouillage et suppression ;
+- sérialiser son état en JSON ;
+- fournir `init()`, `update(props)`, `serialize()` et `destroy()` si JavaScript est nécessaire ;
+- ne jamais dépendre d’un chatbot pour conserver son état ;
+- ne jamais écrire dans un état global implicite.
+
+### 4.2 Contrat drag-and-drop ZenRayMedia
+
+Utilise le type de transfert :
+
+```text
+application/x-zenray-component
+```
+
+Payload minimal :
+
+```json
+{
+  "componentId": "t-03-6-3:<component-id>",
+  "themeId": "T-03-6-3",
+  "version": "1.0.0",
+  "instanceId": "<uuid>",
+  "props": {},
+  "slots": [],
+  "assetRefs": [],
+  "timeline": null
+}
+```
+
+Le compositor doit accepter les composants dans plusieurs surfaces : document, canvas libre, frame vidéo, overlay transparent et timeline.
+
+### 4.3 Liste minimale de composants spécifiques à produire
+
+Les composants ci-dessous ne sont pas des suggestions : ils constituent le **seed obligatoire** de ce thème. Étends la liste jusqu’à **36 packages minimum**.
+
+1. `studio-card` — studio card.
+2. `title-card` — title card.
+3. `date-card` — date card.
+4. `narrative-intertitle` — narrative intertitle.
+5. `press-quote-card` — press quote card.
+6. `festival-laurels` — festival laurels.
+7. `credit-block` — credit block.
+8. `billing-block` — billing block.
+9. `logo-reveal` — logo reveal.
+10. `end-slate` — end slate.
+11. `subtitle-style` — subtitle style.
+12. `chapter-card` — chapter card.
+13. `cut-marker` — cut marker.
+14. `transition-mask` — transition mask.
+15. `film-grain-layer` — film grain layer.
+16. `light-leak-layer` — light leak layer.
+17. `poster-lockup` — poster lockup.
+18. `vertical-teaser-card` — vertical teaser card.
+19. `sound-cue-marker` — sound cue marker.
+20. `localization-variant` — localization variant.
+21. `metal-logo-reveal` — metal logo reveal.
+22. `percussion-cut-marker` — percussion cut marker.
+23. `space-title-card` — space title card.
+24. `hero-ascent-frame` — hero ascent frame.
+25. `fantasy-map-card` — fantasy map card.
+26. `catastrophe-countdown` — catastrophe countdown.
+27. `sequel-numeral-reveal` — sequel numeral reveal.
+28. `shared-universe-timeline` — shared-universe timeline.
+29. `module-signature-bleu-noir` — module signature — Bleu-noir.
+30. `module-signature-typographie-fine-espacee` — module signature — typographie fine espacée.
+31. `module-signature-grondement` — module signature — grondement.
+32. `hero-specifique-science-fiction` — hero spécifique — Science-fiction.
+33. `version-compacte-science-fiction` — version compacte — Science-fiction.
+34. `version-mobile-science-fiction` — version mobile — Science-fiction.
+35. `preview-de-calibration-interne-science-fiction` — preview de calibration interne — Science-fiction.
+
+Les modules issus de la signature doivent être des composants réels, pas de simples commentaires CSS. Par exemple, « Bleu-noir, typographie fine espacée, grondement » doit produire des géométries, contraintes, states et previews identifiables.
+
+## 5. Contrat HTML/CSS/SVG/Motion précis
+
+### 5.1 Isolation
+
+- Namespace racine obligatoire : `.zrm-theme-t-03-6-3`.
+- Interdiction des sélecteurs globaux `body`, `html`, `*`, `h1`, `button`, `img`, `svg`.
+- Tous les tokens doivent être préfixés `--zrm-t-03-6-3-`.
+- Utilise `contain`, des couches CSS et des imports explicites pour empêcher les fuites.
+- Aucun `!important` sauf justification documentée dans `research/technical-decisions.md`.
+- Le shell de l’application réutilise les primitives ZenRayMedia V14 : `.glass`, `.active`, `.active-tint`, focus visible, Dark/Light et progressive disclosure.
+- Le média rendu reste isolé du shell et peut avoir sa propre surface.
+
+### 5.2 Tokens obligatoires
+
+Crée :
+
+```text
+tokens/color.css
+tokens/type.css
+tokens/space.css
+tokens/grid.css
+tokens/radius.css
+tokens/shadow.css
+tokens/motion.css
+tokens/media.css
+tokens/z-index.css
+```
+
+Chaque token doit avoir une valeur, un usage, un fallback et une justification liée soit au système familial, soit à la preuve de calibration **espace**.
+
+### 5.3 SVG
+
+- SVG lisibles, viewBox stable, aucune dimension codée sans raison.
+- Variantes `currentColor` lorsque l’asset est fonctionnel.
+- Aucun logo, pictogramme propriétaire ou dessin protégé reproduit.
+- Les formes inspirées d’une observation doivent être abstraites et documentées.
+- Chaque SVG dispose d’un aperçu sur fond clair, sombre et transparent.
+
+### 5.4 Animation HTML
+
+- Les animations doivent être pilotables par temps déterministe.
+- Expose `window.__ZRM_FRAME__`, `window.__ZRM_FPS__` et `window.__ZRM_DURATION__`.
+- Aucun hasard non seedé.
+- Tous les timings sont exprimés en millisecondes et en frames.
+- Fournis `prefers-reduced-motion`.
+- Les composants vidéo doivent rendre correctement à 24, 25, 30 et 60 fps lorsque pertinent.
+- Prévois fond opaque et alpha lorsque le composant peut être utilisé en overlay.
+
+### 5.5 États obligatoires
+
+Chaque composant fournit au minimum :
+
+`default`, `hover`, `focus-visible`, `selected`, `editing`, `dragging`, `drop-target`, `loading`, `empty`, `error`, `disabled`, `mobile`, `dark-shell`, `light-shell`, `reduced-motion`.
+
+## 6. AssetPlan — 128 assets ciblés
+
+Crée `asset-plan.csv` et `asset-plan.json` avec **128 entrées ciblées**, jamais moins de 64 et jamais plus de 256.
+
+Répartition obligatoire :
+
+- **36** — packages de microcomposants HTML/CSS/SVG
+- **20** — cartons, titres, logos et crédits
+- **16** — textures, masks, grains et overlays
+- **16** — transitions et animations Motion UI
+- **12** — poster, social, vertical et thumbnail derivatives
+- **12** — cues audio et rythmes de montage
+- **8** — localisation, sous-titres et accessibilité
+- **8** — séquences et previews de démonstration
+
+Ajoute des assets spécifiques à la signature :
+
+- un cluster d’assets consacré à **Bleu-noir**
+- un cluster d’assets consacré à **typographie fine espacée**
+- un cluster d’assets consacré à **grondement**
+
+Chaque asset possède :
+
+```text
+asset_id
+theme_id
+component_ids
+role
+media_type
+source_url
+source_domain
+creator
+license
+usage_status
+local_path
+sha256
+width
+height
+duration_ms
+fps
+ratio
+alpha_mode
+dominant_colors
+alt_text
+caption
+focal_point
+safe_crop
+locale
+date_verified
+derivatives
+required_or_optional
+```
+
+Aucun asset ne passe en `ready` sans source et statut de droits explicites. Les captures de recherche restent privées et ne sont jamais réutilisées comme assets finaux sans autorisation.
+
+## 7. Style éditorial, images, vidéo et son
+
+### 7.1 Écriture et information
+
+Déduis de **espace** des règles mesurées concernant :
+
+- longueur des titres ;
+- niveau de langage ;
+- densité ;
+- structure des introductions ;
+- place des citations ;
+- organisation des informations ;
+- CTA et métadonnées ;
+- légendes et crédits.
+
+Ne copie aucune voix identifiable. Produit un style original correspondant au thème public **« Science-fiction »**.
+
+### 7.2 Images
+
+Définis :
+
+- rôles d’images ;
+- ratios ;
+- focal points ;
+- safe crops ;
+- densité d’images ;
+- relation image/texte ;
+- traitement couleur ;
+- légendes ;
+- fallback ;
+- alt text.
+
+Les choix doivent traduire la signature **Bleu-noir, typographie fine espacée, grondement**, pas seulement la palette de **espace**.
+
+### 7.3 Vidéo et Motion UI
+
+Même si la sortie principale est statique, crée les microcomposants animables pertinents : transitions, cartes, intertitres, lower-thirds, titres, séparateurs, CTA ou overlays.
+
+Chaque animation doit être exportable :
+
+```text
+HTML/CSS/JS déterministe
+→ capture Chromium frame par frame
+→ FFmpeg
+→ H.264/H.265/WebM
+→ ProRes 4444 .mov si alpha requis
+```
+
+### 7.4 Son
+
+Le son est conforme au système familial. Produis uniquement jingles courts, cues, impacts, ambiances, room tone ou markers nécessaires. Pas de composition musicale complète.
+
+## 8. Architecture exacte du thème
+
+```text
+themes/volume-a/t-03-6-3/
+  theme.manifest.json
+  calibration.private.json
+  .gitignore
+  README.md
+  tokens/
+  components/
+  compositions/
+    component-lab.html
+    studio-shell.html
+    sample-composition.html
+  assets/
+  motion/
+  audio/
+  sample-content/
+  previews/
+  research/
+    calibration-evidence.private.md
+    calibration-summary.private.md
+    copyright-report.md
+    technical-decisions.md
+  tests/
+    dom.spec.js
+    isolation.spec.js
+    keyboard.spec.js
+    responsive.spec.js
+    visual.spec.js
+    deterministic-render.spec.js
+    assets.spec.js
+```
+
+`calibration.private.json` et tous les fichiers `*.private.*` doivent être inclus dans `.gitignore`.
+
+## 9. Manifestes obligatoires
+
+### 9.1 `theme.manifest.json`
+
+Inclure :
+
+- identité publique du thème ;
+- famille et sous-famille ;
+- version ;
+- namespace ;
+- liste des composants ;
+- tokens ;
+- formats de sortie ;
+- ratios ;
+- capacités de rendu ;
+- dépendances ;
+- asset IDs ;
+- tests ;
+- compatibilité ZenRayMedia ;
+- migrations.
+
+Ne jamais inclure **espace** dans le manifeste public.
+
+### 9.2 `calibration.private.json`
+
+Inclure :
+
+```json
+{
+  "ref": "espace",
+  "type": "studio, festival, cinéaste, franchise ou grammaire de trailer",
+  "visibility": "private",
+  "researchStatus": "pending",
+  "evidenceFile": "research/calibration-evidence.private.md",
+  "minimumEvidenceRows": 20,
+  "minimumReferenceSpecificDecisions": 12
+}
+```
+
+## 10. Previews obligatoires
+
+Produis au minimum :
+
+1. `component-lab-desktop.png` ;
+2. `component-lab-mobile.png` ;
+3. `sample-composition-primary.png` ;
+4. `sample-composition-secondary.png` ;
+5. `transparent-overlay-preview.mov` lorsque pertinent ;
+6. `motion-loop-preview.mp4` lorsque pertinent ;
+7. `social-4x5.png` ;
+8. `story-9x16.png`.
+
+Les previews doivent démontrer les composants séparément puis assemblés. Une unique capture de page ne suffit pas.
+
+## 11. Tests
+
+Teste obligatoirement :
+
+- absence de fuite CSS hors `.zrm-theme-t-03-6-3` ;
+- montage/démontage répété de chaque composant ;
+- sérialisation et restauration identiques ;
+- drag-and-drop clavier et souris ;
+- responsive 1440, 1280, 1024, 768 et 390 px ;
+- contrastes AA ;
+- focus visible ;
+- reduced-motion ;
+- assets manquants ;
+- liens cassés ;
+- licences ;
+- rendu déterministe image par image ;
+- alpha et couleurs ;
+- absence du terme privé **espace** dans les outputs publics.
+
+## 12. Critères de refus
+
+Déclare `NO-GO` si une seule condition est vraie :
+
+- le résultat est principalement une page HTML monolithique ;
+- moins de 36 packages de composants sont produits ;
+- moins de 64 assets sont planifiés ;
+- le plan n’atteint pas la cible de 128 sans justification ;
+- **espace** n’a pas produit au moins 12 décisions spécifiques et sourcées ;
+- le résultat pourrait être obtenu en remplaçant **espace** par une autre référence ;
+- la signature **Bleu-noir, typographie fine espacée, grondement** n’est pas visible dans les composants ;
+- le CSS fuit hors namespace ;
+- les composants ne sont pas sérialisables ou drag-and-dropables ;
+- les états loading, empty, error, mobile ou reduced-motion sont absents ;
+- un asset `ready` n’a pas de source/licence ;
+- la calibration privée apparaît dans un output public ;
+- l’identité finale copie littéralement la référence.
+
+## 13. Format de réponse attendu
+
+Retourne, dans cet ordre :
+
+1. résumé du calibrage **espace** avec preuves ;
+2. décisions originales ZenRayMedia ;
+3. registre des composants ;
+4. arborescence ;
+5. manifests ;
+6. AssetPlan ;
+7. HTML/CSS/JS/SVG individuels ;
+8. compositions de démonstration ;
+9. previews ;
+10. tests ;
+11. rapport droits/licences ;
+12. verdict `GO`, `GO AVEC CORRECTIONS` ou `NO-GO`.
+
+Le livrable n’est terminé que lorsque le thème **« Science-fiction »** est un véritable studio d’assets et de microcomposants, clairement calibré sur **espace**, mais publiquement original et indépendant.

@@ -1,0 +1,363 @@
+# Volume A — Checklist des 256 thèmes corrigés
+
+> Chaque entrée possède un fichier Markdown individuel et utilise explicitement son calibrage privé.
+
+## Famille 01 — Presse & éditorial
+
+### 01-1 — Quotidien national
+
+- [ ] **T-01-1-1 — Une nationale du matin** — calibrage privé : `Le Monde`
+- [ ] **T-01-1-2 — Une de rupture** — calibrage privé : `Libération`
+- [ ] **T-01-1-3 — Quotidien de référence sobre** — calibrage privé : `Le Figaro`
+- [ ] **T-01-1-4 — Quotidien économique saumon** — calibrage privé : `Financial Times`
+- [ ] **T-01-1-5 — Tabloïd d'accroche** — calibrage privé : `The Sun`
+- [ ] **T-01-1-6 — Quotidien régional** — calibrage privé : `Ouest-France`
+- [ ] **T-01-1-7 — Édition du soir** — calibrage privé : `Evening Standard`
+- [ ] **T-01-1-8 — Une d'archive** — calibrage privé : `presse 1960`
+
+### 01-2 — Magazine d'actualité hebdomadaire
+
+- [ ] **T-01-2-1 — Couverture à portrait** — calibrage privé : `Time`
+- [ ] **T-01-2-2 — Dossier de fond** — calibrage privé : `Le Point`
+- [ ] **T-01-2-3 — Hebdo satirique** — calibrage privé : `Le Canard enchaîné`
+- [ ] **T-01-2-4 — Hebdo culturel** — calibrage privé : `Les Inrockuptibles`
+- [ ] **T-01-2-5 — Hebdo international** — calibrage privé : `The Economist`
+- [ ] **T-01-2-6 — Enquête longue** — calibrage privé : `Mediapart`
+- [ ] **T-01-2-7 — Numéro spécial** — calibrage privé : `hors-série`
+- [ ] **T-01-2-8 — Hebdo grand public** — calibrage privé : `Paris Match`
+
+### 01-3 — Longform web & récit
+
+- [ ] **T-01-3-1 — Récit immersif défilant** — calibrage privé : `NYT Snow Fall`
+- [ ] **T-01-3-2 — Lecture pure** — calibrage privé : `Medium`
+- [ ] **T-01-3-3 — Enquête à preuves** — calibrage privé : `ProPublica`
+- [ ] **T-01-3-4 — Carnet d'auteur** — calibrage privé : `Substack essai`
+- [ ] **T-01-3-5 — Récit à chapitres** — calibrage privé : `The Atlantic`
+- [ ] **T-01-3-6 — Reportage photo** — calibrage privé : `National Geographic`
+- [ ] **T-01-3-7 — Récit sombre** — calibrage privé : `longform nocturne`
+- [ ] **T-01-3-8 — Récit court** — calibrage privé : `brève longue`
+
+### 01-4 — Newsletter & infolettre
+
+- [ ] **T-01-4-1 — Infolettre de curation** — calibrage privé : `Brief.me`
+- [ ] **T-01-4-2 — Infolettre d'auteur** — calibrage privé : `Dense Discovery`
+- [ ] **T-01-4-3 — Veille technique** — calibrage privé : `Hacker Newsletter`
+- [ ] **T-01-4-4 — Infolettre d'entreprise** — calibrage privé : `rapport interne`
+- [ ] **T-01-4-5 — Infolettre courte quotidienne** — calibrage privé : `Morning Brew`
+- [ ] **T-01-4-6 — Infolettre visuelle** — calibrage privé : `Sidebar design`
+- [ ] **T-01-4-7 — Infolettre à chapitres** — calibrage privé : `essai hebdomadaire`
+- [ ] **T-01-4-8 — Infolettre d'annonce** — calibrage privé : `lancement produit`
+
+### 01-5 — Presse spécialisée & technique
+
+- [ ] **T-01-5-1 — Revue d'ingénierie** — calibrage privé : `IEEE Spectrum`
+- [ ] **T-01-5-2 — Revue médicale** — calibrage privé : `The Lancet`
+- [ ] **T-01-5-3 — Revue juridique** — calibrage privé : `Dalloz`
+- [ ] **T-01-5-4 — Presse informatique** — calibrage privé : `Ars Technica`
+- [ ] **T-01-5-5 — Revue d'architecture** — calibrage privé : `Detail`
+- [ ] **T-01-5-6 — Presse industrielle** — calibrage privé : `revue métier`
+- [ ] **T-01-5-7 — Revue scientifique grand public** — calibrage privé : `Pour la Science`
+- [ ] **T-01-5-8 — Note technique interne** — calibrage privé : `mémo d'ingénierie`
+
+### 01-6 — Presse people & divertissement
+
+- [ ] **T-01-6-1 — Couverture people** — calibrage privé : `Voici`
+- [ ] **T-01-6-2 — Magazine télé** — calibrage privé : `Télé 7 Jours`
+- [ ] **T-01-6-3 — Presse musicale** — calibrage privé : `Rolling Stone`
+- [ ] **T-01-6-4 — Presse cinéma** — calibrage privé : `Première`
+- [ ] **T-01-6-5 — Presse jeux vidéo** — calibrage privé : `Edge`
+- [ ] **T-01-6-6 — Presse sportive quotidienne** — calibrage privé : `L'Équipe`
+- [ ] **T-01-6-7 — Presse jeunesse** — calibrage privé : `magazine ado`
+- [ ] **T-01-6-8 — Presse potin en ligne** — calibrage privé : `site de brèves`
+
+### 01-7 — Presse gratuite & locale
+
+- [ ] **T-01-7-1 — Quotidien gratuit du matin** — calibrage privé : `20 Minutes`
+- [ ] **T-01-7-2 — Journal municipal** — calibrage privé : `bulletin de ville`
+- [ ] **T-01-7-3 — Gazette de quartier** — calibrage privé : `feuille locale`
+- [ ] **T-01-7-4 — Petites annonces** — calibrage privé : `journal d'annonces`
+- [ ] **T-01-7-5 — Journal d'association** — calibrage privé : `lettre associative`
+- [ ] **T-01-7-6 — Journal scolaire** — calibrage privé : `gazette d'école`
+- [ ] **T-01-7-7 — Journal d'entreprise** — calibrage privé : `interne`
+- [ ] **T-01-7-8 — Affichette d'information** — calibrage privé : `avis public`
+
+### 01-8 — Presse d'opinion & tribune
+
+- [ ] **T-01-8-1 — Tribune signée** — calibrage privé : `page « Idées »`
+- [ ] **T-01-8-2 — Éditorial du directeur** — calibrage privé : `éditorial`
+- [ ] **T-01-8-3 — Débat contradictoire** — calibrage privé : `face-à-face`
+- [ ] **T-01-8-4 — Manifeste** — calibrage privé : `texte collectif`
+- [ ] **T-01-8-5 — Lettre ouverte** — calibrage privé : `courrier public`
+- [ ] **T-01-8-6 — Critique culturelle** — calibrage privé : `chronique`
+- [ ] **T-01-8-7 — Billet d'humeur** — calibrage privé : `chronique courte`
+- [ ] **T-01-8-8 — Dossier polémique** — calibrage privé : `contre-enquête`
+
+## Famille 02 — Télévision & broadcast
+
+### 02-1 — Info continue
+
+- [ ] **T-02-1-1 — Bandeau d'alerte permanente** — calibrage privé : `BFM TV`
+- [ ] **T-02-1-2 — Direct sobre** — calibrage privé : `France Info`
+- [ ] **T-02-1-3 — Info continue internationale** — calibrage privé : `Al Jazeera English`
+- [ ] **T-02-1-4 — Info économique** — calibrage privé : `Bloomberg TV`
+- [ ] **T-02-1-5 — Édition spéciale** — calibrage privé : `événement majeur`
+- [ ] **T-02-1-6 — Alerte rouge** — calibrage privé : `breaking news`
+- [ ] **T-02-1-7 — Résultats en direct** — calibrage privé : `soirée électorale`
+- [ ] **T-02-1-8 — Info continue nocturne** — calibrage privé : `rediffusion`
+
+### 02-2 — Journal télévisé
+
+- [ ] **T-02-2-1 — JT de 20 heures** — calibrage privé : `TF1`
+- [ ] **T-02-2-2 — JT de service public** — calibrage privé : `France 2`
+- [ ] **T-02-2-3 — JT régional** — calibrage privé : `France 3 régions`
+- [ ] **T-02-2-4 — JT étranger de référence** — calibrage privé : `BBC News at Ten`
+- [ ] **T-02-2-5 — Flash d'information** — calibrage privé : `brève de 2 minutes`
+- [ ] **T-02-2-6 — JT du matin** — calibrage privé : `matinale`
+- [ ] **T-02-2-7 — JT en langue des signes** — calibrage privé : `accessibilité`
+- [ ] **T-02-2-8 — JT d'archive** — calibrage privé : `années 1980`
+
+### 02-3 — Plateau & talk
+
+- [ ] **T-02-3-1 — Talk-show du soir** — calibrage privé : `Quotidien`
+- [ ] **T-02-3-2 — Débat politique** — calibrage privé : `émission de débat`
+- [ ] **T-02-3-3 — Talk américain** — calibrage privé : `The Tonight Show`
+- [ ] **T-02-3-4 — Émission culturelle** — calibrage privé : `La Grande Librairie`
+- [ ] **T-02-3-5 — Interview longue** — calibrage privé : `entretien`
+- [ ] **T-02-3-6 — Émission de divertissement** — calibrage privé : `prime time`
+- [ ] **T-02-3-7 — Émission matinale** — calibrage privé : `talk du matin`
+- [ ] **T-02-3-8 — Plateau d'esport** — calibrage privé : `studio de compétition`
+
+### 02-4 — Magazine documentaire TV
+
+- [ ] **T-02-4-1 — Magazine d'investigation** — calibrage privé : `Envoyé spécial`
+- [ ] **T-02-4-2 — Documentaire animalier** — calibrage privé : `BBC Earth`
+- [ ] **T-02-4-3 — Documentaire historique** — calibrage privé : `Arte`
+- [ ] **T-02-4-4 — Reportage de terrain** — calibrage privé : `grand reportage`
+- [ ] **T-02-4-5 — Magazine scientifique** — calibrage privé : `E=M6`
+- [ ] **T-02-4-6 — Documentaire de société** — calibrage privé : `Complément d'enquête`
+- [ ] **T-02-4-7 — Série documentaire premium** — calibrage privé : `Netflix documentaire`
+- [ ] **T-02-4-8 — Documentaire de voyage** — calibrage privé : `carnet de route`
+
+### 02-5 — Météo & service
+
+- [ ] **T-02-5-1 — Bulletin météo national** — calibrage privé : `météo TF1`
+- [ ] **T-02-5-2 — Météo marine** — calibrage privé : `bulletin côtier`
+- [ ] **T-02-5-3 — Météo montagne** — calibrage privé : `bulletin neige`
+- [ ] **T-02-5-4 — Vigilance** — calibrage privé : `alerte météo`
+- [ ] **T-02-5-5 — Info trafic** — calibrage privé : `bulletin routier`
+- [ ] **T-02-5-6 — Qualité de l'air** — calibrage privé : `indice environnemental`
+- [ ] **T-02-5-7 — Programme du jour** — calibrage privé : `grille de chaîne`
+- [ ] **T-02-5-8 — Service public d'urgence** — calibrage privé : `message officiel`
+
+### 02-6 — Télé-achat & promotion
+
+- [ ] **T-02-6-1 — Démonstration produit** — calibrage privé : `télé-achat classique`
+- [ ] **T-02-6-2 — Offre limitée** — calibrage privé : `promotion flash`
+- [ ] **T-02-6-3 — Publireportage** — calibrage privé : `infomercial`
+- [ ] **T-02-6-4 — Bandeau de sponsoring** — calibrage privé : `parrainage d'émission`
+- [ ] **T-02-6-5 — Autopromotion de chaîne** — calibrage privé : `bande-annonce interne`
+- [ ] **T-02-6-6 — Appel aux dons** — calibrage privé : `téléthon`
+- [ ] **T-02-6-7 — Jeu et concours** — calibrage privé : `jeu télévisé`
+- [ ] **T-02-6-8 — Publicité de service** — calibrage privé : `message d'intérêt général`
+
+### 02-7 — Habillage de chaîne
+
+- [ ] **T-02-7-1 — Interprogramme** — calibrage privé : `jingle de chaîne`
+- [ ] **T-02-7-2 — Générique de saison** — calibrage privé : `habillage annuel`
+- [ ] **T-02-7-3 — Bande-annonce de programme** — calibrage privé : `promo`
+- [ ] **T-02-7-4 — Carton de sponsor** — calibrage privé : `avant-programme`
+- [ ] **T-02-7-5 — Mire et fin de diffusion** — calibrage privé : `clôture d'antenne`
+- [ ] **T-02-7-6 — Habillage jeunesse** — calibrage privé : `chaîne enfants`
+- [ ] **T-02-7-7 — Habillage musique** — calibrage privé : `chaîne musicale`
+- [ ] **T-02-7-8 — Habillage sport** — calibrage privé : `chaîne sportive`
+
+### 02-8 — Direct événementiel
+
+- [ ] **T-02-8-1 — Cérémonie officielle** — calibrage privé : `discours d'État`
+- [ ] **T-02-8-2 — Remise de prix** — calibrage privé : `cérémonie de récompenses`
+- [ ] **T-02-8-3 — Concert en direct** — calibrage privé : `captation live`
+- [ ] **T-02-8-4 — Conférence de presse** — calibrage privé : `point presse`
+- [ ] **T-02-8-5 — Défilé national** — calibrage privé : `événement civique`
+- [ ] **T-02-8-6 — Compte à rebours** — calibrage privé : `nouvel an`
+- [ ] **T-02-8-7 — Lancement spatial** — calibrage privé : `direct technique`
+- [ ] **T-02-8-8 — Direct de crise** — calibrage privé : `événement grave`
+
+## Famille 03 — Cinéma & trailer
+
+### 03-1 — Teaser d'annonce
+
+- [ ] **T-03-1-1 — Teaser énigmatique** — calibrage privé : `teaser A24`
+- [ ] **T-03-1-2 — Teaser à date** — calibrage privé : `annonce de sortie`
+- [ ] **T-03-1-3 — Teaser de logo** — calibrage privé : `révélation de titre`
+- [ ] **T-03-1-4 — Teaser sonore** — calibrage privé : `annonce par le son`
+- [ ] **T-03-1-5 — Teaser de franchise** — calibrage privé : `suite attendue`
+- [ ] **T-03-1-6 — Teaser de festival** — calibrage privé : `avant-première`
+- [ ] **T-03-1-7 — Teaser vertical** — calibrage privé : `réseau social`
+- [ ] **T-03-1-8 — Teaser d'archive** — calibrage privé : `ressortie`
+
+### 03-2 — Bande-annonce principale
+
+- [ ] **T-03-2-1 — Structure en trois actes** — calibrage privé : `trailer classique`
+- [ ] **T-03-2-2 — Bande-annonce à cartons** — calibrage privé : `cartons narratifs`
+- [ ] **T-03-2-3 — Bande-annonce silencieuse** — calibrage privé : `tension`
+- [ ] **T-03-2-4 — Bande-annonce d'action** — calibrage privé : `blockbuster`
+- [ ] **T-03-2-5 — Bande-annonce d'auteur** — calibrage privé : `film de festival`
+- [ ] **T-03-2-6 — Bande-annonce à voix off** — calibrage privé : `narration`
+- [ ] **T-03-2-7 — Bande-annonce comique** — calibrage privé : `comédie`
+- [ ] **T-03-2-8 — Bande-annonce internationale** — calibrage privé : `version sous-titrée`
+
+### 03-3 — Générique de début
+
+- [ ] **T-03-3-1 — Générique typographique** — calibrage privé : `Saul Bass`
+- [ ] **T-03-3-2 — Générique noir sur fond** — calibrage privé : `générique sobre`
+- [ ] **T-03-3-3 — Générique intégré au décor** — calibrage privé : `titres dans l'image`
+- [ ] **T-03-3-4 — Générique de série premium** — calibrage privé : `HBO`
+- [ ] **T-03-3-5 — Générique documentaire** — calibrage privé : `ouverture factuelle`
+- [ ] **T-03-3-6 — Générique d'animation** — calibrage privé : `ouverture animée`
+- [ ] **T-03-3-7 — Générique rétro** — calibrage privé : `années 1970`
+- [ ] **T-03-3-8 — Générique minimal** — calibrage privé : `ouverture d'auteur`
+
+### 03-4 — Générique de fin
+
+- [ ] **T-03-4-1 — Défilement classique** — calibrage privé : `générique déroulant`
+- [ ] **T-03-4-2 — Générique à deux colonnes** — calibrage privé : `fonction / nom`
+- [ ] **T-03-4-3 — Générique illustré** — calibrage privé : `animation de fin`
+- [ ] **T-03-4-4 — Générique avec scène post** — calibrage privé : `scène supplémentaire`
+- [ ] **T-03-4-5 — Générique de court métrage** — calibrage privé : `fin brève`
+- [ ] **T-03-4-6 — Générique de jeu vidéo** — calibrage privé : `crédits interactifs`
+- [ ] **T-03-4-7 — Générique de documentaire** — calibrage privé : `mentions et sources`
+- [ ] **T-03-4-8 — Générique de marque** — calibrage privé : `film corporate`
+
+### 03-5 — Film d'auteur & festival
+
+- [ ] **T-03-5-1 — Sélection officielle** — calibrage privé : `Cannes`
+- [ ] **T-03-5-2 — Cinéma indépendant** — calibrage privé : `Sundance`
+- [ ] **T-03-5-3 — Cinéma nordique** — calibrage privé : `festival scandinave`
+- [ ] **T-03-5-4 — Cinéma asiatique d'auteur** — calibrage privé : `festival asiatique`
+- [ ] **T-03-5-5 — Rétrospective** — calibrage privé : `hommage`
+- [ ] **T-03-5-6 — Film expérimental** — calibrage privé : `avant-garde`
+- [ ] **T-03-5-7 — Documentaire de création** — calibrage privé : `making-of d'auteur`
+- [ ] **T-03-5-8 — Film de fin d'études** — calibrage privé : `école de cinéma`
+
+### 03-6 — Blockbuster & franchise
+
+- [ ] **T-03-6-1 — Révélation de logo** — calibrage privé : `franchise majeure`
+- [ ] **T-03-6-2 — Montage d'action** — calibrage privé : `film d'action`
+- [ ] **T-03-6-3 — Science-fiction** — calibrage privé : `espace`
+- [ ] **T-03-6-4 — Super-héros** — calibrage privé : `film de super-héros`
+- [ ] **T-03-6-5 — Fantastique** — calibrage privé : `monde secondaire`
+- [ ] **T-03-6-6 — Catastrophe** — calibrage privé : `film catastrophe`
+- [ ] **T-03-6-7 — Suite annoncée** — calibrage privé : `teaser de suite`
+- [ ] **T-03-6-8 — Univers partagé** — calibrage privé : `annonce croisée`
+
+### 03-7 — Horreur & thriller
+
+- [ ] **T-03-7-1 — Horreur atmosphérique** — calibrage privé : `épouvante lente`
+- [ ] **T-03-7-2 — Horreur brutale** — calibrage privé : `slasher`
+- [ ] **T-03-7-3 — Found footage** — calibrage privé : `caméra trouvée`
+- [ ] **T-03-7-4 — Thriller psychologique** — calibrage privé : `tension mentale`
+- [ ] **T-03-7-5 — Polar** — calibrage privé : `enquête`
+- [ ] **T-03-7-6 — Horreur folklorique** — calibrage privé : `rituel`
+- [ ] **T-03-7-7 — Horreur numérique** — calibrage privé : `écran d'ordinateur`
+- [ ] **T-03-7-8 — Anthologie** — calibrage privé : `segments multiples`
+
+### 03-8 — Animation & famille
+
+- [ ] **T-03-8-1 — Animation grand studio** — calibrage privé : `Pixar`
+- [ ] **T-03-8-2 — Animation japonaise** — calibrage privé : `Ghibli`
+- [ ] **T-03-8-3 — Animation stop-motion** — calibrage privé : `Laika`
+- [ ] **T-03-8-4 — Animation 2D** — calibrage privé : `dessin animé classique`
+- [ ] **T-03-8-5 — Animation adulte** — calibrage privé : `animation pour adultes`
+- [ ] **T-03-8-6 — Comédie familiale** — calibrage privé : `film tout public`
+- [ ] **T-03-8-7 — Aventure jeunesse** — calibrage privé : `film d'aventure`
+- [ ] **T-03-8-8 — Court métrage d'animation** — calibrage privé : `format court`
+
+## Famille 04 — Jeu vidéo
+
+### 04-1 — Trailer d'annonce
+
+- [ ] **T-04-1-1 — Révélation cinématique** — calibrage privé : `reveal de conférence`
+- [ ] **T-04-1-2 — Révélation par le monde** — calibrage privé : `plan d'univers`
+- [ ] **T-04-1-3 — Révélation par le personnage** — calibrage privé : `héros dévoilé`
+- [ ] **T-04-1-4 — Annonce à date** — calibrage privé : `date de sortie`
+- [ ] **T-04-1-5 — Annonce de suite** — calibrage privé : `numéro de série`
+- [ ] **T-04-1-6 — Annonce de remake** — calibrage privé : `jeu restauré`
+- [ ] **T-04-1-7 — Annonce surprise** — calibrage privé : `shadow drop`
+- [ ] **T-04-1-8 — Annonce indépendante** — calibrage privé : `révélation indé`
+
+### 04-2 — Trailer de gameplay
+
+- [ ] **T-04-2-1 — Démonstration commentée** — calibrage privé : `gameplay walkthrough`
+- [ ] **T-04-2-2 — Montage d'action** — calibrage privé : `gameplay monté`
+- [ ] **T-04-2-3 — Vitrine de mécanique** — calibrage privé : `focus système`
+- [ ] **T-04-2-4 — Comparatif de performance** — calibrage privé : `mode technique`
+- [ ] **T-04-2-5 — Trailer de monde ouvert** — calibrage privé : `exploration`
+- [ ] **T-04-2-6 — Trailer de combat** — calibrage privé : `système de combat`
+- [ ] **T-04-2-7 — Trailer coopératif** — calibrage privé : `multijoueur`
+- [ ] **T-04-2-8 — Trailer d'accessibilité** — calibrage privé : `options`
+
+### 04-3 — Trailer de lancement
+
+- [ ] **T-04-3-1 — Lancement épique** — calibrage privé : `launch trailer`
+- [ ] **T-04-3-2 — Lancement à citations** — calibrage privé : `critiques`
+- [ ] **T-04-3-3 — Lancement en prise de vues réelles** — calibrage privé : `live action`
+- [ ] **T-04-3-4 — Lancement narratif** — calibrage privé : `histoire`
+- [ ] **T-04-3-5 — Lancement de portage** — calibrage privé : `nouvelle plateforme`
+- [ ] **T-04-3-6 — Lancement d'édition** — calibrage privé : `édition spéciale`
+- [ ] **T-04-3-7 — Lancement vertical** — calibrage privé : `réseau social`
+- [ ] **T-04-3-8 — Lancement d'accès anticipé** — calibrage privé : `early access`
+
+### 04-4 — Habillage HUD & interface
+
+- [ ] **T-04-4-1 — HUD militaire** — calibrage privé : `tactique`
+- [ ] **T-04-4-2 — HUD science-fiction** — calibrage privé : `interface holographique`
+- [ ] **T-04-4-3 — HUD minimal** — calibrage privé : `immersion`
+- [ ] **T-04-4-4 — HUD rétro** — calibrage privé : `pixel`
+- [ ] **T-04-4-5 — HUD de course** — calibrage privé : `simulation`
+- [ ] **T-04-4-6 — HUD de jeu de rôle** — calibrage privé : `statistiques`
+- [ ] **T-04-4-7 — HUD de stratégie** — calibrage privé : `vue tactique`
+- [ ] **T-04-4-8 — HUD de survie** — calibrage privé : `jauges vitales`
+
+### 04-5 — Esport & compétition
+
+- [ ] **T-04-5-1 — Habillage de tournoi** — calibrage privé : `finale internationale`
+- [ ] **T-04-5-2 — Présentation d'équipe** — calibrage privé : `roster`
+- [ ] **T-04-5-3 — Récapitulatif de manche** — calibrage privé : `résumé`
+- [ ] **T-04-5-4 — Tableau de classement** — calibrage privé : `ligue`
+- [ ] **T-04-5-5 — Compte à rebours d'ouverture** — calibrage privé : `avant-match`
+- [ ] **T-04-5-6 — Analyse d'après-match** — calibrage privé : `plateau`
+- [ ] **T-04-5-7 — Cérémonie de titre** — calibrage privé : `remise de trophée`
+- [ ] **T-04-5-8 — Habillage de créateur** — calibrage privé : `tournoi communautaire`
+
+### 04-6 — Indépendant & pixel
+
+- [ ] **T-04-6-1 — Pixel art rétro** — calibrage privé : `8 bits`
+- [ ] **T-04-6-2 — Pixel art moderne** — calibrage privé : `16 bits enrichi`
+- [ ] **T-04-6-3 — Dessiné à la main** — calibrage privé : `illustration`
+- [ ] **T-04-6-4 — Minimalisme géométrique** — calibrage privé : `formes pures`
+- [ ] **T-04-6-5 — Jeu narratif** — calibrage privé : `roman visuel`
+- [ ] **T-04-6-6 — Jeu de plateforme** — calibrage privé : `précision`
+- [ ] **T-04-6-7 — Jeu contemplatif** — calibrage privé : `ambiance`
+- [ ] **T-04-6-8 — Jeu d'auteur** — calibrage privé : `signature personnelle`
+
+### 04-7 — Mise à jour & saison
+
+- [ ] **T-04-7-1 — Bande-annonce de saison** — calibrage privé : `nouvelle saison`
+- [ ] **T-04-7-2 — Notes de version illustrées** — calibrage privé : `patch notes`
+- [ ] **T-04-7-3 — Nouveau contenu** — calibrage privé : `extension`
+- [ ] **T-04-7-4 — Événement limité** — calibrage privé : `événement temporaire`
+- [ ] **T-04-7-5 — Collaboration croisée** — calibrage privé : `crossover`
+- [ ] **T-04-7-6 — Retour de contenu** — calibrage privé : `rediffusion`
+- [ ] **T-04-7-7 — Feuille de route** — calibrage privé : `roadmap`
+- [ ] **T-04-7-8 — Message de fin de service** — calibrage privé : `arrêt de service`
+
+### 04-8 — Édition collector & précommande
+
+- [ ] **T-04-8-1 — Déballage de collector** — calibrage privé : `unboxing`
+- [ ] **T-04-8-2 — Comparatif d'éditions** — calibrage privé : `tableau d'offres`
+- [ ] **T-04-8-3 — Bonus de précommande** — calibrage privé : `incitation`
+- [ ] **T-04-8-4 — Édition d'art** — calibrage privé : `artbook`
+- [ ] **T-04-8-5 — Figurine et objet** — calibrage privé : `produit dérivé`
+- [ ] **T-04-8-6 — Bande originale physique** — calibrage privé : `vinyle`
+- [ ] **T-04-8-7 — Édition de studio** — calibrage privé : `boutique officielle`
+- [ ] **T-04-8-8 — Édition anniversaire** — calibrage privé : `rééditions`

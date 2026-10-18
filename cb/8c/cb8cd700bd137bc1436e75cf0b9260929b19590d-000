@@ -1,0 +1,107 @@
+# ZenRayMedia — Prompt affiné, phrase par phrase
+
+Règle de ce fichier : **le texte original est conservé intégralement** (colonne « Original », verbatim, fautes
+comprises). La colonne « Affiné » ne change jamais le sens : elle nomme, précise, chiffre et rend exécutable.
+En cas de doute d'interprétation, **l'original fait foi** (fallback).
+
+---
+
+## 1. Cadrage de la demande
+
+| # | Original (verbatim) | Affiné |
+|---|---|---|
+| 1 | « commencer à construire le plan pour pas encore le code » | Livrer d'abord la **conception** : doctrine produit, architecture, modèle de données, découpage en tâches. Zéro ligne de code applicatif à ce stade. |
+| 2 | « concevoir la documentation de ce produit on commence uniquement par le plan » | Produire la **documentation fondatrice** du produit (le document qu'un studio lit avant d'écrire une ligne), pas un README a posteriori. |
+| 3 | « hormis si tu veux faire du design » | Exception unique : le **design HTML** (maquettes) est autorisé, car une maquette est un document de conception, pas de l'implémentation. |
+| 4 | « HTML = l'UI global de ZenRayProgress. ne te focus pas dessus pour le moment ou fais une lecture rapide » | `ui-components-zenray-v14.html` est la **source de vérité visuelle**. Extraction ciblée (tokens, primitives, composants), jamais lecture intégrale — 314 197 caractères, le coût de lecture ne se justifie pas. |
+| 5 | « Je conserve son système de verre, ses états dark/light et ses composants existants au lieu de repartir d'une esthétique générique. » | Contrainte dure : **hériter**, ne pas réinventer. Le verre (`.glass`), le bruit 5 %, le rim haut/bas, les jeux de tokens `--plan-*` / `--theme-*` et la bascule dark/light sont repris tels quels. |
+| 6 | « chaque sous composants de l'app doit être vue comme un sous composants individuels à traiter comme une tâche entière » | Découpage **atomique** : chaque composant a un identifiant, une définition de « fini », ses dépendances et son test. Pas de tâche fourre-tout. |
+| 7 | « N'utilise aucun raccourci ne soit jamais fénéant. » | Aucune ellipse, aucun « etc. », aucune liste tronquée. Ce qui est annoncé est produit en entier. |
+
+---
+
+## 2. Thèse produit
+
+| # | Original (verbatim) | Affiné |
+|---|---|---|
+| 8 | « Construire une application qui permet atomiquement grâce à des presets ultra pro type Apple / Notion-like UI pouvoir génère n'importe quel type de média » | Construire une application dont l'**unité atomique est le preset** : un preset encapsule une direction artistique complète et produit, seul, un média fini de qualité professionnelle. L'interface reste au niveau Apple / Notion : sobre, dense, sans jargon. |
+| 9 | « à l'ère de Naval : Code et Media. » | Doctrine : les deux seuls leviers à **effet démultiplicateur sans coût marginal** (Naval Ravikant : *code and media are permissionless leverage*). ZenRayMedia est la fusion des deux — du code qui fabrique du média. |
+| 10 | « Via AI construire le software ultime qui permettrait une edition fine du texte, de la vidéo, et des images, des effets spéciaux (2D ou Motion UI…) » | L'IA n'est pas une fonctionnalité de l'application : elle est le **moyen de fabrication** de l'application et de ses gabarits. Périmètre d'édition : texte, image, vidéo, effets 2D et Motion UI. |
+| 11 | « l'AI ne permettant pas encore à bas coup de générer de la 3D type Houdini, la 2D et le Motion UI sont accessibles car code infini » | Arbitrage assumé et **daté (2026-07)** : la 3D procédurale de niveau Houdini n'est pas atteignable à bas coût par génération de code ; la 2D et le Motion UI le sont, parce qu'ils s'expriment intégralement en code. La 3D entre par **import d'assets**, jamais par génération. |
+| 12 | « à travers différents type de media : Video, Articles, Trailer, Affiche flyer, pubs, la télévision, le cinéma, Internet, la presse, les jeux vidéos, la 3D, la mode, le luxe, ... tout domaine, tout medias. » | Couverture cible : **tout support diffusable**. Formalisé en 16 familles × 8 sous-familles × 8 variantes = **1024 thèmes** (catalogue en `05-THEMES-*`). |
+| 13 | « Le tout dans un resultat ultra premium. Le but est de pouvoir s'adresser à n'importe quel public en fonction du contexte » | Critère d'acceptation unique : **un professionnel du domaine visé ne doit pas pouvoir dire que c'est fait à la maison**. Le thème encode le registre (public, ton, codes du métier), pas seulement les couleurs. |
+
+---
+
+## 3. Stack et pipeline
+
+| # | Original (verbatim) | Affiné |
+|---|---|---|
+| 14 | « Stack Technique : tout type de librairies et de code. + générations procédurales de code outils, codex, claude code, chatgpt » | Aucune restriction de bibliothèque. Les **outils sont eux-mêmes générés** par agent (Claude Code / Codex) : un gabarit = du code produit à la demande, pas un fichier écrit à la main. |
+| 15 | « Génération HTML pour le design de composants réutilisables, idem pour media vidéo. » | **HTML/CSS est le substrat universel de composition** : un article, une affiche, un bandeau TV, un générique et un carrousel Instagram sont le même artefact rendu différemment. |
+| 16 | « HTML ensuite convertit en .mov pour la plage transparent. Animation visionnable ProRes 4444 » | Chaîne vérifiée : HTML → séquence RGBA (Chromium sans fond) → `.mov` **ProRes 4444, `yuva444p10le`** (couche alpha réelle, vérifiée disponible dans ffmpeg 8.1.1 local). |
+| 17 | « Montage pour vidéo : Code HTML + FFMPEG. convertit en media vidéo » | Le **montage est déclaratif** : une timeline JSON compilée en graphe de filtres ffmpeg. Aucune manipulation manuelle, tout est rejouable. |
+| 18 | « Carte blanche pour le reste. mais besoin de backbone solide » | Liberté sur les choix internes, à condition d'une **colonne vertébrale explicite** : contrats de données stables, rendu déterministe, un seul endroit par constante. |
+
+---
+
+## 4. Périmètre son
+
+| # | Original (verbatim) | Affiné |
+|---|---|---|
+| 19 | « Medias exclus : rap, composition musicale complète, musique artiste » | **Hors périmètre** : composition musicale originale, écriture de morceaux, production d'artiste. Ni généré, ni imité. |
+| 20 | « Medias inclus : Music adapté au media, clip sonore, sound design. (Au format texte, la génération technique de ce type de media serait à l'heure actuelle trop complexe.) » | **Dans le périmètre** : sélection et placement d'un lit musical existant sous le média, courts éléments sonores fonctionnels (whoosh, impact, UI tick), design sonore par emplacements. Traité comme une **partition textuelle** (slots + timecodes), jamais comme un rendu audio génératif. |
+
+---
+
+## 5. Le système de gabarits
+
+| # | Original (verbatim) | Affiné |
+|---|---|---|
+| 21 | « à partir de mes notes l'application web self hosté qui permettrait de créer à la volée un article professionel » | Entrée = **les notes existantes** (Markdown, pages Create de ZenRayProgress). Sortie = un livrable professionnel, en une opération, sans quitter l'application. Hébergement **auto-hébergé** (poste local + Vercel pour l'interface). |
+| 22 | « Peut importe le media a travers des styles différents et des templates que je vais créer ensuite mais il me faut le core design de l'application » | Le **noyau** (interface, contrats, moteur) est livré d'abord ; les gabarits sont du **contenu ajouté ensuite**, sans toucher au noyau. C'est la condition pour en ajouter mille. |
+| 23 | « les templates seront créées ensuite comme des skills et je vais en créer environ 128. à termes 1024 » | Correction technique nécessaire (détaillée en `02-RISQUES`) : **1024 skills sont impossibles** — chaque skill charge sa description en contexte. Un thème est une **donnée** (fichier de tokens) dans un catalogue interrogeable ; le skill est l'**atelier** qui crée et valide un thème. Un atelier, mille thèmes. |
+| 24 | « en fonctions de style comme ceci : BFM TV, influenceur YouTube, social media → Instagram, TikTok, podcast. » | Les marques réelles servent de **repères de calibrage internes** (champ privé `ref`). Le nom public d'un thème est un archétype de genre (« chaîne d'info continue »), jamais une marque déposée. |
+| 25 | « pour créer ZenRayMedia comme un empire adaptatif, extremement puissant. » | Objectif : **un brief, mille formes**. La puissance ne vient pas du nombre de fonctionnalités mais du découplage `Brief × Thème × Format`. |
+| 26 | « L'idéal serait d'être une agence media presse type LeMonde,LeCrayon, Plus une agence de Media de communications… Plus une agence com + vfx style weta… Plus un studio de jeux vidéo vfx pour les trailers » | Quatre métiers réunis dans une seule surface : **rédaction de presse**, **communication de créateur**, **habillage/VFX 2D**, **trailer de jeu vidéo**. Chacun devient une famille de thèmes, pas une application séparée. |
+| 27 | « Pour chacun de ces exemples prégénère les meilleurs exemples des domaines. » | Chaque famille est livrée avec ses **références de calibrage** : ce qui fait référence dans le métier, pour que le rendu vise le haut du panier et non la moyenne. |
+
+---
+
+## 6. Interface
+
+| # | Original (verbatim) | Affiné |
+|---|---|---|
+| 28 | « pour l'instant le html que tu va générer va se concentrer uniquement sur les buttons UI et agencement simple pour créer les components / l'edition vidéo etc. » | Périmètre de la maquette : **contrôles et disposition**, rien d'autre. Pas de logique, pas de données réelles. |
+| 29 | « Faut que tu le penses comme un site web qui réunit Davinci / Photoshop / VFX software / HTML add on on video or web article. » | Modèle mental : la **puissance** d'un logiciel de post-production, la **charge cognitive** d'une page web. Un professionnel doit retrouver ses repères sans qu'un débutant soit noyé. |
+| 30 | « je veux que ça reste d'une simplicité crucial avec une UI type Notion Like ou Apple Liquid glass. » | Contrainte non négociable : **Notion pour la structure**, **Liquid Glass pour la matière**. Densité d'information élevée, décoration nulle. |
+| 31 | « tu dois penser design soustractif » | Règle de conception : un élément n'entre dans l'écran que si son retrait casse une tâche. En cas de doute, on retire. |
+| 32 | « tu dois vraiment focus sur le minimum de clique. » | Objectif chiffré : **≤ 3 actions** de la note au livrable rendu. Toute action supplémentaire doit être justifiée par écrit. |
+| 33 | « ton esthétique global et tes choix doivent être fin et éclairés comme des studios de renom comme Kojima Productions / Sony Productions » | Niveau d'exigence : chaque choix (espacement, courbe, durée, graisse) est **motivé**, jamais décoratif. Le silence visuel est un choix actif. |
+| 34 | « tu peux créer autant de versions et sur la même version autant de page » | Livraison autorisée en **plusieurs versions** et en plusieurs pages par version, pour comparer des partis pris plutôt que défendre un seul. |
+
+---
+
+## 7. Prompt canonique (version courte, réutilisable telle quelle)
+
+> Conçois **ZenRayMedia** : application web auto-hébergée qui transforme mes notes en médias professionnels finis
+> (article, vidéo, trailer, affiche, publicité, post social, habillage TV), en découplant strictement
+> **contenu × thème × format**. HTML/CSS est le substrat de composition ; le rendu vidéo passe par une capture
+> déterministe en séquence RGBA puis ProRes 4444 alpha et ffmpeg. Les gabarits sont des **données** dans un
+> catalogue de 1024 thèmes (16 familles × 8 sous-familles × 8 variantes), pas des skills. L'interface hérite
+> **intégralement** du système visuel de `ui-components-zenray-v14.html` (verre, bruit 5 %, rim, tokens
+> `--plan-*`, dark/light) et vise **≤ 3 actions** entre la note et le livrable. Exclus : composition musicale
+> et 3D générative. Livre d'abord le **plan et la documentation**, ensuite les maquettes HTML, jamais de code
+> applicatif avant validation. Traite chaque sous-composant comme une tâche entière, sans raccourci.
+
+---
+
+## 8. Vocabulaire à installer
+
+| Terme | Définition | Pourquoi il t'est utile |
+|---|---|---|
+| **Découplage** (*decoupling*) | Séparer deux choses qui changent à des rythmes différents, pour les faire varier indépendamment. | C'est le mot exact de ta thèse : « un brief, mille formes ». Contenu et style ne changent pas au même rythme — les séparer est ce qui rend l'empire adaptatif possible. |
+| **Déterminisme** (rendu déterministe) | Même entrée → même sortie, bit pour bit, quelle que soit la machine ou l'heure. | C'est la propriété qui sépare un pipeline vidéo professionnel d'un bricolage. Sans elle, une re-génération produit une vidéo différente et tu ne peux plus rien réparer. |
+| **Substrat** | La matière commune sur laquelle tout est construit. | Ici HTML/CSS. Dire « HTML est mon substrat » explique en un mot pourquoi article, affiche et générique sont le même objet. |
+| **Registre** | Le niveau de langue et les codes d'un métier ou d'un public. | Ton besoin réel — « s'adresser à n'importe quel public » — n'est pas un besoin de couleurs, c'est un besoin de registre. Un thème encode un registre. |
+| **Progressive disclosure** (déjà dans tes notes) | Ne montrer que l'essentiel, révéler le reste à la demande. | C'est le nom savant de ton « minimum de clics » ; l'employer te fait gagner une phrase d'explication à chaque fois. |

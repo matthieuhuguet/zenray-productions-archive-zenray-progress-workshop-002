@@ -1,0 +1,59 @@
+# Skills d'upload par type de média (2026-07-04)
+
+4 Claude Code SKILLS créés sous `.claude/skills/` à la racine de ce repo (ZenRayProgress), pour uploader
+du contenu en langage naturel sans passer par l'UI web. Format calqué sur `~/.claude/skills/archive-organize/SKILL.md`
+(frontmatter YAML `name`/`description` + Markdown détaillé, autonome).
+
+## 1. `zenray-upload-video`
+Fichier : `.claude/skills/zenray-upload-video/SKILL.md`
+
+Ajoute une ou plusieurs vidéos YouTube (nœud `.media.json {type:'youtube'}`), via `src/lib/youtubeLink.js`
+(`createYoutubeLinkNode` / `createYoutubeLinkNodesBatch`). Nécessite le serveur local `:3000`
+(`scripts/dev-server.sh`).
+
+Déclencheurs : "ajoute cette vidéo YouTube", "mets ce lien YouTube dans tel dossier", liens
+youtu.be/youtube.com fournis avec intention d'ajout. Couvre le lot (un lien par ligne).
+
+## 2. `zenray-upload-audio`
+Fichier : `.claude/skills/zenray-upload-audio/SKILL.md`
+
+Même mécanisme que la vidéo, avec `opts.audioOnly:true` (widget compact façon YouTube Music). Mêmes
+fonctions `src/lib/youtubeLink.js`, discriminant `audioOnly` en plus dans le manifeste.
+
+Déclencheurs : "ajoute cette musique", "cette piste audio YouTube", "cette chanson", mots
+"musique"/"piste"/"chanson"/"morceau" + lien YouTube. Distinct de `zenray-upload-video` (celui-ci sert
+la vidéo classique, DJI/clips).
+
+## 3. `zenray-upload-image`
+Fichier : `.claude/skills/zenray-upload-image/SKILL.md`
+
+Uploade une ou plusieurs images locales vers ZenRayShards (`scripts/upload-img-list.mjs`, réutilise
+`scripts/img-ingest.mjs` : `makeImgShardCtx`/`ingestImageBulk`/`resolveImgManifest`). Règle documentée :
+original ≤ 20 Mo → flux normal (poussé tel quel + vignette webp) ; > 20 Mo → conversion AVIF CRF25
+d'abord (`avifenc --min 25 --max 25 --speed 10 --jobs 1`), PUIS sharding dans tous les cas (géré
+nativement par le pipeline, pas une étape manuelle séparée). Barreau d'affichage (>19 Mo clair) généré
+automatiquement.
+
+Déclencheurs : "uploade cette image/ces photos", chemin de fichier image + intention d'ajout.
+
+## 4. `zenray-backup-mirror`
+Fichier : `.claude/skills/zenray-backup-mirror/SKILL.md`
+
+Documente `Scripts/backup-mirror.mjs` (repo Memory, écrit par un agent en parallèle — confirmé existant
+et fonctionnel au moment de la rédaction de ce skill, interface vérifiée contre le fichier réel).
+Deuxième exemplaire indépendant (froid, repos privés `zenray-shards-<hex12>`) des binaires ZenRayShards,
+chunks 95 Mo, index `pages/_backup-index/index.json`, idempotent par sha256.
+
+Flags réels : `--dry-run`/`--dry`, `--limit=N`, `--path="<chemin>"`. Garde-fou intégré au script : refuse
+un run complet sans `--limit` ni `--path`, sauf `--i-know-what-im-doing` — qui ne doit être ajouté
+qu'après confirmation explicite de Matthieu. Lancement en tâche de fond documenté (`nohup` + `disown`,
+logs `~/.zr-runs/`), monitoring via `/loop` ou polling ponctuel (jamais de `sleep` en boucle).
+
+Déclencheurs : "lance le backup", "vérifie le second backup", "sauvegarde en double tel dossier".
+
+## Vérifications faites
+
+- `git status --short` : seuls les 4 dossiers de skills ajoutés côté périmètre de cette tâche (plus
+  `scripts/backup-mirror.mjs` et `docs/ZenRayProgress-FINAL-ARCHITECTURE.md`, produits par l'agent
+  parallèle, hors périmètre de cette tâche). Aucun fichier `src/` modifié.
+- `npm run build` : vert (`✓ built in 8.15s`).

@@ -1,0 +1,272 @@
+Je n'ai pas besoin de lire le code : les analyses fournissent les références fichier:ligne réelles. Voici le document de design.
+
+---
+
+# Pipeline vidéo ZenRayProgress — Design de fiabilisation, vitesse et UX
+
+## 1. DIAGNOSTIC de l'échec `active-vid-shard: fetch`
+
+### Cause la plus probable
+
+L'erreur naît dans **`scripts/video-hls-lib.mjs:57-64`**, fonction `activeVidShard(apiBase, need)`. Elle fait un `fetch` POST vers `/api/upload-shard?action=active-vid-shard&need=<octets>`. Le suffixe `: fetch` du message d'erreur indique que **l'exception est levée au niveau du `fetch()` lui-même** (réseau / timeout), pas par une réponse serveur structurée.
+
+Chaîne logique :
+
+- Le transcodage a réussi (750 segments, 3.6 GB dans `/tmp/zr_hls/out/<id>`).
+- Au moment du push, **`pushHls()` (`video-hls-lib.mjs:306-445`) appelle `activeVidShard()` à la ligne 316**, AVANT de pousser le moindre blob.
+- 3.6 GB + `need` franchit le seuil doux 4.5 GB → le serveur (`server/upload-shard.js:445-468`) tente un **rollover** : créer un repo public `zenray-vid-NN+1`, attendre `waitShardReady()`, poser un README, basculer l'état.
+- Cette opération serveur est **longue** (création de repo GitHub + propagation). Le `fetch` client n'a **aucun timeout configuré** (`hlsTranscoder.js:60-64`, `shardApi()` sans `AbortController`). Soit le fetch expire côté OS, soit `ghAbs()`/`ghRetry()` côté serveur échoue et la réponse n'arrive jamais proprement.
+
+**Localisation de la levée :** `video-hls-lib.mjs:64` → `throw 'active-vid-shard: ' + (r.error || 'fail')`. Mais le message observé est `: fetch`, donc l'échec est en amont, dans le `.catch()` du `fetch` (cf. `upload-shard.js:62` cité comme point typique de capture réseau). Le mot `fetch` est le label du rejet réseau, pas une `r.error` serveur.
+
+### Hypothèses classées
+
+1. **Rollover lent → timeout réseau** (le plus probable) : création du nouveau shard public dépasse la patience du fetch. Cohérent avec « après 750 segments » = pile au franchissement du seuil.
+2. **GITHUB_TOKEN expiré/absent** au moment du push (`upload-shard.js:310` → `{error:'no-token'}`). Moins probable car donnerait `: no-token`, pas `: fetch`.
+3. **Serveur local non démarré / port mort** pendant le long transcodage.
+
+### Comment confirmer (3 commandes)
+
+```bash
+# 1. Le transcodage local est-il intact ? (preuve de reprise possible)
+ls -la /tmp/zr_hls/out/*/  | tail; du -sh /tmp/zr_hls/out/*
+
+# 2. Rejouer l'appel exact à la main, mesurer la latence
+time curl -sS -X POST "http://localhost:PORT/api/upload-shard?action=active-vid-shard&need=4000000000" -w '\n%{http_code} %{time_total}s\n'
+
+# 3. État du drive vidéo (seuil franchi ?)
+gh api repos/<owner>/zenray-data/contents/pages/.zr-vid-drive.json --jq '.content' | base64 -d
+```
+
+Si (2) répond lentement ou jamais → confirme le timeout rollover. Si (1) montre 750 `.ts` présents → confirme que **seul le push est tombé, retranscoder est inutile**.
+
+---
+
+## 2. PHASE 1 — Fiabilité : correctif + reprise au push
+
+Objectif : (a) ne plus crasher sur un fetch réseau, (b) si le transcodage `/tmp` existe, reprendre **directement au push** sans retranscoder.
+
+### 2.1 `scripts/video-hls-lib.mjs` — timeout + retry sur `activeVidShard`
+
+`activeVidShard()` (lignes 57-64) doit tolérer la lenteur du rollover.
+
+- Ajouter un `AbortController` avec timeout long (**120 s**, le rollover crée un repo).
+- Envelopper le `fetch` dans un retry exponentiel (3 tentatives, 2s/6s/18s). Le rollover serveur est idempotent côté 422 déjà-existant (`upload-shard.js:450`), donc rejouer est sûr.
+- Ne `throw` qu'après épuisement des retries.
+
+```js
+async function activeVidShard(apiBase, need) {
+  let last;
+  for (let i = 0; i < 3; i++) {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 120_000);
+    try {
+      const r = await fetch(`${apiBase}/api/upload-shard?action=active-vid-shard&need=${need}`,
+        { method:'POST', signal: ac.signal }).then(x => x.json());
+      if (r && r.repo) return r.repo;
+      last = r && r.error;
+    } catch (e) { last = e.name === 'AbortError' ? 'timeout' : 'fetch'; }
+    finally { clearTimeout(t); }
+    await new Promise(s => setTimeout(s, 2000 * 3 ** i));
+  }
+  throw 'active-vid-shard: ' + (last || 'fail');
+}
+```
+
+### 2.2 `scripts/video-hls-lib.mjs:45` — NE PAS nettoyer `/tmp` si le push échoue
+
+C'est le point critique pour la reprise. Aujourd'hui `rm(result.outDir)` (ligne 45 dans `video-hls.mjs`, post-`pushHls`) s'exécute après succès. **Risque déjà identifié** : un `rm` prématuré détruit les 750 segments.
+
+- Dans `video-hls.mjs:1-51` : encadrer `pushHls()` dans un `try`. **Le `rm(outDir)` ne s'exécute QUE dans le `then`/succès.** Si `pushHls` rejette → laisser `/tmp/zr_hls/out/<id>` intact et logger le chemin.
+
+```js
+try {
+  const pushed = await pushHls(result);
+  await rm(result.outDir, { recursive: true, force: true }); // succès uniquement
+  return pushed;
+} catch (e) {
+  console.error(`[push échoué] transcodage conservé: ${result.outDir}`);
+  console.error(`reprise: node scripts/video-hls.mjs --resume ${result.outDir} --push`);
+  throw e;
+}
+```
+
+### 2.3 `scripts/video-hls.mjs` — flag `--resume <outDir>`
+
+Nouveau chemin d'entrée qui **saute `transcodeHls()`** et reconstruit l'objet `result` depuis un `outDir` existant, puis appelle `pushHls()`.
+
+- Lire `<outDir>/master.m3u8`, `stream_*.m3u8`, lister `seg_*.ts`, recharger la clé/IV depuis le keyinfo conservé.
+- Persister un petit `outDir/.zr-meta.json` à la fin de `transcodeHls()` (id, dest, keyPath, IV, liste streams) pour que `--resume` n'ait rien à deviner.
+
+```js
+if (argv.resume) {
+  const result = loadResult(argv.resume);   // lit .zr-meta.json + scanne les .ts
+  return await pushHls(result);             // zéro ré-encodage
+}
+```
+
+### 2.4 `pushHls()` — reprise *partielle* du push (idempotence des blobs)
+
+Si le push tombe à mi-chemin (ex. 400/750 segments poussés), éviter de re-pousser les blobs déjà présents.
+
+- `video-hls-lib.mjs:330-352` hashe déjà chaque `.ts` en SHA-256 → le nom de blob est **déterministe** (`ab/cd/<hash>.ts`).
+- Avant `pushBlobs()` (ligne 356), interroger le shard public pour les hashes déjà présents (un `git tree` ou HEAD jsDelivr) et **filtrer `binBlobs`** sur les manquants seulement. La Git Data API tolère le re-push, mais filtrer économise bande passante et temps sur une reprise.
+
+**Effort Phase 1 : faible-moyen. Gain : élimine la perte des 3.6 GB transcodés, rend l'échec réseau non destructif.**
+
+---
+
+## 3. PHASE 2 — Vitesse : remux conditionnel + encodage matériel M5 Max
+
+Le pipeline actuel (`video-hls-lib.mjs:165-181`) impose `libx264 -preset fast -crf 21` à **toute** source, même déjà H.264/AAC compatible. C'est le gaspillage principal.
+
+### 3.1 `scripts/video-hls-lib.mjs` — détection codec via ffprobe (déjà disponible)
+
+`video-mse-lib.mjs:56-75` expose déjà `probe()` (lit `codec_name`) et `codecOf()` (lit `mime_codec_string`, ex. `avc1.4d401f`, `mp4a.40.2`). Réutiliser ces fonctions au lieu d'en créer.
+
+Ajouter dans `transcodeHls()` une fonction `pickStrategy(probe)` :
+
+```js
+function pickStrategy(p) {
+  const v = p.video[0], a = p.audio[0];
+  const h264_8bit = v.codec_name === 'h264' && v.pix_fmt === 'yuv420p' && v.profile !== 'High 10';
+  const aacOk     = !a || a.codec_name === 'aac';
+  const gopOk     = v.gop_size && v.gop_size <= 6 * v.fps; // keyframes <= 6s
+  if (h264_8bit && aacOk && gopOk) return 'remux';   // -c copy
+  if (h264_8bit && aacOk)          return 'remux_kf'; // copy vidéo impossible car GOP -> ré-encode léger
+  return 'hw';                                        // videotoolbox
+}
+```
+
+### 3.2 Branche REMUX (`-c copy`) — gain ~x12-15
+
+Pour les sources H.264 8-bit yuv420p + AAC avec GOP aligné (rare mais idéal) :
+
+```
+ffmpeg -i <src> -c copy -map 0:v:0 -map 0:a -f hls \
+  -hls_time 6 -hls_segment_type mpegts -hls_key_info_file <keyinfo> \
+  -hls_playlist_type vod -master_pl_name master.m3u8 ...
+```
+
+Aucun ré-encodage. Le chiffrement AES-128 MPEG-TS reste appliqué par ffmpeg au moment de la segmentation (`video-hls-lib.mjs:160-164` confirme : MPEG-TS obligatoire pour AES, donc `-c copy` reste compatible).
+
+**Contrainte keyframe** : `-c copy` ne peut couper qu'aux keyframes existantes. Si GOP source = 30 (cas fréquent), les segments seront irréguliers → mauvais seek. D'où la branche `remux_kf` :
+
+### 3.3 Branche encodage matériel `h264_videotoolbox` — gain ~x4-6
+
+Pour H.264 mal-GOP ou tout ce qui n'est pas remuxable (MKV, 10-bit, ProRes) :
+
+```
+ffmpeg -i <src> -c:v h264_videotoolbox -b:v 6M -profile:v main \
+  -g 144 -keyint_min 144 -force_key_frames "expr:gte(t,n_forced*6)" \
+  -c:a aac -b:a 160k \
+  -f hls -hls_time 6 -hls_segment_type mpegts -hls_key_info_file <keyinfo> ...
+```
+
+Points clés :
+- `-force_key_frames expr:gte(t,n_forced*6)` garantit une keyframe **exactement toutes les 6 s** → segments propres (résout le risque keyframe alignment).
+- `-profile:v main` car `h264_videotoolbox` ne fait pas High10 (risque cité).
+- Pour sources HEVC futures : `-c:v hevc_videotoolbox` mais garder H.264 par défaut pour compat navigateur HLS.
+- Fallback : si videotoolbox échoue (source GPU-incompatible), retomber sur `libx264 -preset fast` actuel. Wrapper try/catch autour du spawn ffmpeg dans `transcodeHls()`.
+
+### 3.4 `scripts/video-transcode.mjs` — cas MP4 web-natif sans HLS
+
+`video-transcode.mjs:93` produit déjà `libx264 -crf 21 + aac 160k -movflags +faststart`. Décision :
+
+- **Si source ≤ ~200 MB ET H.264/AAC** : produire un **MP4 unique `+faststart`** plutôt que HLS. Pas de chiffrement, pas de segmentation, lecture native `<video>` partout, range-request jsDelivr fonctionne. Plus simple, plus rapide.
+- HLS reste réservé aux gros fichiers (>200 MB) ou à ceux nécessitant le chiffrement AES.
+- Brancher ce choix dans `video-hls.mjs:1-51` : `pickContainer(size, probe)` → `'mp4'` ou `'hls'`.
+
+Limite à documenter (`ffmpeg-speed` risque) : MP4 sans segmentation = pas de chiffrement AES, donc réservé au contenu non sensible.
+
+### 3.5 Changements fichier par fichier — Phase 2
+
+| Fichier | Changement |
+|---|---|
+| `video-hls-lib.mjs:165-181` | remplacer la commande fixe `libx264` par un switch sur `pickStrategy()` : remux / hw / fallback CPU |
+| `video-hls-lib.mjs` (nouvelle fn) | `pickStrategy(probe)` + `buildFfmpegArgs(strategy, keyinfo)` |
+| `video-mse-lib.mjs:56-75` | réutiliser `probe()` / `codecOf()` (exporter si pas déjà fait), ajouter `gop_size`/`pix_fmt`/`fps` à la sortie de `probe()` |
+| `video-hls.mjs:1-51` | `pickContainer()` → router vers MP4 natif (`video-transcode.mjs`) ou HLS |
+| `video-transcode.mjs:93` | accepter `h264_videotoolbox` comme encodeur quand source non-copy mais MP4 demandé |
+
+**Effort : moyen. Gain : x10+ sur sources déjà compatibles (majorité des captures écran/MP4), x4-6 sinon. Risque : alignement keyframe (couvert par `-force_key_frames`), fallback CPU à tester.**
+
+---
+
+## 4. PHASE 3 — UI : drag-drop natif, tuile à progression live, file d'attente
+
+État actuel (`universalCapture.js:468-497`, `614-646`) : la vidéo passe **uniquement par Terminal** (`captureVideoLocalCmd` → `/api/upload-cmd` → copier-coller). Le placeholder live (`captureVideoTranscode`) a été retiré (`docs/removed-video-transcode-placeholder.md`) car figé à 0% sans worker.
+
+Objectif : drag-drop navigateur → le **serveur local transcode** → tuile placeholder à `%` live → nœud final. Plus de Terminal.
+
+### 4.1 `scripts/local-server.mjs` — nouvel endpoint `/api/transcode-local`
+
+`local-server.mjs:25-39` relaie déjà `/api/*` vers `api/[...route].js`. Ajouter une route **native** (hors catch-all, car elle spawn ffmpeg et streame du progrès) :
+
+- `POST /api/transcode-local` : body `{filePath, dest, name}`. Le navigateur fournit le chemin disque (drag d'un fichier local → on lit `file.path` en Electron, ou on copie le blob dans `/tmp` d'abord).
+- Le handler **spawn `scripts/video-hls.mjs --push`** en sous-processus, capture `stderr` ffmpeg, parse la ligne `time=HH:MM:SS` pour calculer `%` (vs durée totale via `probe()`).
+- Retourne immédiatement un `{jobId}`. Le travail continue en arrière-plan.
+
+### 4.2 File d'attente — `pages/.zr-transcode-queue.json`
+
+Le fichier de queue est déjà nommé dans l'analyse (`captureVideoTranscode` devait le poller). L'implémenter pour de vrai côté serveur :
+
+- `local-server.mjs` maintient une queue en mémoire + miroir disque `pages/.zr-transcode-queue.json` : `[{jobId, name, dest, stage, progress, error}]`.
+- **Un seul ffmpeg à la fois** (le M5 Max sature vite en HW encode ; sérialiser évite la contention GPU citée comme risque). Les jobs suivants restent `stage:'en file'`.
+
+### 4.3 Progression live serveur → navigateur (SSE)
+
+Préférer **SSE** au polling (plus simple qu'un websocket, push natif) :
+
+- `GET /api/transcode-events?jobId=` → flux `text/event-stream`. Chaque parse de `time=` de ffmpeg émet `event: progress data: {progress, stage}`.
+- Stages : `probe` → `transcode (xx%)` → `push (yy%)` → `done` / `fail`.
+- À `done`, l'event porte `nodePath` → l'UI remplace la tuile placeholder par le vrai nœud.
+
+Fallback polling si SSE indisponible : `GET /api/transcode-status?jobId=` lit la queue JSON (réutilisable tel quel).
+
+### 4.4 `src/capture/universalCapture.js` — rebrancher la tuile placeholder (proprement)
+
+Le placeholder retiré était dangereux car figé. Le réactiver **seulement maintenant qu'un worker existe** :
+
+- `universalCapture.js:387-406` : ressusciter `captureVideoTranscode` → crée le nœud `{type:'hls', transcoding:true, progress:0, stage:'en file', jobId}`.
+- `universalCapture.js:614-646` (`routeFile`) : en local (localhost/127.0.0.1), router la vidéo vers `captureVideoTranscode` au lieu de `captureVideoLocalCmd`. Garder le repli navigateur HLS pour Vercel.
+- Ouvrir un `EventSource('/api/transcode-events?jobId=')`, brancher chaque event sur le handle `notifyProgress()` existant (`Notifications.jsx:48-72`, déjà conçu pour `{set, log, done, fail}` + barre `%`).
+- À l'event `done` : mettre à jour le manifest `.media.json` (retirer `transcoding`, poser playlist finale) et **forcer le refresh du drive** dans `App.jsx` (résout le risque « pas de webhook post-push » : ici l'event SSE EST le signal de refresh).
+
+### 4.5 Garde-fous (risques cités)
+
+- Drag-drop d'un blob navigateur sans chemin disque → copier d'abord dans `/tmp/zr_in/<uuid>` côté serveur avant de spawn (sinon ffmpeg n'a pas de fichier).
+- `GITHUB_TOKEN` : le handler `/api/transcode-local` injecte `GITHUB_TOKEN=$(gh auth token)` dans l'env du sous-processus (comme `upload-cmd.js:21-32`), supprimant la dépendance à l'env du Terminal user.
+- Sous-titres PGS/VobSub : le chemin natif (vs ffmpeg.wasm) les extrait → le manifest aura `subs` rempli. Documenter la différence.
+
+### 4.6 Changements fichier par fichier — Phase 3
+
+| Fichier | Changement |
+|---|---|
+| `scripts/local-server.mjs` | endpoints `/api/transcode-local` (POST, spawn), `/api/transcode-events` (SSE), `/api/transcode-status` (polling fallback) ; queue mémoire + miroir `pages/.zr-transcode-queue.json` ; sérialisation 1 ffmpeg |
+| `scripts/video-hls.mjs` | émettre la progression parsable sur stdout (`PROGRESS <pct> <stage>`) pour que le parent la relaie |
+| `src/capture/universalCapture.js:387-406` | ressusciter `captureVideoTranscode`, créer nœud placeholder `{transcoding, jobId}` |
+| `src/capture/universalCapture.js:614-646` | `routeFile` → local: `captureVideoTranscode` ; ouvrir `EventSource`, brancher `notifyProgress` |
+| `src/components/Notifications.jsx:48-72` | réutilisé tel quel (handle déjà compatible) |
+| `App.jsx:1709-1717` | remplacer le toast `'video-cmd'` par insertion de tuile live + refresh drive sur event `done` |
+| `docs/` | note de re-activation du placeholder (worker désormais réel) |
+
+**Effort : élevé. Gain : suppression du copier-coller Terminal, feedback live, file d'attente. Risque : SSE/spawn, synchro manifest↔progress réel.**
+
+---
+
+## 5. SÉQUENCE recommandée
+
+| Ordre | Phase | Effort | Gain attendu | Risque |
+|---|---|---|---|---|
+| **1** | **Phase 1 — Fiabilité** (timeout+retry `activeVidShard`, `rm` conditionnel, `--resume`, push idempotent) | Faible-moyen | Élevé : un échec réseau ne détruit plus 3.6 GB ; reprise au push en secondes | Faible : modifs localisées, idempotence native (hash SHA-256 + 422-tolérant) |
+| **2** | **Phase 2 — Vitesse** (ffprobe→remux/`videotoolbox`, MP4 natif) | Moyen | Élevé : x10+ sur sources compatibles, x4-6 sinon | Moyen : keyframe alignment (couvert), fallback CPU à valider sur un échantillon MKV/10-bit |
+| **3** | **Phase 3 — UI** (endpoint natif, tuile live SSE, queue) | Élevé | Moyen-élevé : suppression Terminal, UX fluide | Moyen-élevé : spawn+SSE, synchro manifest, copie blob→/tmp |
+
+### Pourquoi cet ordre
+
+1. **Phase 1 d'abord, non négociable.** Tant que l'échec réseau détruit le transcodage, chaque test des phases 2 et 3 risque de coûter une reconstruction complète. La fiabilité est le socle. Effort faible, gain immédiat.
+2. **Phase 2 ensuite.** Elle accélère le pipeline que la Phase 1 vient de sécuriser. Chaque itération de la Phase 3 (qui déclenche beaucoup de transcodages de test) profitera du x10. Tester la détection codec sur 3 sources types : MP4 H.264 (→ remux), MKV (→ hw), ProRes/10-bit (→ hw+fallback).
+3. **Phase 3 en dernier.** C'est la couche la plus visible mais la moins critique : elle s'appuie sur un backend désormais fiable (P1) et rapide (P2). La tuile live n'a de sens que si le transcodage derrière ne se fige plus (raison exacte du retrait du placeholder en 2026-06-02).
+
+**Micro-premier acte (sous le seuil d'argumentation) :** dans `video-hls.mjs`, déplacer le `rm(result.outDir)` à l'intérieur du `then` de succès de `pushHls()`. Une ligne. Cela seul rend l'échec actuel non destructif et permet le `--resume` manuel dès aujourd'hui.

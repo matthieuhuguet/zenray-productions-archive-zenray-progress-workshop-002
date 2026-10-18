@@ -1,0 +1,2562 @@
+[
+  {
+    "id": "T-01-1-1",
+    "theme": "Une nationale du matin",
+    "calibration": "Le Monde",
+    "signature": "Manchette 6 colonnes, filet fin, une seule photo dominante",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-1__une-nationale-du-matin.md",
+    "sha256": "6a1afecda4f3898c417eee787fe4b22f4f368e6b2f15c9966cf6357e4c057cc3"
+  },
+  {
+    "id": "T-01-1-2",
+    "theme": "Une de rupture",
+    "calibration": "Libération",
+    "signature": "Photo pleine page, titre unique en capitales, tout le reste chassé",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-2__une-de-rupture.md",
+    "sha256": "f10725b3c6b6e33cb367f0d3243be034058a054387dac8a0902615e799b82e07"
+  },
+  {
+    "id": "T-01-1-3",
+    "theme": "Quotidien de référence sobre",
+    "calibration": "Le Figaro",
+    "signature": "Serif classique, filets doubles, colonnes étroites, zéro couleur",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-3__quotidien-de-reference-sobre.md",
+    "sha256": "e71b9240f7c1b299a059d906508c39a690b701ae46238d5189ef451315593760"
+  },
+  {
+    "id": "T-01-1-4",
+    "theme": "Quotidien économique saumon",
+    "calibration": "Financial Times",
+    "signature": "Fond crème, chiffres tabulaires, graphiques en encre unique",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-4__quotidien-economique-saumon.md",
+    "sha256": "d4fb050545f35f24099a79493636cd7c00e6026a8c53dd03605517bf6b8cd1c7"
+  },
+  {
+    "id": "T-01-1-5",
+    "theme": "Tabloïd d'accroche",
+    "calibration": "The Sun",
+    "signature": "Bandeau rouge, capitales condensées, contraste maximal",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-5__tabloid-d-accroche.md",
+    "sha256": "0959314244b986cee72f4620fc727489c752349fc5949be2be7db7f1a78d6e39"
+  },
+  {
+    "id": "T-01-1-6",
+    "theme": "Quotidien régional",
+    "calibration": "Ouest-France",
+    "signature": "Densité forte, brèves en colonnes, photo légendée systématique",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-6__quotidien-regional.md",
+    "sha256": "80d7cd1e42569129bf9832cacdf75cadb3a51e82868e50f33dbda712311e1c26"
+  },
+  {
+    "id": "T-01-1-7",
+    "theme": "Édition du soir",
+    "calibration": "Evening Standard",
+    "signature": "Encre plus sombre, titraille resserrée, rythme rapide",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-7__edition-du-soir.md",
+    "sha256": "eb6ae7ca67eaa301679c4ec88eb6db4560abaeabe1e861ae61905a709e79252c"
+  },
+  {
+    "id": "T-01-1-8",
+    "theme": "Une d'archive",
+    "calibration": "presse 1960",
+    "signature": "Papier jauni, plomb, filets épais, photo en trame",
+    "family": "Presse & éditorial",
+    "subfamily": "Quotidien national",
+    "file": "01_presse-editorial/01-1_quotidien-national/T-01-1-8__une-d-archive.md",
+    "sha256": "86bff5cc6cdd6fbfab24e57b274f58624973559daae1c5c0256992258a6fc458"
+  },
+  {
+    "id": "T-01-2-1",
+    "theme": "Couverture à portrait",
+    "calibration": "Time",
+    "signature": "Cadre rouge, portrait cadré serré, un seul mot en titre",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-1__couverture-a-portrait.md",
+    "sha256": "fab819bdd832fddd18886719dc795b13da06c3498aadccfa4c4294f0a8411245"
+  },
+  {
+    "id": "T-01-2-2",
+    "theme": "Dossier de fond",
+    "calibration": "Le Point",
+    "signature": "Chapeau long, intertitres marqués, encadrés de contexte",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-2__dossier-de-fond.md",
+    "sha256": "b3a4172716fb6592998125305179800d7bb3b0a6af143bc82c36904f4fbbba50"
+  },
+  {
+    "id": "T-01-2-3",
+    "theme": "Hebdo satirique",
+    "calibration": "Le Canard enchaîné",
+    "signature": "Composition dense, dessins, typographie de plomb",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-3__hebdo-satirique.md",
+    "sha256": "88c7bc433136c222ce643134e74cd56b787afb90c95b7fc204987b91b0bfc819"
+  },
+  {
+    "id": "T-01-2-4",
+    "theme": "Hebdo culturel",
+    "calibration": "Les Inrockuptibles",
+    "signature": "Grille cassée, images plein bord, légendes décalées",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-4__hebdo-culturel.md",
+    "sha256": "453755481848dc87c63c0575d50571fbe923c4bdeb04f7504df8f51699a2a8c2"
+  },
+  {
+    "id": "T-01-2-5",
+    "theme": "Hebdo international",
+    "calibration": "The Economist",
+    "signature": "Colonne stricte, encre rouge unique, graphiques sobres",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-5__hebdo-international.md",
+    "sha256": "27a30a91704cc6d52b550b793c1d69801d8d26b4c805fbc1da0f74ba38c2caaa"
+  },
+  {
+    "id": "T-01-2-6",
+    "theme": "Enquête longue",
+    "calibration": "Mediapart",
+    "signature": "Fond sombre, appels de note, sources listées en pied",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-6__enquete-longue.md",
+    "sha256": "6012d3a516271bccf9a2f6c2b4485ee9a57e062a83d35fd9d2a11fb1a3fd81ba"
+  },
+  {
+    "id": "T-01-2-7",
+    "theme": "Numéro spécial",
+    "calibration": "hors-série",
+    "signature": "Format élargi, sommaire monumental, papier mat",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-7__numero-special.md",
+    "sha256": "08fd509c22d61f24baa603b804aafa8ac76dd0849bacc000c614b315c4f27bf1"
+  },
+  {
+    "id": "T-01-2-8",
+    "theme": "Hebdo grand public",
+    "calibration": "Paris Match",
+    "signature": "Photo pleine page, titre en surimpression, légende narrative",
+    "family": "Presse & éditorial",
+    "subfamily": "Magazine d'actualité hebdomadaire",
+    "file": "01_presse-editorial/01-2_magazine-d-actualite-hebdomadaire/T-01-2-8__hebdo-grand-public.md",
+    "sha256": "2f8a712c5e0452956fe4715176ee02cc7d15f172c41fcfcdec99c6cd84259b7e"
+  },
+  {
+    "id": "T-01-3-1",
+    "theme": "Récit immersif défilant",
+    "calibration": "NYT Snow Fall",
+    "signature": "Images plein écran entre les chapitres, texte centré étroit",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-1__recit-immersif-defilant.md",
+    "sha256": "c669a2d11c6ad0c56c0a3439e1ac8a061dbb5f1a03b383bb6d689aed8715875a"
+  },
+  {
+    "id": "T-01-3-2",
+    "theme": "Lecture pure",
+    "calibration": "Medium",
+    "signature": "Mesure 62 signes, aucune décoration, respiration maximale",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-2__lecture-pure.md",
+    "sha256": "25987085784e09314ecdff3e1a252b61d706d6f9989c4cb01eb0826da4a88d92"
+  },
+  {
+    "id": "T-01-3-3",
+    "theme": "Enquête à preuves",
+    "calibration": "ProPublica",
+    "signature": "Encadrés de documents, citations en bloc, chronologie latérale",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-3__enquete-a-preuves.md",
+    "sha256": "fed93ef0b30ef076461aac5fb6ec539e5a2d39d9b9706bddbbecf3eb73d0821d"
+  },
+  {
+    "id": "T-01-3-4",
+    "theme": "Carnet d'auteur",
+    "calibration": "Substack essai",
+    "signature": "Serif chaleureux, notes en marge, signature manuscrite",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-4__carnet-d-auteur.md",
+    "sha256": "174b04bc433d26eb22d3bb998c9b9d7543e0cb84134e0c12a194dd966bffc1c9"
+  },
+  {
+    "id": "T-01-3-5",
+    "theme": "Récit à chapitres",
+    "calibration": "The Atlantic",
+    "signature": "Numéros de chapitre monumentaux, lettrines",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-5__recit-a-chapitres.md",
+    "sha256": "670ff019c6491d210892eab61fad9008daa384b0b7bd6270bb3e4d8450917edd"
+  },
+  {
+    "id": "T-01-3-6",
+    "theme": "Reportage photo",
+    "calibration": "National Geographic",
+    "signature": "Photo pleine largeur, légende longue, texte en réserve",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-6__reportage-photo.md",
+    "sha256": "bdfbc75afbe5dbfa41ac7274dd54c052c938819d87f30b21d2bb16252290c2e4"
+  },
+  {
+    "id": "T-01-3-7",
+    "theme": "Récit sombre",
+    "calibration": "longform nocturne",
+    "signature": "Fond encre, texte crème, images désaturées",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-7__recit-sombre.md",
+    "sha256": "6482473d12d16bab00660736242f5b3b7c5d5a302b276b01936bf91e0e863818"
+  },
+  {
+    "id": "T-01-3-8",
+    "theme": "Récit court",
+    "calibration": "brève longue",
+    "signature": "800 mots maximum, une image, une citation",
+    "family": "Presse & éditorial",
+    "subfamily": "Longform web & récit",
+    "file": "01_presse-editorial/01-3_longform-web-recit/T-01-3-8__recit-court.md",
+    "sha256": "fa5a0c331537b8468ecbc166ca3f0aca28fcbd9d8458aa083f9f65119fa38c15"
+  },
+  {
+    "id": "T-01-4-1",
+    "theme": "Infolettre de curation",
+    "calibration": "Brief.me",
+    "signature": "Sections numérotées, temps de lecture, liens listés",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-1__infolettre-de-curation.md",
+    "sha256": "e0658eac41d4575b02ae55fe6dceea69bceed04fe1bc44ed6a7ff382eb9bab33"
+  },
+  {
+    "id": "T-01-4-2",
+    "theme": "Infolettre d'auteur",
+    "calibration": "Dense Discovery",
+    "signature": "Colonne unique, blocs alternés, palette pastel",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-2__infolettre-d-auteur.md",
+    "sha256": "f6040a86d7b9e127660bbc26b2dfedc03898e09f4bd476f4f71533855512044a"
+  },
+  {
+    "id": "T-01-4-3",
+    "theme": "Veille technique",
+    "calibration": "Hacker Newsletter",
+    "signature": "Mono pour les liens, densité forte, zéro image",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-3__veille-technique.md",
+    "sha256": "19b18b5874afb8656ad30e5931d5734353b5caca6c43ca6465fbc14bd0ccbf5e"
+  },
+  {
+    "id": "T-01-4-4",
+    "theme": "Infolettre d'entreprise",
+    "calibration": "rapport interne",
+    "signature": "En-tête institutionnel, chiffres clés en tuiles",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-4__infolettre-d-entreprise.md",
+    "sha256": "b425d1a74300c7ef2ef5d04b8dd9787ecd74dcb4a99abdd3be885d1b6b775baf"
+  },
+  {
+    "id": "T-01-4-5",
+    "theme": "Infolettre courte quotidienne",
+    "calibration": "Morning Brew",
+    "signature": "Ton direct, emoji-free, une accroche par section",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-5__infolettre-courte-quotidienne.md",
+    "sha256": "9a6fa93d66590df3d1bb9ca6a7b542b05a59892d1eccce332217aea5ab49e0d0"
+  },
+  {
+    "id": "T-01-4-6",
+    "theme": "Infolettre visuelle",
+    "calibration": "Sidebar design",
+    "signature": "Grande image par entrée, légende courte",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-6__infolettre-visuelle.md",
+    "sha256": "0272a9dec0582e740389676483c216798f37d46103228c00594ebcb54963ac8a"
+  },
+  {
+    "id": "T-01-4-7",
+    "theme": "Infolettre à chapitres",
+    "calibration": "essai hebdomadaire",
+    "signature": "Sommaire cliquable, texte long, note de fin",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-7__infolettre-a-chapitres.md",
+    "sha256": "f7a74cb9c9b43901b31766e556c4a8224eb550d5c3233abecbbea43ec175c36e"
+  },
+  {
+    "id": "T-01-4-8",
+    "theme": "Infolettre d'annonce",
+    "calibration": "lancement produit",
+    "signature": "Une seule information, un seul bouton",
+    "family": "Presse & éditorial",
+    "subfamily": "Newsletter & infolettre",
+    "file": "01_presse-editorial/01-4_newsletter-infolettre/T-01-4-8__infolettre-d-annonce.md",
+    "sha256": "340d5def50fe9654978b7a2d07e169aaa3df7306b45efa5192d31e6b970b88ec"
+  },
+  {
+    "id": "T-01-5-1",
+    "theme": "Revue d'ingénierie",
+    "calibration": "IEEE Spectrum",
+    "signature": "Schémas légendés, colonnes serrées, encadrés techniques",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-1__revue-d-ingenierie.md",
+    "sha256": "0062e14c5d54ffd12091ddab432d10a098c4f871fa4411f50c0e219d13cc313c"
+  },
+  {
+    "id": "T-01-5-2",
+    "theme": "Revue médicale",
+    "calibration": "The Lancet",
+    "signature": "Structure imposée, résumé structuré, références numérotées",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-2__revue-medicale.md",
+    "sha256": "851f910e96d2720724cd9cb6d352c7574f8305a8fd3521a247814767c71c4362"
+  },
+  {
+    "id": "T-01-5-3",
+    "theme": "Revue juridique",
+    "calibration": "Dalloz",
+    "signature": "Numérotation d'articles, renvois, marge de notes",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-3__revue-juridique.md",
+    "sha256": "9c1a2965b5d0a136b58043aa6b8ebbaf8a52ae8021bdf4b8f9dcdb11c37089ae"
+  },
+  {
+    "id": "T-01-5-4",
+    "theme": "Presse informatique",
+    "calibration": "Ars Technica",
+    "signature": "Captures d'écran annotées, tableaux comparatifs",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-4__presse-informatique.md",
+    "sha256": "58f6d94e71b09d843e8f4fc63cd189455ac5cfef4b9a0e21b2d2c9d834a48d5f"
+  },
+  {
+    "id": "T-01-5-5",
+    "theme": "Revue d'architecture",
+    "calibration": "Detail",
+    "signature": "Plans, coupes, échelle, légende en pied",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-5__revue-d-architecture.md",
+    "sha256": "78bc04efd7a9f14febbfdb93612ea237fe28c1ecde782c1fd33c85478720696b"
+  },
+  {
+    "id": "T-01-5-6",
+    "theme": "Presse industrielle",
+    "calibration": "revue métier",
+    "signature": "Fiches produit, spécifications tabulaires",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-6__presse-industrielle.md",
+    "sha256": "8bb5594599658e2c9edf844cdc9dbbaf58fb9f2e607a6435164aa73d6fe6263f"
+  },
+  {
+    "id": "T-01-5-7",
+    "theme": "Revue scientifique grand public",
+    "calibration": "Pour la Science",
+    "signature": "Infographie centrale, encadré « comment ça marche »",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-7__revue-scientifique-grand-public.md",
+    "sha256": "16946fcb2b921bd046a69291056dabf7ecbbc98b1230ee9edc392e3a3a9fe325"
+  },
+  {
+    "id": "T-01-5-8",
+    "theme": "Note technique interne",
+    "calibration": "mémo d'ingénierie",
+    "signature": "Mono intégral, aucune image, numérotation stricte",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse spécialisée & technique",
+    "file": "01_presse-editorial/01-5_presse-specialisee-technique/T-01-5-8__note-technique-interne.md",
+    "sha256": "c386bc00bd1827dde307a9f2f47fd7b7097ae7428868267b8c627368e7cf2ff0"
+  },
+  {
+    "id": "T-01-6-1",
+    "theme": "Couverture people",
+    "calibration": "Voici",
+    "signature": "Titraille multiple, encarts ronds, contraste saturé",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-1__couverture-people.md",
+    "sha256": "38da26f4d1a63e4890faffe10bba52da1be6b3c81183ec881c3af8237cd629b7"
+  },
+  {
+    "id": "T-01-6-2",
+    "theme": "Magazine télé",
+    "calibration": "Télé 7 Jours",
+    "signature": "Grille de programmes, vignettes, encadrés horaires",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-2__magazine-tele.md",
+    "sha256": "2cb49a253977bc2458395012d1b589578202dd60e2fbb39c969b41233dd943d9"
+  },
+  {
+    "id": "T-01-6-3",
+    "theme": "Presse musicale",
+    "calibration": "Rolling Stone",
+    "signature": "Portrait pleine page, titre en surimpression, texte en réserve",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-3__presse-musicale.md",
+    "sha256": "199dea2d9e34337c6ba3e53360ea5ecdef487fa51a43207fba3aba9e61f75035"
+  },
+  {
+    "id": "T-01-6-4",
+    "theme": "Presse cinéma",
+    "calibration": "Première",
+    "signature": "Affiche dominante, note en étoiles, colonne critique",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-4__presse-cinema.md",
+    "sha256": "f76a0710c5accb11b75a56282888617395a26fccc72f3e370a14ec894067adca"
+  },
+  {
+    "id": "T-01-6-5",
+    "theme": "Presse jeux vidéo",
+    "calibration": "Edge",
+    "signature": "Fond sombre, captures pleine largeur, note isolée",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-5__presse-jeux-video.md",
+    "sha256": "fc03bb4619bafdce1e9544422c9b3cc5a0c3f4afd63c36dc3c4bf81739ba987c"
+  },
+  {
+    "id": "T-01-6-6",
+    "theme": "Presse sportive quotidienne",
+    "calibration": "L'Équipe",
+    "signature": "Une à un mot, photo d'action, fond jaune signal",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-6__presse-sportive-quotidienne.md",
+    "sha256": "07a126252a9ac51dea6cc474dfd3cd7f8cad881b74e4ae1330e6cf2a84ed4779"
+  },
+  {
+    "id": "T-01-6-7",
+    "theme": "Presse jeunesse",
+    "calibration": "magazine ado",
+    "signature": "Couleurs vives, bulles, typographie ronde",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-7__presse-jeunesse.md",
+    "sha256": "49de24ca0a91a51caaed91d5e10c881ec73ba4962603a3765293260ede22764a"
+  },
+  {
+    "id": "T-01-6-8",
+    "theme": "Presse potin en ligne",
+    "calibration": "site de brèves",
+    "signature": "Vignettes empilées, titres à accroche, défilement infini",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse people & divertissement",
+    "file": "01_presse-editorial/01-6_presse-people-divertissement/T-01-6-8__presse-potin-en-ligne.md",
+    "sha256": "08365cb5baa96e2d791ae7457fc2702e31c139268a63955ac59e3b4423bba409"
+  },
+  {
+    "id": "T-01-7-1",
+    "theme": "Quotidien gratuit du matin",
+    "calibration": "20 Minutes",
+    "signature": "Brèves courtes, colonnes larges, photo unique",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-1__quotidien-gratuit-du-matin.md",
+    "sha256": "12d21ac3c6b535e55686eb34a8408bcc5e872aa700beb5295ac6b7833edd19d5"
+  },
+  {
+    "id": "T-01-7-2",
+    "theme": "Journal municipal",
+    "calibration": "bulletin de ville",
+    "signature": "En-tête institutionnel, agenda, encadré pratique",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-2__journal-municipal.md",
+    "sha256": "7e36c8fa163e3a17d8a5f420cf841d617314532bd2f2238098dddaeddfe7546e"
+  },
+  {
+    "id": "T-01-7-3",
+    "theme": "Gazette de quartier",
+    "calibration": "feuille locale",
+    "signature": "Composition simple, annonces, calendrier",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-3__gazette-de-quartier.md",
+    "sha256": "d360177dee08df66f60703d002b8ba4050e26fcb58719a4e8c732ac79985b4ec"
+  },
+  {
+    "id": "T-01-7-4",
+    "theme": "Petites annonces",
+    "calibration": "journal d'annonces",
+    "signature": "Grille dense, catégories, prix en évidence",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-4__petites-annonces.md",
+    "sha256": "94ff6ed04f57f06b3d938e4b0bf237a848feb2905aafbf89ec228d100a284835"
+  },
+  {
+    "id": "T-01-7-5",
+    "theme": "Journal d'association",
+    "calibration": "lettre associative",
+    "signature": "Ton chaleureux, photos de groupe, remerciements",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-5__journal-d-association.md",
+    "sha256": "acaf31fea516e1d16cbe3d3174158a8e3801cf6113700a2a128bcde06939355d"
+  },
+  {
+    "id": "T-01-7-6",
+    "theme": "Journal scolaire",
+    "calibration": "gazette d'école",
+    "signature": "Typographie ronde, illustrations, couleurs franches",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-6__journal-scolaire.md",
+    "sha256": "b5065ad8a3e5a61a3d98b13be09e0a803d7d3254e78d0e22b0f5bc8667e5b67a"
+  },
+  {
+    "id": "T-01-7-7",
+    "theme": "Journal d'entreprise",
+    "calibration": "interne",
+    "signature": "Chiffres du mois, portraits de collaborateurs",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-7__journal-d-entreprise.md",
+    "sha256": "a243ca8ee4b45cc5dad502ad657a6f172c3c63bd8ff2d96fec85c64096a198e5"
+  },
+  {
+    "id": "T-01-7-8",
+    "theme": "Affichette d'information",
+    "calibration": "avis public",
+    "signature": "Une seule information, très grande, très lisible",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse gratuite & locale",
+    "file": "01_presse-editorial/01-7_presse-gratuite-locale/T-01-7-8__affichette-d-information.md",
+    "sha256": "313fa709ea47f6e3be6f896b3b7b67704a9c490b18eca1fe19f77f35bf284158"
+  },
+  {
+    "id": "T-01-8-1",
+    "theme": "Tribune signée",
+    "calibration": "page « Idées »",
+    "signature": "Portrait de l'auteur, chapeau de qualité, texte long",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-1__tribune-signee.md",
+    "sha256": "951c4fbbf78621a1acc5dd6055b7448c3c048677152f90e7ce12e48225a691fe"
+  },
+  {
+    "id": "T-01-8-2",
+    "theme": "Éditorial du directeur",
+    "calibration": "éditorial",
+    "signature": "Colonne unique, signature manuscrite, filet d'encadrement",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-2__editorial-du-directeur.md",
+    "sha256": "4a904be0813f6e07bdf2ae1f386da22ed4a909eb860932846b9212021e44112f"
+  },
+  {
+    "id": "T-01-8-3",
+    "theme": "Débat contradictoire",
+    "calibration": "face-à-face",
+    "signature": "Deux colonnes opposées, deux couleurs d'encre",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-3__debat-contradictoire.md",
+    "sha256": "5439a87c5e4a9ef8b1ac4cf0cfca759ff4a1d5ea6a7e6ddca06e635a65c9aff0"
+  },
+  {
+    "id": "T-01-8-4",
+    "theme": "Manifeste",
+    "calibration": "texte collectif",
+    "signature": "Capitales, liste de signataires, aucune image",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-4__manifeste.md",
+    "sha256": "c626f9ceca1f8e1174c7d92d4bf7702a03d7af07e32b14738f6873179c27bdb2"
+  },
+  {
+    "id": "T-01-8-5",
+    "theme": "Lettre ouverte",
+    "calibration": "courrier public",
+    "signature": "Mise en page de lettre, en-tête, formule d'adresse",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-5__lettre-ouverte.md",
+    "sha256": "f5b4d3edf9ec99fe0edf6bd4afec5267af91b3152a6253c377e9fc504511fcc7"
+  },
+  {
+    "id": "T-01-8-6",
+    "theme": "Critique culturelle",
+    "calibration": "chronique",
+    "signature": "Note, extrait cité, colonne étroite",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-6__critique-culturelle.md",
+    "sha256": "9cbc571296d244661f27f57c33965f77169c896a46159bc686902aa2c374e28d"
+  },
+  {
+    "id": "T-01-8-7",
+    "theme": "Billet d'humeur",
+    "calibration": "chronique courte",
+    "signature": "300 mots, une chute, une signature",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-7__billet-d-humeur.md",
+    "sha256": "5b24a72e1c3a69d9e2d509e2480d990ea118211181dcfa9fca04001fd415d7a1"
+  },
+  {
+    "id": "T-01-8-8",
+    "theme": "Dossier polémique",
+    "calibration": "contre-enquête",
+    "signature": "Encadrés de réfutation, sources en vis-à-vis",
+    "family": "Presse & éditorial",
+    "subfamily": "Presse d'opinion & tribune",
+    "file": "01_presse-editorial/01-8_presse-d-opinion-tribune/T-01-8-8__dossier-polemique.md",
+    "sha256": "0e1a1a87d7c2496167322ac58ca388da820b012a988479524d8a27a481190046"
+  },
+  {
+    "id": "T-02-1-1",
+    "theme": "Bandeau d'alerte permanente",
+    "calibration": "BFM TV",
+    "signature": "Bandeau rouge plein, ticker continu, horloge haut-droite",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-1__bandeau-d-alerte-permanente.md",
+    "sha256": "0433578a888302c3dbff799bded1e0aaa294b394273bc01887712d0ea95a3f0f"
+  },
+  {
+    "id": "T-02-1-2",
+    "theme": "Direct sobre",
+    "calibration": "France Info",
+    "signature": "Bleu institutionnel, bandeau simple, aucune surcharge",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-2__direct-sobre.md",
+    "sha256": "a4996b24c9c29ebbfb8dd33dd29e906c83629a0b46328a5a7530223531dc25f5"
+  },
+  {
+    "id": "T-02-1-3",
+    "theme": "Info continue internationale",
+    "calibration": "Al Jazeera English",
+    "signature": "Habillage doré, double bandeau, mention de fuseau",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-3__info-continue-internationale.md",
+    "sha256": "cb10e024a55342a77af187c5401d997bb0cfc8f53bbb2e2f6c4dd8ba95f306dd"
+  },
+  {
+    "id": "T-02-1-4",
+    "theme": "Info économique",
+    "calibration": "Bloomberg TV",
+    "signature": "Rubans de cotations, quadrillage, chiffres partout",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-4__info-economique.md",
+    "sha256": "6f9522fe28c352606701fcd6039103220f18b5088dba84ff8a6844536ed67bb0"
+  },
+  {
+    "id": "T-02-1-5",
+    "theme": "Édition spéciale",
+    "calibration": "événement majeur",
+    "signature": "Fond noir, mention « ÉDITION SPÉCIALE », logo réduit",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-5__edition-speciale.md",
+    "sha256": "71fd270aa4d33a7aaa86678407203aa889c480e73acde2542893f7a3ef5e7546"
+  },
+  {
+    "id": "T-02-1-6",
+    "theme": "Alerte rouge",
+    "calibration": "breaking news",
+    "signature": "Bandeau clignotant, capitales, virgule sonore d'impact",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-6__alerte-rouge.md",
+    "sha256": "a37e4af3c5430e382140243aaa1ec761c7037c8a704153695ff99a4495526d87"
+  },
+  {
+    "id": "T-02-1-7",
+    "theme": "Résultats en direct",
+    "calibration": "soirée électorale",
+    "signature": "Tableau de résultats, barres animées, carte",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-7__resultats-en-direct.md",
+    "sha256": "f2fd25e227db417f9b8dd97ae4f69c9429c1febdc37808506eba1ebc1e96a6b2"
+  },
+  {
+    "id": "T-02-1-8",
+    "theme": "Info continue nocturne",
+    "calibration": "rediffusion",
+    "signature": "Palette assombrie, ticker ralenti, horloge dominante",
+    "family": "Télévision & broadcast",
+    "subfamily": "Info continue",
+    "file": "02_television-broadcast/02-1_info-continue/T-02-1-8__info-continue-nocturne.md",
+    "sha256": "3c1faf7a2588ab7af5d731da74d3deef2a5feed111ae410a8ce63699dff148e2"
+  },
+  {
+    "id": "T-02-2-1",
+    "theme": "JT de 20 heures",
+    "calibration": "TF1",
+    "signature": "Tiers inférieur à deux niveaux, générique orchestral",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-1__jt-de-20-heures.md",
+    "sha256": "479d0b8f9a8f8a0020e875f5c4315982b09bd10b1bb94f87e469b4fb5a3f5b8d"
+  },
+  {
+    "id": "T-02-2-2",
+    "theme": "JT de service public",
+    "calibration": "France 2",
+    "signature": "Bleu-blanc sobre, mention de correspondant",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-2__jt-de-service-public.md",
+    "sha256": "322faf74e33d3ed5c119f796c426e166e5d52063b3e3867f04ba45797b501836"
+  },
+  {
+    "id": "T-02-2-3",
+    "theme": "JT régional",
+    "calibration": "France 3 régions",
+    "signature": "Carte régionale, couleur locale, ton proche",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-3__jt-regional.md",
+    "sha256": "ec0e0cdf906552b45590257a36cfd6db1e86101e22f4188d517af1be847ff0fa"
+  },
+  {
+    "id": "T-02-2-4",
+    "theme": "JT étranger de référence",
+    "calibration": "BBC News at Ten",
+    "signature": "Rouge et blanc, compte à rebours d'ouverture",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-4__jt-etranger-de-reference.md",
+    "sha256": "b0f2ebbe21753fd588236dfded490d946e3b3eed340712e35f9ac07ce90f5c68"
+  },
+  {
+    "id": "T-02-2-5",
+    "theme": "Flash d'information",
+    "calibration": "brève de 2 minutes",
+    "signature": "Titraille seule, aucun sujet développé",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-5__flash-d-information.md",
+    "sha256": "8dd752a7dbde488f291d0587be6b3bcddff1f55bee91c57cdfb5dc84840cfe3e"
+  },
+  {
+    "id": "T-02-2-6",
+    "theme": "JT du matin",
+    "calibration": "matinale",
+    "signature": "Palette claire, agenda du jour, météo intégrée",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-6__jt-du-matin.md",
+    "sha256": "fdeca2af0f000ae77a1deca16a1f2edc9bd404cacabf663885b67f008439cef8"
+  },
+  {
+    "id": "T-02-2-7",
+    "theme": "JT en langue des signes",
+    "calibration": "accessibilité",
+    "signature": "Cadre de traduction permanent, sous-titres obligatoires",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-7__jt-en-langue-des-signes.md",
+    "sha256": "24511750ba1dd06fe545b9e0f929ee475c9ec0f4af967dfe7e24815e03715435"
+  },
+  {
+    "id": "T-02-2-8",
+    "theme": "JT d'archive",
+    "calibration": "années 1980",
+    "signature": "Habillage vectoriel d'époque, mire, grain vidéo",
+    "family": "Télévision & broadcast",
+    "subfamily": "Journal télévisé",
+    "file": "02_television-broadcast/02-2_journal-televise/T-02-2-8__jt-d-archive.md",
+    "sha256": "033402ac59aa9365ede04dd51ab8ae73991aedbd0ed2fdde1aff6b8cb1801e3a"
+  },
+  {
+    "id": "T-02-3-1",
+    "theme": "Talk-show du soir",
+    "calibration": "Quotidien",
+    "signature": "Cartons d'invités, ton rapide, couleurs saturées",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-1__talk-show-du-soir.md",
+    "sha256": "ff1fcd7c17479d4eeb7a5bc27512289005e99d325e955d010902e2b99727dca4"
+  },
+  {
+    "id": "T-02-3-2",
+    "theme": "Débat politique",
+    "calibration": "émission de débat",
+    "signature": "Chronomètre de temps de parole, pupitres, plan large",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-2__debat-politique.md",
+    "sha256": "1b7e67dcf3b85583825390f6e389a53e604165aee6dbf93c44c11f2d250f0dd8"
+  },
+  {
+    "id": "T-02-3-3",
+    "theme": "Talk américain",
+    "calibration": "The Tonight Show",
+    "signature": "Rideau, orchestre, cartons dorés",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-3__talk-americain.md",
+    "sha256": "cd0731c203b5b06c5e6116554abf927cd0f9920ae651f8cbef7bc403248cde3a"
+  },
+  {
+    "id": "T-02-3-4",
+    "theme": "Émission culturelle",
+    "calibration": "La Grande Librairie",
+    "signature": "Bibliothèque, serif chaleureux, rythme lent",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-4__emission-culturelle.md",
+    "sha256": "77056694874668ef0fbfcf61ab651ddf5871e36f4751b39a710516e21fa0f852"
+  },
+  {
+    "id": "T-02-3-5",
+    "theme": "Interview longue",
+    "calibration": "entretien",
+    "signature": "Un seul carton de nom, aucun habillage superflu",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-5__interview-longue.md",
+    "sha256": "6c46070241a22c0d411e3b787cef2a95ba2dc21eacc4703451be0e0ee07ac4ca"
+  },
+  {
+    "id": "T-02-3-6",
+    "theme": "Émission de divertissement",
+    "calibration": "prime time",
+    "signature": "Habillage brillant, transitions spectaculaires",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-6__emission-de-divertissement.md",
+    "sha256": "3b952f3fcf5af434602aa7e4bd3e4e05b485342eabf01ed2503533bf538e179e"
+  },
+  {
+    "id": "T-02-3-7",
+    "theme": "Émission matinale",
+    "calibration": "talk du matin",
+    "signature": "Palette pastel, horloge, rubrique service",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-7__emission-matinale.md",
+    "sha256": "0270167ef66a0c326899323aed5d2e50bd300861429a808d778d5e831423f206"
+  },
+  {
+    "id": "T-02-3-8",
+    "theme": "Plateau d'esport",
+    "calibration": "studio de compétition",
+    "signature": "Néons, statistiques latérales, tension bleue",
+    "family": "Télévision & broadcast",
+    "subfamily": "Plateau & talk",
+    "file": "02_television-broadcast/02-3_plateau-talk/T-02-3-8__plateau-d-esport.md",
+    "sha256": "26a4ce44e9029444b551f23cd729968c21fbf605a59bd97e0e9c83fea8892bac"
+  },
+  {
+    "id": "T-02-4-1",
+    "theme": "Magazine d'investigation",
+    "calibration": "Envoyé spécial",
+    "signature": "Cartons de contexte, sources affichées, rythme grave",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-1__magazine-d-investigation.md",
+    "sha256": "ba775fe1a54f9cb9aed1bb28496e419257fd47853f4959afab7dd9d497a32e5d"
+  },
+  {
+    "id": "T-02-4-2",
+    "theme": "Documentaire animalier",
+    "calibration": "BBC Earth",
+    "signature": "Typographie fine, cartes de localisation, silence",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-2__documentaire-animalier.md",
+    "sha256": "c65cccf116a27803a4ccdb060ae513fe2ba1894e84645d3f88f94f47b047c200"
+  },
+  {
+    "id": "T-02-4-3",
+    "theme": "Documentaire historique",
+    "calibration": "Arte",
+    "signature": "Archives, cartons de date, palette sépia",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-3__documentaire-historique.md",
+    "sha256": "42e6f87729d25d50d79ede01205230a96ae27cc39a380b1285bde372ad96eda8"
+  },
+  {
+    "id": "T-02-4-4",
+    "theme": "Reportage de terrain",
+    "calibration": "grand reportage",
+    "signature": "Caméra portée, cartons manuscrits, sous-titrage",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-4__reportage-de-terrain.md",
+    "sha256": "691e70bf9d4ab2ee1becb002e8c5ff9ca489487abbcf043a7357fa3dde39c931"
+  },
+  {
+    "id": "T-02-4-5",
+    "theme": "Magazine scientifique",
+    "calibration": "E=M6",
+    "signature": "Schémas animés, ton pédagogique, couleurs claires",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-5__magazine-scientifique.md",
+    "sha256": "41004f1d000b2d14b962a609d6f5e76605c4b1fac3bcdf2429eb1a7d3b9f4ca4"
+  },
+  {
+    "id": "T-02-4-6",
+    "theme": "Documentaire de société",
+    "calibration": "Complément d'enquête",
+    "signature": "Interviews en contre-jour, cartons anonymisés",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-6__documentaire-de-societe.md",
+    "sha256": "bb5f4ca67186e0258224ab3b2613cc37ea56fa01d61f47cd364d9964c50e60a9"
+  },
+  {
+    "id": "T-02-4-7",
+    "theme": "Série documentaire premium",
+    "calibration": "Netflix documentaire",
+    "signature": "Générique cinématographique, chapitrage, score",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-7__serie-documentaire-premium.md",
+    "sha256": "b96ce72afc0c0bc286fd439a8d42b8d1d835862d0a7b2a98c2dff8460840f458"
+  },
+  {
+    "id": "T-02-4-8",
+    "theme": "Documentaire de voyage",
+    "calibration": "carnet de route",
+    "signature": "Cartes tracées, cartons de lieu, musique locale",
+    "family": "Télévision & broadcast",
+    "subfamily": "Magazine documentaire TV",
+    "file": "02_television-broadcast/02-4_magazine-documentaire-tv/T-02-4-8__documentaire-de-voyage.md",
+    "sha256": "e3431e5c16952d14bc8cd94d2a0985bc69eb76f7ff1c6118d6d20f50fd90753a"
+  },
+  {
+    "id": "T-02-5-1",
+    "theme": "Bulletin météo national",
+    "calibration": "météo TF1",
+    "signature": "Carte animée, pictogrammes, températures tabulaires",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-1__bulletin-meteo-national.md",
+    "sha256": "0478822c632698d8ed0c68b5ea5f8e042597ebe17e02da5ede65dfb05bf7b4c0"
+  },
+  {
+    "id": "T-02-5-2",
+    "theme": "Météo marine",
+    "calibration": "bulletin côtier",
+    "signature": "Vents, houle, symboles nautiques",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-2__meteo-marine.md",
+    "sha256": "85955474cdcaa85df88c076d1746009921d6aac983318e245563334e6be13e0d"
+  },
+  {
+    "id": "T-02-5-3",
+    "theme": "Météo montagne",
+    "calibration": "bulletin neige",
+    "signature": "Altitudes, risque d'avalanche, palette froide",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-3__meteo-montagne.md",
+    "sha256": "c639fe8ec688c0abbdaefc79de6c4775a78fefe65d68c175c5e504885dc9e981"
+  },
+  {
+    "id": "T-02-5-4",
+    "theme": "Vigilance",
+    "calibration": "alerte météo",
+    "signature": "Code couleur officiel, départements, ton grave",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-4__vigilance.md",
+    "sha256": "80a0fc1a5165ea361136607648c178b3c02abccef4b702a7c5e6928e2454d272"
+  },
+  {
+    "id": "T-02-5-5",
+    "theme": "Info trafic",
+    "calibration": "bulletin routier",
+    "signature": "Carte de routes, temps de parcours, icônes",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-5__info-trafic.md",
+    "sha256": "df975d581c208b57bff4d5277f9899e7ea07cb2e10e9e95f737f16bf2664fe17"
+  },
+  {
+    "id": "T-02-5-6",
+    "theme": "Qualité de l'air",
+    "calibration": "indice environnemental",
+    "signature": "Échelle colorée, conseils, chiffre unique",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-6__qualite-de-l-air.md",
+    "sha256": "1304d8d7ed106975165471c341a45ecd8bd038cdde5ddbd19bd8575e5e7fa2e5"
+  },
+  {
+    "id": "T-02-5-7",
+    "theme": "Programme du jour",
+    "calibration": "grille de chaîne",
+    "signature": "Bandeau horaire, vignettes de programmes",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-7__programme-du-jour.md",
+    "sha256": "168862a74a3826468656776b8e702952e797f7ecd94ace0207fed202dc5a47f6"
+  },
+  {
+    "id": "T-02-5-8",
+    "theme": "Service public d'urgence",
+    "calibration": "message officiel",
+    "signature": "Fond uni, texte seul, aucune décoration",
+    "family": "Télévision & broadcast",
+    "subfamily": "Météo & service",
+    "file": "02_television-broadcast/02-5_meteo-service/T-02-5-8__service-public-d-urgence.md",
+    "sha256": "36c39619c1dc6d00d4f8959d504e02de598b401e7a5d71faa43b08cdf791a182"
+  },
+  {
+    "id": "T-02-6-1",
+    "theme": "Démonstration produit",
+    "calibration": "télé-achat classique",
+    "signature": "Prix barré, incrustation permanente, compte à rebours",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-1__demonstration-produit.md",
+    "sha256": "d7af5e1a20dd0697a5e5e385443b1c2096949a92c3bfcf4a088b5077e8d4e95c"
+  },
+  {
+    "id": "T-02-6-2",
+    "theme": "Offre limitée",
+    "calibration": "promotion flash",
+    "signature": "Chronomètre géant, capitales, jaune et rouge",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-2__offre-limitee.md",
+    "sha256": "6928a95dd5f5c07e14bc316e140dc8fe9ab8fe42b65c1693c021764610209ff6"
+  },
+  {
+    "id": "T-02-6-3",
+    "theme": "Publireportage",
+    "calibration": "infomercial",
+    "signature": "Faux plateau, témoignages, mention légale en bas",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-3__publireportage.md",
+    "sha256": "2228e68d0cc4809529be9b270256362174a74e88f62e5ce3ff4779affd6e14cb"
+  },
+  {
+    "id": "T-02-6-4",
+    "theme": "Bandeau de sponsoring",
+    "calibration": "parrainage d'émission",
+    "signature": "Logo animé 5 s, mention « en partenariat »",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-4__bandeau-de-sponsoring.md",
+    "sha256": "b8f36ef48e599352335dc6d1bf2093958282742089f3632d2ccabc153d84dd1d"
+  },
+  {
+    "id": "T-02-6-5",
+    "theme": "Autopromotion de chaîne",
+    "calibration": "bande-annonce interne",
+    "signature": "Voix off, date de diffusion, logo final",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-5__autopromotion-de-chaine.md",
+    "sha256": "75cdecbfabebf8bbef53cd3ca223837ae4e97e170f887bc9f70b941da6607518"
+  },
+  {
+    "id": "T-02-6-6",
+    "theme": "Appel aux dons",
+    "calibration": "téléthon",
+    "signature": "Compteur en direct, numéro géant, ton chaleureux",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-6__appel-aux-dons.md",
+    "sha256": "ee20921278e1d5411618dc5f04f7dea9c54972cdb314eda69ad101226e3c92be"
+  },
+  {
+    "id": "T-02-6-7",
+    "theme": "Jeu et concours",
+    "calibration": "jeu télévisé",
+    "signature": "Numéro surtaxé, mention légale, habillage doré",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-7__jeu-et-concours.md",
+    "sha256": "a4508e05cdcb1f1b92c9f582e1f7b5ba852bf94d5ddcb6f4a1ccf15fa9bafe30"
+  },
+  {
+    "id": "T-02-6-8",
+    "theme": "Publicité de service",
+    "calibration": "message d'intérêt général",
+    "signature": "Ton sobre, mention officielle, aucune promesse",
+    "family": "Télévision & broadcast",
+    "subfamily": "Télé-achat & promotion",
+    "file": "02_television-broadcast/02-6_tele-achat-promotion/T-02-6-8__publicite-de-service.md",
+    "sha256": "4bebb994e9fa36efd4c91d0953485f7472aaf57a4a68e1a444f3cbc063a95289"
+  },
+  {
+    "id": "T-02-7-1",
+    "theme": "Interprogramme",
+    "calibration": "jingle de chaîne",
+    "signature": "Logo animé 3 s, couleur signature, virgule sonore",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-1__interprogramme.md",
+    "sha256": "ae96f4ba8f3f7d583a519363b1321954737be89f91ff6e8633509a1f3b1241a4"
+  },
+  {
+    "id": "T-02-7-2",
+    "theme": "Générique de saison",
+    "calibration": "habillage annuel",
+    "signature": "Motif décliné, palette unique, rythme reconnaissable",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-2__generique-de-saison.md",
+    "sha256": "c0151ff03d1ad8701d940957e933e959127cb0535ce8d08789bafa78be02542d"
+  },
+  {
+    "id": "T-02-7-3",
+    "theme": "Bande-annonce de programme",
+    "calibration": "promo",
+    "signature": "Extraits montés, date en fin, voix off",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-3__bande-annonce-de-programme.md",
+    "sha256": "fd77880bf91a7619bca7f55b313b472ea6c00b75f797350070ba3f274af6744d"
+  },
+  {
+    "id": "T-02-7-4",
+    "theme": "Carton de sponsor",
+    "calibration": "avant-programme",
+    "signature": "Logo partenaire, fond neutre, 5 secondes",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-4__carton-de-sponsor.md",
+    "sha256": "70a2f26ebdc04fb0cab4e27846bab340e6862d3bdc9c502d57053100fd60028a"
+  },
+  {
+    "id": "T-02-7-5",
+    "theme": "Mire et fin de diffusion",
+    "calibration": "clôture d'antenne",
+    "signature": "Mire, horloge, silence",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-5__mire-et-fin-de-diffusion.md",
+    "sha256": "4ab26b5d9cbb0a0724f8f00276690455eaa3cbab9bf8cd63d34bbc6ca55728de"
+  },
+  {
+    "id": "T-02-7-6",
+    "theme": "Habillage jeunesse",
+    "calibration": "chaîne enfants",
+    "signature": "Couleurs primaires, formes rondes, mouvement rebondissant",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-6__habillage-jeunesse.md",
+    "sha256": "8e86ff621ba9bce6417c27a2451e9b7c79c0dab342687bc999ebd79e468ca6c1"
+  },
+  {
+    "id": "T-02-7-7",
+    "theme": "Habillage musique",
+    "calibration": "chaîne musicale",
+    "signature": "Typographie graffée, transitions rapides, saturation",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-7__habillage-musique.md",
+    "sha256": "7aec12150b14b94ed355eaf869b51eaa488917370471155899219985556d002b"
+  },
+  {
+    "id": "T-02-7-8",
+    "theme": "Habillage sport",
+    "calibration": "chaîne sportive",
+    "signature": "Diagonales, métal brossé, impacts sonores",
+    "family": "Télévision & broadcast",
+    "subfamily": "Habillage de chaîne",
+    "file": "02_television-broadcast/02-7_habillage-de-chaine/T-02-7-8__habillage-sport.md",
+    "sha256": "920e308e1da5a5766112138c700a5788f743800b283d8dc7a735e9d7d1c63807"
+  },
+  {
+    "id": "T-02-8-1",
+    "theme": "Cérémonie officielle",
+    "calibration": "discours d'État",
+    "signature": "Habillage protocolaire, aucun ticker, plan fixe",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-1__ceremonie-officielle.md",
+    "sha256": "3c3d3a2a191f8ac5830d58025e2f186a098996e7e8dfe065de551981254ef599"
+  },
+  {
+    "id": "T-02-8-2",
+    "theme": "Remise de prix",
+    "calibration": "cérémonie de récompenses",
+    "signature": "Doré, nominés listés, enveloppe",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-2__remise-de-prix.md",
+    "sha256": "83064f669209b56764cfe0ebce1fdcb48fe3f4fa2d0a45d573a3e3f5f210c2a8"
+  },
+  {
+    "id": "T-02-8-3",
+    "theme": "Concert en direct",
+    "calibration": "captation live",
+    "signature": "Nom d'artiste en tiers inférieur, minuteur de set",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-3__concert-en-direct.md",
+    "sha256": "d7d1912e29afcdd0080e6ba8f91b5a5f60f787643e5c5647ad2bb344c8848a36"
+  },
+  {
+    "id": "T-02-8-4",
+    "theme": "Conférence de presse",
+    "calibration": "point presse",
+    "signature": "Bandeau de fonction, chrono de question",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-4__conference-de-presse.md",
+    "sha256": "3f9ccab5f08e00e30001d3794886edb8fc225205c670110e7904e280fe2d0f21"
+  },
+  {
+    "id": "T-02-8-5",
+    "theme": "Défilé national",
+    "calibration": "événement civique",
+    "signature": "Cartons de régiment, plans aériens",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-5__defile-national.md",
+    "sha256": "30a9501921358f6a694687b3a8ca39228c4531dbf45d2f51616a581f386ea9ae"
+  },
+  {
+    "id": "T-02-8-6",
+    "theme": "Compte à rebours",
+    "calibration": "nouvel an",
+    "signature": "Chiffres monumentaux, décompte synchronisé",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-6__compte-a-rebours.md",
+    "sha256": "797447cdbad0fa26f175f2af2e88dc644f52d49203b756ae4f708a8128b32010"
+  },
+  {
+    "id": "T-02-8-7",
+    "theme": "Lancement spatial",
+    "calibration": "direct technique",
+    "signature": "Télémétrie, compte à rebours, vocabulaire de contrôle",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-7__lancement-spatial.md",
+    "sha256": "33f704f6a2c866a093664f00cb5a6fba3ba08e1c409ef65b28794a28b46cf1e7"
+  },
+  {
+    "id": "T-02-8-8",
+    "theme": "Direct de crise",
+    "calibration": "événement grave",
+    "signature": "Bandeau sobre, aucune musique, mention d'heure",
+    "family": "Télévision & broadcast",
+    "subfamily": "Direct événementiel",
+    "file": "02_television-broadcast/02-8_direct-evenementiel/T-02-8-8__direct-de-crise.md",
+    "sha256": "e8f0148aa0b5c9d89a9dffd17fab9ecf43e509ac0607374d06f280a8a6ee8d6e"
+  },
+  {
+    "id": "T-03-1-1",
+    "theme": "Teaser énigmatique",
+    "calibration": "teaser A24",
+    "signature": "Un seul plan, un seul mot, noir dominant",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-1__teaser-enigmatique.md",
+    "sha256": "ea9674f873f4343e551bf5bf86f9c4ee021e2bcacef2fc02a8ad836a91e12253"
+  },
+  {
+    "id": "T-03-1-2",
+    "theme": "Teaser à date",
+    "calibration": "annonce de sortie",
+    "signature": "Date monumentale en fin, aucun dialogue",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-2__teaser-a-date.md",
+    "sha256": "4bc134f6d001cab775d1703c25634ba86a2aec1ab04b1ec71ca0018792edb696"
+  },
+  {
+    "id": "T-03-1-3",
+    "theme": "Teaser de logo",
+    "calibration": "révélation de titre",
+    "signature": "Le titre se construit à l'écran, 20 secondes",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-3__teaser-de-logo.md",
+    "sha256": "e5dfea4223e8130a7b665224dab0d22e74488a2f518a4867c7b913b758f6b41b"
+  },
+  {
+    "id": "T-03-1-4",
+    "theme": "Teaser sonore",
+    "calibration": "annonce par le son",
+    "signature": "Écran noir, son seul, une image finale",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-4__teaser-sonore.md",
+    "sha256": "ded172d90f83ad7e6f14e0a2bd8035364ab1615bae10f5843792a5d6aa65ed3a"
+  },
+  {
+    "id": "T-03-1-5",
+    "theme": "Teaser de franchise",
+    "calibration": "suite attendue",
+    "signature": "Motif reconnaissable, thème musical connu",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-5__teaser-de-franchise.md",
+    "sha256": "d6d26fa90cdbadc27bdb1957702448090c912220ad63af4f1e71b19b0206bc8d"
+  },
+  {
+    "id": "T-03-1-6",
+    "theme": "Teaser de festival",
+    "calibration": "avant-première",
+    "signature": "Lauriers, mention de sélection, sobriété",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-6__teaser-de-festival.md",
+    "sha256": "5f9a537f2aa319e7b6589550936e721e6f93868a2ead938e89ce2cba4c5177f5"
+  },
+  {
+    "id": "T-03-1-7",
+    "theme": "Teaser vertical",
+    "calibration": "réseau social",
+    "signature": "9:16, sous-titres incrustés, accroche en 1,5 s",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-7__teaser-vertical.md",
+    "sha256": "7fa559b5b2cdd7782fb37a0f98e5faa73ca05610e0822d4fec8349d14ddd3cfd"
+  },
+  {
+    "id": "T-03-1-8",
+    "theme": "Teaser d'archive",
+    "calibration": "ressortie",
+    "signature": "Grain argentique, carton « restauré »",
+    "family": "Cinéma & trailer",
+    "subfamily": "Teaser d'annonce",
+    "file": "03_cinema-trailer/03-1_teaser-d-annonce/T-03-1-8__teaser-d-archive.md",
+    "sha256": "b4c2ebe2ddb0f8ff664948e2f44c06debc0f86ccfcaade04525488b2683547f6"
+  },
+  {
+    "id": "T-03-2-1",
+    "theme": "Structure en trois actes",
+    "calibration": "trailer classique",
+    "signature": "Mise en place, montée, salve finale",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-1__structure-en-trois-actes.md",
+    "sha256": "abcd5811fe618171055461a163608606437ef6455c52ba9622e51d646178efcd"
+  },
+  {
+    "id": "T-03-2-2",
+    "theme": "Bande-annonce à cartons",
+    "calibration": "cartons narratifs",
+    "signature": "Phrases en capitales entre les plans",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-2__bande-annonce-a-cartons.md",
+    "sha256": "22a9eb045b5d9823eb840dad859fb97c609bec5a0c845d272aa13790c6f0b5f4"
+  },
+  {
+    "id": "T-03-2-3",
+    "theme": "Bande-annonce silencieuse",
+    "calibration": "tension",
+    "signature": "Aucune voix off, respiration entre chaque plan",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-3__bande-annonce-silencieuse.md",
+    "sha256": "00d8e5c7d6a704ae9de3526e7fd9a80009f7e23f38da02ed03d66c680182585f"
+  },
+  {
+    "id": "T-03-2-4",
+    "theme": "Bande-annonce d'action",
+    "calibration": "blockbuster",
+    "signature": "Coupes sur temps fort, montée de tempo",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-4__bande-annonce-d-action.md",
+    "sha256": "48b5eabed7e573b2321ab2a35eaf7c307262c5994c87858a89991fbd809981e5"
+  },
+  {
+    "id": "T-03-2-5",
+    "theme": "Bande-annonce d'auteur",
+    "calibration": "film de festival",
+    "signature": "Plans longs, citations de presse, musique unique",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-5__bande-annonce-d-auteur.md",
+    "sha256": "7fcfcbbb9c32f281ccbf875d0b8839fc2959117ce0885a74287bd85dc4248ea7"
+  },
+  {
+    "id": "T-03-2-6",
+    "theme": "Bande-annonce à voix off",
+    "calibration": "narration",
+    "signature": "Voix grave, phrases scandées, structure imposée",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-6__bande-annonce-a-voix-off.md",
+    "sha256": "ff130b478360c33d533c1d9d0c96f6e6d60f5a1b5ec34ba75a10adbd545f4429"
+  },
+  {
+    "id": "T-03-2-7",
+    "theme": "Bande-annonce comique",
+    "calibration": "comédie",
+    "signature": "Rythme de vanne, coupes sèches, silence de chute",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-7__bande-annonce-comique.md",
+    "sha256": "14881d55551fb607983c946b13a1c47afcf345232107585ca40c3726afaf56b7"
+  },
+  {
+    "id": "T-03-2-8",
+    "theme": "Bande-annonce internationale",
+    "calibration": "version sous-titrée",
+    "signature": "Sous-titres intégrés, titre localisé",
+    "family": "Cinéma & trailer",
+    "subfamily": "Bande-annonce principale",
+    "file": "03_cinema-trailer/03-2_bande-annonce-principale/T-03-2-8__bande-annonce-internationale.md",
+    "sha256": "e35c4f35f47df46fad9c8b2db628bcc2e490fa13b1d699662ce9e9e36da37167"
+  },
+  {
+    "id": "T-03-3-1",
+    "theme": "Générique typographique",
+    "calibration": "Saul Bass",
+    "signature": "Formes découpées, mouvement graphique, jazz",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-1__generique-typographique.md",
+    "sha256": "6b9b735640d3ca2f3f2561204757bfdbe063e5605cdafe12b4329ef49bb846cd"
+  },
+  {
+    "id": "T-03-3-2",
+    "theme": "Générique noir sur fond",
+    "calibration": "générique sobre",
+    "signature": "Texte blanc sur noir, cadence régulière",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-2__generique-noir-sur-fond.md",
+    "sha256": "098da88122adb2a1ed62e03f5512068bc40bdb9ce2f3536256f8ef121ecefec8"
+  },
+  {
+    "id": "T-03-3-3",
+    "theme": "Générique intégré au décor",
+    "calibration": "titres dans l'image",
+    "signature": "Le titre s'inscrit dans le plan réel",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-3__generique-integre-au-decor.md",
+    "sha256": "7d9988d10fb9d3834ce3dcc42cc0a4159eb034188fd6423d2112cc5a04194417"
+  },
+  {
+    "id": "T-03-3-4",
+    "theme": "Générique de série premium",
+    "calibration": "HBO",
+    "signature": "Motif métaphorique, thème musical fort",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-4__generique-de-serie-premium.md",
+    "sha256": "defa978fa53af76d524ed9f3b442b1c934dc890118113082a25a4519d3749a46"
+  },
+  {
+    "id": "T-03-3-5",
+    "theme": "Générique documentaire",
+    "calibration": "ouverture factuelle",
+    "signature": "Cartes, archives, date d'ouverture",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-5__generique-documentaire.md",
+    "sha256": "57ed3a2454209e9592492626d5c25241511c292ca580e5ca9ff7e77585c8ebd5"
+  },
+  {
+    "id": "T-03-3-6",
+    "theme": "Générique d'animation",
+    "calibration": "ouverture animée",
+    "signature": "Personnages en défilé, couleurs saturées",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-6__generique-d-animation.md",
+    "sha256": "b5bbfc0e5d43f1832ce02aede68b2d1870ec0482f486a6387480a232649ccc6d"
+  },
+  {
+    "id": "T-03-3-7",
+    "theme": "Générique rétro",
+    "calibration": "années 1970",
+    "signature": "Grain, halations, typographie de l'époque",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-7__generique-retro.md",
+    "sha256": "ee3a460cca9ff24fefe2fea3919223cc62978daf12d46f76b28e50e592e2bc8a"
+  },
+  {
+    "id": "T-03-3-8",
+    "theme": "Générique minimal",
+    "calibration": "ouverture d'auteur",
+    "signature": "Un seul carton, une seule police, silence",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de début",
+    "file": "03_cinema-trailer/03-3_generique-de-debut/T-03-3-8__generique-minimal.md",
+    "sha256": "98c51de7f302bf19900035e4b4c22ac0a45ce2915aa35046f0ea0ca8c8490708"
+  },
+  {
+    "id": "T-03-4-1",
+    "theme": "Défilement classique",
+    "calibration": "générique déroulant",
+    "signature": "Colonne centrée, vitesse constante",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-1__defilement-classique.md",
+    "sha256": "56ca83e2f8a1609d38942bf38947f0c3c098062703e74e4357dc553a667eac6a"
+  },
+  {
+    "id": "T-03-4-2",
+    "theme": "Générique à deux colonnes",
+    "calibration": "fonction / nom",
+    "signature": "Alignement au centre, filet de séparation",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-2__generique-a-deux-colonnes.md",
+    "sha256": "32cc6927f90e5b6513b13181472f32c0f1102eb2a1c7d563b739f8d452d58964"
+  },
+  {
+    "id": "T-03-4-3",
+    "theme": "Générique illustré",
+    "calibration": "animation de fin",
+    "signature": "Illustrations entre les blocs",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-3__generique-illustre.md",
+    "sha256": "e56ff5f13128ca56e60ed85f14dde04251a90277384998c32e6231333e9c9a6b"
+  },
+  {
+    "id": "T-03-4-4",
+    "theme": "Générique avec scène post",
+    "calibration": "scène supplémentaire",
+    "signature": "Interruption du défilement, reprise ensuite",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-4__generique-avec-scene-post.md",
+    "sha256": "f32692641e9e5f985372e25695915c34b2b65e84eeba66e3877a0e2fdfaaf7f9"
+  },
+  {
+    "id": "T-03-4-5",
+    "theme": "Générique de court métrage",
+    "calibration": "fin brève",
+    "signature": "30 secondes, blocs groupés",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-5__generique-de-court-metrage.md",
+    "sha256": "08335e3ac6bb0b32796bd712a922441ca29871963d90772f716ad9ed2e623994"
+  },
+  {
+    "id": "T-03-4-6",
+    "theme": "Générique de jeu vidéo",
+    "calibration": "crédits interactifs",
+    "signature": "Défilement contrôlable, musique en boucle",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-6__generique-de-jeu-video.md",
+    "sha256": "593854636d8c613759af5da79a3937b1d80bd015304e58d786743e33323d7a5b"
+  },
+  {
+    "id": "T-03-4-7",
+    "theme": "Générique de documentaire",
+    "calibration": "mentions et sources",
+    "signature": "Sources, remerciements, financements",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-7__generique-de-documentaire.md",
+    "sha256": "216d191157dd3ee6469a09a3e40bcd4bbaed518f28b2d7a82257ae760fa4f679"
+  },
+  {
+    "id": "T-03-4-8",
+    "theme": "Générique de marque",
+    "calibration": "film corporate",
+    "signature": "Logo final, mentions légales, silence",
+    "family": "Cinéma & trailer",
+    "subfamily": "Générique de fin",
+    "file": "03_cinema-trailer/03-4_generique-de-fin/T-03-4-8__generique-de-marque.md",
+    "sha256": "178caa9417bea7c79d4408514930462244ed283871f15e2254cda9374a5c2fb4"
+  },
+  {
+    "id": "T-03-5-1",
+    "theme": "Sélection officielle",
+    "calibration": "Cannes",
+    "signature": "Lauriers dorés, plans longs, aucun effet",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-1__selection-officielle.md",
+    "sha256": "22098f0844ead20989602ad846b325c11abe69b1e700a8d1e18664f7a8046570"
+  },
+  {
+    "id": "T-03-5-2",
+    "theme": "Cinéma indépendant",
+    "calibration": "Sundance",
+    "signature": "Typographie manuscrite, palette délavée",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-2__cinema-independant.md",
+    "sha256": "58639afac297ae2ac5cdd20b97dbdd52d5efc165a3d9a52a9c119ae5972b4ce1"
+  },
+  {
+    "id": "T-03-5-3",
+    "theme": "Cinéma nordique",
+    "calibration": "festival scandinave",
+    "signature": "Froid, vide, cadre large",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-3__cinema-nordique.md",
+    "sha256": "3474fa9ad2b4e71aeaddb0718c0cf6c038d757e82f4d615d726d265fed791060"
+  },
+  {
+    "id": "T-03-5-4",
+    "theme": "Cinéma asiatique d'auteur",
+    "calibration": "festival asiatique",
+    "signature": "Composition frontale, vertical, silence",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-4__cinema-asiatique-d-auteur.md",
+    "sha256": "78823e04f2b1a2ed2476439ab4f1c983089aff246913cbf3bf1e2555f18927f2"
+  },
+  {
+    "id": "T-03-5-5",
+    "theme": "Rétrospective",
+    "calibration": "hommage",
+    "signature": "Noir et blanc, cartons de date, archives",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-5__retrospective.md",
+    "sha256": "32513a332823e15a6518325f0d787dd8afd9d47acf088887333170accc68f56e"
+  },
+  {
+    "id": "T-03-5-6",
+    "theme": "Film expérimental",
+    "calibration": "avant-garde",
+    "signature": "Typographie déconstruite, montage heurté",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-6__film-experimental.md",
+    "sha256": "8158e4038a5a614e6204927f137f5bb826781d5a9c0a11b964574d691ace8869"
+  },
+  {
+    "id": "T-03-5-7",
+    "theme": "Documentaire de création",
+    "calibration": "making-of d'auteur",
+    "signature": "Caméra portée, texte manuscrit",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-7__documentaire-de-creation.md",
+    "sha256": "d2a4520e93032e8e2bd5ba09271ac5429b942b38cf70d95b5de2836afe86dcba"
+  },
+  {
+    "id": "T-03-5-8",
+    "theme": "Film de fin d'études",
+    "calibration": "école de cinéma",
+    "signature": "Sobre, générique complet, mention d'école",
+    "family": "Cinéma & trailer",
+    "subfamily": "Film d'auteur & festival",
+    "file": "03_cinema-trailer/03-5_film-d-auteur-festival/T-03-5-8__film-de-fin-d-etudes.md",
+    "sha256": "f986d73de095ef87566ce59522700b085c21dde3e001ce6a35f2820f6802db77"
+  },
+  {
+    "id": "T-03-6-1",
+    "theme": "Révélation de logo",
+    "calibration": "franchise majeure",
+    "signature": "Métal, éclat, impact sonore, 3 secondes",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-1__revelation-de-logo.md",
+    "sha256": "b8e5ffdd76e8ad6fc05dd60684c6545b56a451c094ee65716c856d960c4ab6a5"
+  },
+  {
+    "id": "T-03-6-2",
+    "theme": "Montage d'action",
+    "calibration": "film d'action",
+    "signature": "Coupes sur percussion, plans de 12 images",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-2__montage-d-action.md",
+    "sha256": "2bbce0bcc1ca1bc42b13cf96d72aa6213c4c47327bf5c5dda14578f39b15326b"
+  },
+  {
+    "id": "T-03-6-3",
+    "theme": "Science-fiction",
+    "calibration": "espace",
+    "signature": "Bleu-noir, typographie fine espacée, grondement",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-3__science-fiction.md",
+    "sha256": "775b7d8277980145034b62893b523eacbbf08e656a3218174406e833c8189025"
+  },
+  {
+    "id": "T-03-6-4",
+    "theme": "Super-héros",
+    "calibration": "film de super-héros",
+    "signature": "Couleurs primaires, plans héroïques ascendants",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-4__super-heros.md",
+    "sha256": "bb2d552824139711928ddd988efd339cf9b65d2d04867592c4dcee21f1b340bb"
+  },
+  {
+    "id": "T-03-6-5",
+    "theme": "Fantastique",
+    "calibration": "monde secondaire",
+    "signature": "Doré, cartes, voix de conteur",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-5__fantastique.md",
+    "sha256": "0070e067f64697c66dcfe233cae31dbe8aab03da6ad869fbf0dbcfbc3ef70c43"
+  },
+  {
+    "id": "T-03-6-6",
+    "theme": "Catastrophe",
+    "calibration": "film catastrophe",
+    "signature": "Échelle, compte à rebours, sirènes",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-6__catastrophe.md",
+    "sha256": "55966bb502e75716ee1312453373f776c597b7b1fce2ecc25ada99832a25eff2"
+  },
+  {
+    "id": "T-03-6-7",
+    "theme": "Suite annoncée",
+    "calibration": "teaser de suite",
+    "signature": "Reprise du motif précédent, variation",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-7__suite-annoncee.md",
+    "sha256": "46ce0dc1ed6b6522220b8f39006da22189e1e48ae6efa6c163b64b0c56c70b18"
+  },
+  {
+    "id": "T-03-6-8",
+    "theme": "Univers partagé",
+    "calibration": "annonce croisée",
+    "signature": "Logos multiples, chronologie affichée",
+    "family": "Cinéma & trailer",
+    "subfamily": "Blockbuster & franchise",
+    "file": "03_cinema-trailer/03-6_blockbuster-franchise/T-03-6-8__univers-partage.md",
+    "sha256": "6f06f2eb46a29b635261978548cfc67cb53b5fe2e1c8c0aa83fc506ab049dabc"
+  },
+  {
+    "id": "T-03-7-1",
+    "theme": "Horreur atmosphérique",
+    "calibration": "épouvante lente",
+    "signature": "Silence, hors-champ, un seul sursaut",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-1__horreur-atmospherique.md",
+    "sha256": "a2a844163e77315edc59c880926575ff660f33f5e9bde51426d56308a6c04d75"
+  },
+  {
+    "id": "T-03-7-2",
+    "theme": "Horreur brutale",
+    "calibration": "slasher",
+    "signature": "Coupes violentes, rouge, grain",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-2__horreur-brutale.md",
+    "sha256": "fb4b0df71dfe170fc01da339e7ace4aa9595c18d04afd1515a4ded55bae43019"
+  },
+  {
+    "id": "T-03-7-3",
+    "theme": "Found footage",
+    "calibration": "caméra trouvée",
+    "signature": "Timecode, batterie faible, image dégradée",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-3__found-footage.md",
+    "sha256": "52b853103599e5d34e2e1809755e6b96c6bccad9b3e471ffb20ba12783648a4b"
+  },
+  {
+    "id": "T-03-7-4",
+    "theme": "Thriller psychologique",
+    "calibration": "tension mentale",
+    "signature": "Cadres serrés, dérive sonore, respiration",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-4__thriller-psychologique.md",
+    "sha256": "90609c805af5a39d06727c486012a92cfc0b75419918e5375a45016cedd7f592"
+  },
+  {
+    "id": "T-03-7-5",
+    "theme": "Polar",
+    "calibration": "enquête",
+    "signature": "Nuit, néons, pluie, typographie de dossier",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-5__polar.md",
+    "sha256": "c02affd00b1904220b298d6b855723a929c050e1673f906f2627437e666f7af3"
+  },
+  {
+    "id": "T-03-7-6",
+    "theme": "Horreur folklorique",
+    "calibration": "rituel",
+    "signature": "Symboles, chants, palette terreuse",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-6__horreur-folklorique.md",
+    "sha256": "56b47fa1eca03e598cf4b32f4e1bccb65739ab15c6ef0042bc04885ad569ee97"
+  },
+  {
+    "id": "T-03-7-7",
+    "theme": "Horreur numérique",
+    "calibration": "écran d'ordinateur",
+    "signature": "Interface, curseur, notifications",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-7__horreur-numerique.md",
+    "sha256": "f6f24c008d12898eb824ae2b4b76aa963384e21d62bdeaf7154a1bc4081164b2"
+  },
+  {
+    "id": "T-03-7-8",
+    "theme": "Anthologie",
+    "calibration": "segments multiples",
+    "signature": "Cartons de chapitre, ruptures de ton",
+    "family": "Cinéma & trailer",
+    "subfamily": "Horreur & thriller",
+    "file": "03_cinema-trailer/03-7_horreur-thriller/T-03-7-8__anthologie.md",
+    "sha256": "eb34b5fe1add411427ab2405ee455a967fd6ed0b05d917772b2ea4b1512ae2b3"
+  },
+  {
+    "id": "T-03-8-1",
+    "theme": "Animation grand studio",
+    "calibration": "Pixar",
+    "signature": "Lumière chaude, humour de rythme, thème mélodique",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-1__animation-grand-studio.md",
+    "sha256": "409e4363b29299c68dfca98995da133df74381e9d1026d1f33cac8d46f9686fb"
+  },
+  {
+    "id": "T-03-8-2",
+    "theme": "Animation japonaise",
+    "calibration": "Ghibli",
+    "signature": "Aquarelle, ciel, silence, plans de respiration",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-2__animation-japonaise.md",
+    "sha256": "92866f28f38b190e99171de21a0188de2487acb8503555ff313340c0a911a740"
+  },
+  {
+    "id": "T-03-8-3",
+    "theme": "Animation stop-motion",
+    "calibration": "Laika",
+    "signature": "Texture de matière, éclairage contrasté",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-3__animation-stop-motion.md",
+    "sha256": "3dfcf8868929278968475a9fb18c9383193a2664894eadb1dd52bc46798367ba"
+  },
+  {
+    "id": "T-03-8-4",
+    "theme": "Animation 2D",
+    "calibration": "dessin animé classique",
+    "signature": "Aplats, contours nets, mouvement franc",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-4__animation-2d.md",
+    "sha256": "e7388d135b5651930672109dbb35f4ac6760ef5533da5fe4c5fdffffa84e0c97"
+  },
+  {
+    "id": "T-03-8-5",
+    "theme": "Animation adulte",
+    "calibration": "animation pour adultes",
+    "signature": "Palette sombre, humour noir, typographie brute",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-5__animation-adulte.md",
+    "sha256": "acf844cba3814a5b0d35a04497e8347910c1403aa99e369018761f0f1c60103f"
+  },
+  {
+    "id": "T-03-8-6",
+    "theme": "Comédie familiale",
+    "calibration": "film tout public",
+    "signature": "Couleurs vives, musique pop, promesse de rire",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-6__comedie-familiale.md",
+    "sha256": "67ddee07f53e4b046fac2661ed0635635e884ccaca41c6b9f637f3df84996a7f"
+  },
+  {
+    "id": "T-03-8-7",
+    "theme": "Aventure jeunesse",
+    "calibration": "film d'aventure",
+    "signature": "Cartes, boussole, ton d'expédition",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-7__aventure-jeunesse.md",
+    "sha256": "9f7e5979d28930dadf495d731c7e01929c90c00f97308af82df6baa03f492302"
+  },
+  {
+    "id": "T-03-8-8",
+    "theme": "Court métrage d'animation",
+    "calibration": "format court",
+    "signature": "Une seule idée, 3 minutes, silence final",
+    "family": "Cinéma & trailer",
+    "subfamily": "Animation & famille",
+    "file": "03_cinema-trailer/03-8_animation-famille/T-03-8-8__court-metrage-d-animation.md",
+    "sha256": "29149d86c991c59ea0a00bac6f35765dd9600b8a413ec4c43fd078c130dafba2"
+  },
+  {
+    "id": "T-04-1-1",
+    "theme": "Révélation cinématique",
+    "calibration": "reveal de conférence",
+    "signature": "Aucune image de jeu, montée jusqu'au logo",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-1__revelation-cinematique.md",
+    "sha256": "fe46e615ac110e133c8645dbe5e871078e01de189a14c301d9fe3a78fbe9c39a"
+  },
+  {
+    "id": "T-04-1-2",
+    "theme": "Révélation par le monde",
+    "calibration": "plan d'univers",
+    "signature": "Travelling long, échelle, silence",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-2__revelation-par-le-monde.md",
+    "sha256": "29b2f2e5724f0c24b2cefe0b6a31dda9aad8c2e2a401ba9b721921a0976f6e81"
+  },
+  {
+    "id": "T-04-1-3",
+    "theme": "Révélation par le personnage",
+    "calibration": "héros dévoilé",
+    "signature": "Dos puis visage, thème musical",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-3__revelation-par-le-personnage.md",
+    "sha256": "b4e322364849fab623f5b0a3418de17bb3d3293df9981601f5d335f876c0ba1a"
+  },
+  {
+    "id": "T-04-1-4",
+    "theme": "Annonce à date",
+    "calibration": "date de sortie",
+    "signature": "Chiffres monumentaux, plateformes en fin",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-4__annonce-a-date.md",
+    "sha256": "bfd253fc3a86db8f31ef27846318ac57f7212979a50a71faff90a31f6667eb4b"
+  },
+  {
+    "id": "T-04-1-5",
+    "theme": "Annonce de suite",
+    "calibration": "numéro de série",
+    "signature": "Le chiffre est le sujet du trailer",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-5__annonce-de-suite.md",
+    "sha256": "6048caa4a3dbac90d3d13988024341b789da4c626d88f9e3e048bb1c63c8bdad"
+  },
+  {
+    "id": "T-04-1-6",
+    "theme": "Annonce de remake",
+    "calibration": "jeu restauré",
+    "signature": "Comparaison avant / après, nostalgie",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-6__annonce-de-remake.md",
+    "sha256": "16a628418c55197b00e73b6c8d36e08c76baefedec1e700964e82dd44fd224ce"
+  },
+  {
+    "id": "T-04-1-7",
+    "theme": "Annonce surprise",
+    "calibration": "shadow drop",
+    "signature": "Mention « disponible maintenant » en fin",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-7__annonce-surprise.md",
+    "sha256": "94e5e6e88d7ed9f4a9d03b76bcfee473fa88eb9ace9d1cd71b5266a16971ac1a"
+  },
+  {
+    "id": "T-04-1-8",
+    "theme": "Annonce indépendante",
+    "calibration": "révélation indé",
+    "signature": "Ton personnel, voix du créateur",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer d'annonce",
+    "file": "04_jeu-video/04-1_trailer-d-annonce/T-04-1-8__annonce-independante.md",
+    "sha256": "f49b565062931130d27fc4251a5ca53e37bc467177c68a4f78e7418e1468f50c"
+  },
+  {
+    "id": "T-04-2-1",
+    "theme": "Démonstration commentée",
+    "calibration": "gameplay walkthrough",
+    "signature": "Voix de développeur, HUD visible",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-1__demonstration-commentee.md",
+    "sha256": "4076b22087c108dc337418d8d70c5d21c081fb03daa630a33a13d578c07c92c0"
+  },
+  {
+    "id": "T-04-2-2",
+    "theme": "Montage d'action",
+    "calibration": "gameplay monté",
+    "signature": "Coupes sur temps fort, aucune voix",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-2__montage-d-action.md",
+    "sha256": "9d754a92dc2fdbd5cd3651ab8ca52f04a4123bf911c87a74f22178bb6085710a"
+  },
+  {
+    "id": "T-04-2-3",
+    "theme": "Vitrine de mécanique",
+    "calibration": "focus système",
+    "signature": "Un mécanisme, expliqué par l'image",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-3__vitrine-de-mecanique.md",
+    "sha256": "7a9836ff8d75e9fd1e5c09d74093c06cf5f0dfb2b237af471ed090c3293f5f7e"
+  },
+  {
+    "id": "T-04-2-4",
+    "theme": "Comparatif de performance",
+    "calibration": "mode technique",
+    "signature": "Compteur d'images, résolution affichée",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-4__comparatif-de-performance.md",
+    "sha256": "7e5c17ff8ebe851318d9fe4fd54406d541cd4069943cedc9a9b8ccd93cdb309c"
+  },
+  {
+    "id": "T-04-2-5",
+    "theme": "Trailer de monde ouvert",
+    "calibration": "exploration",
+    "signature": "Carte, biomes, plans aériens",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-5__trailer-de-monde-ouvert.md",
+    "sha256": "cd21af3bc41e563c6a395ede3d02d6a81f4d8eb7a8f7b9f2a1d20749a7fdd4c9"
+  },
+  {
+    "id": "T-04-2-6",
+    "theme": "Trailer de combat",
+    "calibration": "système de combat",
+    "signature": "Ralenti sur impact, compteur de coups",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-6__trailer-de-combat.md",
+    "sha256": "3f30fe011d9574c1c13106176cfc097569218abb700db363c0cecc4a2bef3e6e"
+  },
+  {
+    "id": "T-04-2-7",
+    "theme": "Trailer coopératif",
+    "calibration": "multijoueur",
+    "signature": "Écran partagé, voix de joueurs",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-7__trailer-cooperatif.md",
+    "sha256": "3aa5220b34c329dc05990f06fdf9770871f50a0a33eefc66d8b0135f10223483"
+  },
+  {
+    "id": "T-04-2-8",
+    "theme": "Trailer d'accessibilité",
+    "calibration": "options",
+    "signature": "Démonstration des réglages, ton pédagogique",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de gameplay",
+    "file": "04_jeu-video/04-2_trailer-de-gameplay/T-04-2-8__trailer-d-accessibilite.md",
+    "sha256": "b2929c6e74acd10ca87512d64d6406dc39d0cd567ecc6af8344eddba321341cb"
+  },
+  {
+    "id": "T-04-3-1",
+    "theme": "Lancement épique",
+    "calibration": "launch trailer",
+    "signature": "Musique licenciée, montage de tout le jeu",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-1__lancement-epique.md",
+    "sha256": "9b83467a2da8c44c10dd98b3a033797eb6941d09766901649256f68fc1a4e3e8"
+  },
+  {
+    "id": "T-04-3-2",
+    "theme": "Lancement à citations",
+    "calibration": "critiques",
+    "signature": "Notes de presse incrustées",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-2__lancement-a-citations.md",
+    "sha256": "6c1ff7f12fae5f629a708a9ffe566f809daeca619da514040dc93713d5805541"
+  },
+  {
+    "id": "T-04-3-3",
+    "theme": "Lancement en prise de vues réelles",
+    "calibration": "live action",
+    "signature": "Acteurs, décor réel, clin d'œil au jeu",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-3__lancement-en-prise-de-vues-reelles.md",
+    "sha256": "d2d7f30df71d9e1a0814543b71248914c71c7c736a4f8cb4613bc40733f84b3a"
+  },
+  {
+    "id": "T-04-3-4",
+    "theme": "Lancement narratif",
+    "calibration": "histoire",
+    "signature": "Voix de personnage, arc résumé",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-4__lancement-narratif.md",
+    "sha256": "81e82c7761547312cfa0a5f684726a285859a70a4d014f5792ac324721955088"
+  },
+  {
+    "id": "T-04-3-5",
+    "theme": "Lancement de portage",
+    "calibration": "nouvelle plateforme",
+    "signature": "Mention de plateforme dominante",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-5__lancement-de-portage.md",
+    "sha256": "0c16779fc3ebef4318505a045528a837a39f2422bbebcafc84a2f31e5a71b411"
+  },
+  {
+    "id": "T-04-3-6",
+    "theme": "Lancement d'édition",
+    "calibration": "édition spéciale",
+    "signature": "Contenu listé, objets physiques",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-6__lancement-d-edition.md",
+    "sha256": "036c56852390cfb55440fe7e64366f66c36ef7cb1ded1d7134d610113e7e283b"
+  },
+  {
+    "id": "T-04-3-7",
+    "theme": "Lancement vertical",
+    "calibration": "réseau social",
+    "signature": "9:16, accroche immédiate, sous-titres",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-7__lancement-vertical.md",
+    "sha256": "a92f7558ae2cc7de9c48ee1f07d258241952e636fbc672162a94d2422ea113c4"
+  },
+  {
+    "id": "T-04-3-8",
+    "theme": "Lancement d'accès anticipé",
+    "calibration": "early access",
+    "signature": "Feuille de route affichée, ton honnête",
+    "family": "Jeu vidéo",
+    "subfamily": "Trailer de lancement",
+    "file": "04_jeu-video/04-3_trailer-de-lancement/T-04-3-8__lancement-d-acces-anticipe.md",
+    "sha256": "fec38ee0fa55796572ea4e07336a84c536f4110d81c65482654232afca0d2666"
+  },
+  {
+    "id": "T-04-4-1",
+    "theme": "HUD militaire",
+    "calibration": "tactique",
+    "signature": "Réticules, données, vert phosphore",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-1__hud-militaire.md",
+    "sha256": "5f121c6b951d9eee6ed6ce8c9945392efeae3a052799ba0b4d80df5af0617723"
+  },
+  {
+    "id": "T-04-4-2",
+    "theme": "HUD science-fiction",
+    "calibration": "interface holographique",
+    "signature": "Bleu translucide, glitch, profondeur",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-2__hud-science-fiction.md",
+    "sha256": "d3b2907e34e6e86a3c0cb0d2f0e01ebed1172d6ad9a86f84a368e969cb0da8e7"
+  },
+  {
+    "id": "T-04-4-3",
+    "theme": "HUD minimal",
+    "calibration": "immersion",
+    "signature": "Presque rien, apparition contextuelle",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-3__hud-minimal.md",
+    "sha256": "ad52335d5cbd64deb95f94be8d376da0029a07466ea1febfbe6e131848d9db31"
+  },
+  {
+    "id": "T-04-4-4",
+    "theme": "HUD rétro",
+    "calibration": "pixel",
+    "signature": "Cadres pixelisés, police bitmap",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-4__hud-retro.md",
+    "sha256": "f412619121ed979e7b85080a37f0c5fde633eddbbddb28cffbb009690aa4dc1d"
+  },
+  {
+    "id": "T-04-4-5",
+    "theme": "HUD de course",
+    "calibration": "simulation",
+    "signature": "Compteurs, tours, chronométrage",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-5__hud-de-course.md",
+    "sha256": "20f0053588e5b5e94da920e0e81a221e51b196fe74199af4de86db14a064b0d6"
+  },
+  {
+    "id": "T-04-4-6",
+    "theme": "HUD de jeu de rôle",
+    "calibration": "statistiques",
+    "signature": "Jauges, inventaire, icônes de sort",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-6__hud-de-jeu-de-role.md",
+    "sha256": "c9d7669d503374b6fe0666644dcfb060ba28b8f768d3817916974a1223e31846"
+  },
+  {
+    "id": "T-04-4-7",
+    "theme": "HUD de stratégie",
+    "calibration": "vue tactique",
+    "signature": "Mini-carte, ressources, files de production",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-7__hud-de-strategie.md",
+    "sha256": "2a2ba214b2314b51189b40c7a8ec18e6da7a255e55b34468ac03cd4d1cc64a30"
+  },
+  {
+    "id": "T-04-4-8",
+    "theme": "HUD de survie",
+    "calibration": "jauges vitales",
+    "signature": "Faim, froid, endurance, dégradation",
+    "family": "Jeu vidéo",
+    "subfamily": "Habillage HUD & interface",
+    "file": "04_jeu-video/04-4_habillage-hud-interface/T-04-4-8__hud-de-survie.md",
+    "sha256": "b003fe5beab1e7b935e604aea915aaf6505d201b703aab3850fa3fbcf8b0925f"
+  },
+  {
+    "id": "T-04-5-1",
+    "theme": "Habillage de tournoi",
+    "calibration": "finale internationale",
+    "signature": "Tableau, équipes, score permanent",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-1__habillage-de-tournoi.md",
+    "sha256": "692c892900759f6575de200edaeffc7be9b951ec5392b0b8a3466afc1517fa7c"
+  },
+  {
+    "id": "T-04-5-2",
+    "theme": "Présentation d'équipe",
+    "calibration": "roster",
+    "signature": "Portraits, pseudonymes, statistiques",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-2__presentation-d-equipe.md",
+    "sha256": "70399fbc0d5630dfe1566da8f82eaa1f2b3b597be8cca3023ffc25cdeea24f62"
+  },
+  {
+    "id": "T-04-5-3",
+    "theme": "Récapitulatif de manche",
+    "calibration": "résumé",
+    "signature": "Temps forts, chiffres, ralentis",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-3__recapitulatif-de-manche.md",
+    "sha256": "2633a4de8816ca4566dffe2280751a981c144edc71d727a8a5c7b695d8b829ed"
+  },
+  {
+    "id": "T-04-5-4",
+    "theme": "Tableau de classement",
+    "calibration": "ligue",
+    "signature": "Grille, points, évolution",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-4__tableau-de-classement.md",
+    "sha256": "06ff76e7bd17df662264d36fa50a277799d66bf6d60164edd70bfab3fdf78f9e"
+  },
+  {
+    "id": "T-04-5-5",
+    "theme": "Compte à rebours d'ouverture",
+    "calibration": "avant-match",
+    "signature": "Chronomètre, montée sonore",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-5__compte-a-rebours-d-ouverture.md",
+    "sha256": "d9d86403dca30a9dfe0345e15f861a5927bc3adfde0806773a6cd37b8481edda"
+  },
+  {
+    "id": "T-04-5-6",
+    "theme": "Analyse d'après-match",
+    "calibration": "plateau",
+    "signature": "Schémas tactiques, télestration",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-6__analyse-d-apres-match.md",
+    "sha256": "15b0b13a22d450655bbe6213c2c7904f6f7d9726f3062985024a2b77bff52e16"
+  },
+  {
+    "id": "T-04-5-7",
+    "theme": "Cérémonie de titre",
+    "calibration": "remise de trophée",
+    "signature": "Doré, confettis, ralenti",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-7__ceremonie-de-titre.md",
+    "sha256": "0ae181d2dfd0761e9729bd35c86caa42130e0843034eaef5b0cbe8990521bf6b"
+  },
+  {
+    "id": "T-04-5-8",
+    "theme": "Habillage de créateur",
+    "calibration": "tournoi communautaire",
+    "signature": "Ton décontracté, couleurs de la communauté",
+    "family": "Jeu vidéo",
+    "subfamily": "Esport & compétition",
+    "file": "04_jeu-video/04-5_esport-competition/T-04-5-8__habillage-de-createur.md",
+    "sha256": "46c0b13b2eeeb8960206e11cbe3fba3e8896bfbbb336c46dae6df3d9aeb38abd"
+  },
+  {
+    "id": "T-04-6-1",
+    "theme": "Pixel art rétro",
+    "calibration": "8 bits",
+    "signature": "Palette limitée, police bitmap, chiptune",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-1__pixel-art-retro.md",
+    "sha256": "bbbfa7f11e115bddb7879e6b2115fd5227d17e7102a37bb5f39ce5395db166bb"
+  },
+  {
+    "id": "T-04-6-2",
+    "theme": "Pixel art moderne",
+    "calibration": "16 bits enrichi",
+    "signature": "Éclairage dynamique, palette étendue",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-2__pixel-art-moderne.md",
+    "sha256": "3de4b8290df813b52094aad58d5da004a4596a0cf09d410f968445b419a3b2f4"
+  },
+  {
+    "id": "T-04-6-3",
+    "theme": "Dessiné à la main",
+    "calibration": "illustration",
+    "signature": "Traits visibles, texture papier",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-3__dessine-a-la-main.md",
+    "sha256": "b8b879f676d147659295cbf37cac1ba4de943c424e183f58a1ae30f233c974da"
+  },
+  {
+    "id": "T-04-6-4",
+    "theme": "Minimalisme géométrique",
+    "calibration": "formes pures",
+    "signature": "Aplats, mouvement épuré, silence",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-4__minimalisme-geometrique.md",
+    "sha256": "e94227700c34effb053c4817c07be4844876222149d3f238a086168e29765832"
+  },
+  {
+    "id": "T-04-6-5",
+    "theme": "Jeu narratif",
+    "calibration": "roman visuel",
+    "signature": "Texte central, choix, portraits",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-5__jeu-narratif.md",
+    "sha256": "08fcd99eab0d493b2068e94ed077e3f3906ae78fb6b983647b4e5403d4f8b0a8"
+  },
+  {
+    "id": "T-04-6-6",
+    "theme": "Jeu de plateforme",
+    "calibration": "précision",
+    "signature": "Rythme rapide, compteur de morts",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-6__jeu-de-plateforme.md",
+    "sha256": "3e549a8ae1e962926b1cf2b8bf673601f1ebffa296bb7a396e5ce06065a46c5a"
+  },
+  {
+    "id": "T-04-6-7",
+    "theme": "Jeu contemplatif",
+    "calibration": "ambiance",
+    "signature": "Lent, ambiant, sans interface",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-7__jeu-contemplatif.md",
+    "sha256": "e8fc455a44b5af335acdec56cb5b37b2a2f62222527105b6f914ea80965d375a"
+  },
+  {
+    "id": "T-04-6-8",
+    "theme": "Jeu d'auteur",
+    "calibration": "signature personnelle",
+    "signature": "Ton intime, présence du créateur",
+    "family": "Jeu vidéo",
+    "subfamily": "Indépendant & pixel",
+    "file": "04_jeu-video/04-6_independant-pixel/T-04-6-8__jeu-d-auteur.md",
+    "sha256": "49fbfdb088ca481d45c50ecd9811e4c1cd26d6153be6bd0aae5f21265ee6ca38"
+  },
+  {
+    "id": "T-04-7-1",
+    "theme": "Bande-annonce de saison",
+    "calibration": "nouvelle saison",
+    "signature": "Thème saisonnier, passe de combat",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-1__bande-annonce-de-saison.md",
+    "sha256": "19db9c60484c64863d8c963f4059e41dd548db52d84ab1376364a130334eb6e8"
+  },
+  {
+    "id": "T-04-7-2",
+    "theme": "Notes de version illustrées",
+    "calibration": "patch notes",
+    "signature": "Listes, avant / après, chiffres d'équilibrage",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-2__notes-de-version-illustrees.md",
+    "sha256": "df2c44f7ebdd8f3a2777ca69b6499e8140174e77474e20bddedfc779465c38d1"
+  },
+  {
+    "id": "T-04-7-3",
+    "theme": "Nouveau contenu",
+    "calibration": "extension",
+    "signature": "Nouvelle zone, nouveaux personnages",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-3__nouveau-contenu.md",
+    "sha256": "c130c014fef277332c439e3ba55dcdfb2197b135776ba3c01f0d6ec3202c1f2c"
+  },
+  {
+    "id": "T-04-7-4",
+    "theme": "Événement limité",
+    "calibration": "événement temporaire",
+    "signature": "Compte à rebours, récompenses listées",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-4__evenement-limite.md",
+    "sha256": "d803f9f88a51a9320594f9aa7c8861f937d249e7621a45fcda474a15e1696c93"
+  },
+  {
+    "id": "T-04-7-5",
+    "theme": "Collaboration croisée",
+    "calibration": "crossover",
+    "signature": "Deux identités visuelles fusionnées",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-5__collaboration-croisee.md",
+    "sha256": "41cebce460d6324b96e849231576f283fe76641ce5b63dbcdcc2d139553ec4c4"
+  },
+  {
+    "id": "T-04-7-6",
+    "theme": "Retour de contenu",
+    "calibration": "rediffusion",
+    "signature": "Mention « de retour », nostalgie",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-6__retour-de-contenu.md",
+    "sha256": "5548c3741b83badd73f2be2dbd74292f481d13d49c2a32dc56d30f614a0ae691"
+  },
+  {
+    "id": "T-04-7-7",
+    "theme": "Feuille de route",
+    "calibration": "roadmap",
+    "signature": "Chronologie, jalons, transparence",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-7__feuille-de-route.md",
+    "sha256": "921aa0442543c5ed2e38a39c0915bd94df7efe32ee80ce90d33d517fe8298d8c"
+  },
+  {
+    "id": "T-04-7-8",
+    "theme": "Message de fin de service",
+    "calibration": "arrêt de service",
+    "signature": "Ton respectueux, remerciements, date",
+    "family": "Jeu vidéo",
+    "subfamily": "Mise à jour & saison",
+    "file": "04_jeu-video/04-7_mise-a-jour-saison/T-04-7-8__message-de-fin-de-service.md",
+    "sha256": "caa42a7d7a0fab23fe20cf2ff16550c55ae15e73caa434df4a795f4ea6619974"
+  },
+  {
+    "id": "T-04-8-1",
+    "theme": "Déballage de collector",
+    "calibration": "unboxing",
+    "signature": "Objets présentés un par un, lumière rasante",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-1__deballage-de-collector.md",
+    "sha256": "c8d8e01855f966a9d82fd0b3ced139331a440e61901f9a70d40ebd8eee6f27cf"
+  },
+  {
+    "id": "T-04-8-2",
+    "theme": "Comparatif d'éditions",
+    "calibration": "tableau d'offres",
+    "signature": "Colonnes, contenus cochés, prix",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-2__comparatif-d-editions.md",
+    "sha256": "55ea1a668c359272eba78c639f055ea58773404a6ae6bef9780adeace937cf0f"
+  },
+  {
+    "id": "T-04-8-3",
+    "theme": "Bonus de précommande",
+    "calibration": "incitation",
+    "signature": "Objets exclusifs, date limite",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-3__bonus-de-precommande.md",
+    "sha256": "bcd64a9d9f373c7d3d12d2e91e354b4742e7fcdf58b0c5852616e573fdafa40d"
+  },
+  {
+    "id": "T-04-8-4",
+    "theme": "Édition d'art",
+    "calibration": "artbook",
+    "signature": "Planches, croquis, papier",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-4__edition-d-art.md",
+    "sha256": "a909c8d3d7e87599b8f155318f4500d9d163787c735efba323268880826039b6"
+  },
+  {
+    "id": "T-04-8-5",
+    "theme": "Figurine et objet",
+    "calibration": "produit dérivé",
+    "signature": "Rotation à 360°, échelle, matière",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-5__figurine-et-objet.md",
+    "sha256": "73572b7bc35a4148424bc9e1c4af22926bdadb23a3cda8ea9481d1513517481e"
+  },
+  {
+    "id": "T-04-8-6",
+    "theme": "Bande originale physique",
+    "calibration": "vinyle",
+    "signature": "Pochette, sillon, ton audiophile",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-6__bande-originale-physique.md",
+    "sha256": "2d5e7580cc38a07df48c91c4337d995d382a97c14744dd0e80adbfadf1142d83"
+  },
+  {
+    "id": "T-04-8-7",
+    "theme": "Édition de studio",
+    "calibration": "boutique officielle",
+    "signature": "Habillage de marque, sobriété",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-7__edition-de-studio.md",
+    "sha256": "1d0b2d781f167427d9bcf5dfd13278c1e1db187f90eb5621fd85fedc6f89a5b7"
+  },
+  {
+    "id": "T-04-8-8",
+    "theme": "Édition anniversaire",
+    "calibration": "rééditions",
+    "signature": "Chiffre d'anniversaire, archives",
+    "family": "Jeu vidéo",
+    "subfamily": "Édition collector & précommande",
+    "file": "04_jeu-video/04-8_edition-collector-precommande/T-04-8-8__edition-anniversaire.md",
+    "sha256": "025f32357602293e752d84eedc07a1b0ea7fa8f4483ad17dd920250835590dbe"
+  }
+]

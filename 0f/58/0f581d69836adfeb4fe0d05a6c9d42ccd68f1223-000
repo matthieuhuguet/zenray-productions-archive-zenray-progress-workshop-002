@@ -1,0 +1,816 @@
+# ZenRayMedia — Prompt maître V3
+
+## 0. Ordre d’exécution obligatoire
+
+1. Lire intégralement `SKILL(1).md` et appliquer une seule passe **Think of Everything** à la décision de produit décrite ci-dessous.
+2. Lire intégralement `ui-components-zenray-v14(3).html` : HTML, CSS, SVG, états, thèmes Dark/Light et JavaScript.
+3. Considérer ce HTML comme la **source de vérité visuelle actuelle**. Ne pas le remplacer par un design générique.
+4. Extraire chaque composant et chaque état en fragment HTML individuel, avec ses dépendances CSS/JS et un aperçu autonome.
+5. Produire d’abord le plan produit, l’architecture et la cartographie des composants.
+6. Attendre la validation du plan avant de construire ou de modifier le mockup principal.
+
+En cas de contradiction, appliquer cet ordre de priorité :
+
+1. Préservation fonctionnelle et réversibilité.
+2. Fidélité au HTML fourni.
+3. Simplicité d’usage et minimum de clics.
+4. Cohérence du système.
+5. Étendue fonctionnelle.
+
+---
+
+## 1. Mission
+
+Concevoir **ZenRayMedia**, une application web self-hosted, modulaire et orientée opérations atomiques. Elle doit permettre de créer, éditer, décliner, rendre et publier des médias professionnels à partir :
+
+- d’une interface visuelle ;
+- d’instructions en langage naturel ;
+- d’une ligne de commande ;
+- de skills automatisés exécutables par Codex, Claude Code, ChatGPT ou des agents équivalents.
+
+La vision s’inscrit dans la logique de Naval Ravikant : **le code et les médias comme leviers de création et de distribution**.
+
+Le résultat doit donner à une personne ou à une petite équipe la puissance opérationnelle d’un studio média, d’une agence de communication, d’un outil de postproduction et d’un système de publication multicanal, sans transformer l’interface en cockpit illisible.
+
+---
+
+## 2. Principe fondamental : création atomique
+
+Chaque action doit être modulaire, réutilisable, composable et automatisable.
+
+Exemples d’actions atomiques :
+
+- écrire ou réécrire un bloc de texte ;
+- appliquer un style éditorial ;
+- importer, recadrer ou retoucher une image ;
+- ajouter un titre animé ;
+- générer une transition 2D ;
+- composer une scène Motion UI en HTML/CSS/JS ;
+- ajouter un effet sonore ;
+- assembler une séquence ;
+- convertir un rendu HTML en vidéo ;
+- décliner un média dans plusieurs ratios ;
+- publier vers un site ou un réseau social ;
+- versionner, valider, annuler ou relancer une opération.
+
+Les presets ne doivent pas être de simples apparences. Ils doivent encapsuler des règles de composition, de typographie, de mouvement, de rythme, de format, de sortie et de publication.
+
+---
+
+## 3. Ambition du produit
+
+Construire, avec l’aide de l’IA, un logiciel premium capable d’assurer une édition fine de :
+
+- texte ;
+- images ;
+- vidéo ;
+- montage ;
+- compositing 2D ;
+- Motion UI ;
+- titrage ;
+- effets visuels 2D ;
+- son adapté au média ;
+- publication et distribution.
+
+La génération 3D procédurale avancée de type Houdini n’est pas le cœur du MVP. Elle doit être prévue comme une extension future ou comme une intégration externe. Le cœur initial doit privilégier les domaines où le code offre déjà un levier fort : HTML, CSS, SVG, Canvas, WebGL léger, FFmpeg, traitement d’images, motion design 2D et automatisation éditoriale.
+
+Les modèles frontier mentionnés dans le contexte, par exemple GPT‑5.6 SOL ou Opus 5, peuvent générer du code, proposer des variantes et piloter les outils. Ils ne doivent cependant jamais être le seul stockage de l’état ni la seule couche de validation.
+
+---
+
+## 4. Médias et domaines couverts
+
+ZenRayMedia doit pouvoir créer ou décliner des contenus pour :
+
+- articles et dossiers éditoriaux ;
+- vidéos courtes et longues ;
+- bandes-annonces et trailers ;
+- publicités ;
+- affiches, flyers et campagnes print ;
+- télévision ;
+- cinéma ;
+- presse ;
+- sites web ;
+- réseaux sociaux ;
+- podcasts et formats audio éditoriaux ;
+- jeux vidéo ;
+- présentations de projets 3D ;
+- mode ;
+- luxe ;
+- communication de marque ;
+- communication produit ;
+- portfolio et communication personnelle.
+
+L’architecture doit être indépendante du domaine : un même contenu source doit pouvoir être transformé en article, vidéo, carousel, bande-annonce, page web, publication sociale ou dossier de presse.
+
+---
+
+## 5. Médias inclus et exclus
+
+### Inclus
+
+- musique d’accompagnement adaptée au média ;
+- clips sonores courts ;
+- jingles simples ;
+- bruitages ;
+- sound design ;
+- mixage élémentaire ;
+- synchronisation audio/vidéo ;
+- import de morceaux licenciés ou fournis par l’utilisateur.
+
+### Hors périmètre initial
+
+- création complète d’un morceau de rap ;
+- composition musicale artistique complète ;
+- remplacement d’un compositeur ou d’un musicien ;
+- génération text-to-music complexe présentée comme un résultat final professionnel ;
+- génération 3D procédurale lourde équivalente à Houdini.
+
+Le système peut préparer les briefs, structures, marqueurs temporels, pistes de référence et exports nécessaires à ces métiers, mais ne doit pas prétendre les remplacer dans le MVP.
+
+---
+
+## 6. Stack technique et backbone
+
+La stack est ouverte : utiliser les bibliothèques, langages et outils les plus adaptés, à condition de conserver une architecture claire, testable et remplaçable.
+
+Le backbone doit au minimum séparer les couches suivantes :
+
+1. **Project Graph** — projets, médias sources, versions, dépendances et métadonnées.
+2. **Document Graph** — texte, blocs éditoriaux, scènes, compositions et paramètres.
+3. **Render Graph** — jobs de rendu, formats, codecs, ratios, transparence et artefacts.
+4. **Automation Graph** — skills, commandes, agents, entrées, sorties et permissions.
+5. **Publishing Graph** — cibles, comptes, coffre OAuth, registre de capacités, adaptateurs, planification, files d’attente, idempotence, retries, webhooks, analytics et historique.
+6. **Asset Library** — médias, composants, templates, polices, sons et licences.
+7. **Observability** — logs, progression, erreurs, coûts, durée et reproductibilité.
+
+Technologies autorisées ou envisagées :
+
+- TypeScript / JavaScript ;
+- HTML / CSS / SVG / Canvas ;
+- React, Vue, Svelte ou Web Components si leur usage est justifié ;
+- FFmpeg ;
+- Playwright ou Chromium headless pour le rendu déterministe de compositions web ;
+- Python pour le traitement, l’orchestration ou les outils ;
+- stockage local ou objet ;
+- base de données locale ou serveur ;
+- files de jobs ;
+- Codex, Claude Code, ChatGPT et skills générés procéduralement.
+
+Ne pas choisir une technologie parce qu’elle est populaire. Justifier chaque dépendance par sa fonction, sa durabilité, son coût et sa réversibilité.
+
+---
+
+## 7. Pipeline HTML vers vidéo
+
+Les compositions Motion UI doivent pouvoir être décrites en HTML/CSS/JS réutilisable.
+
+Pipeline cible :
+
+1. construire la composition à partir de composants versionnés ;
+2. charger les polices et assets de manière déterministe ;
+3. rendre image par image dans Chromium ou un moteur équivalent ;
+4. conserver un framerate, une résolution et une durée fixes ;
+5. transmettre les frames à FFmpeg ;
+6. produire un média vidéo standard ;
+7. lorsque nécessaire, produire un export avec canal alpha, par exemple ProRes 4444 `.mov` ;
+8. vérifier couleur, alpha, cadence, audio et synchronisation.
+
+Ne jamais résumer ce processus par « convertir directement le HTML en MOV ». Décrire précisément le moteur de capture, le rendu des frames, l’encodage et les contrôles qualité.
+
+---
+
+## 8. Source de vérité design
+
+Le fichier `ui-components-zenray-v14(3).html` est le point de départ obligatoire.
+
+Contraintes :
+
+- préserver les composants, SVG, tailles, états et comportements existants ;
+- préserver les variantes Dark et Light ;
+- préserver la logique Liquid Glass, les liserés, le blur, les profondeurs et les timings ;
+- conserver l’esthétique générale Apple / Notion-like déjà présente ;
+- ne pas remplacer les composants par une librairie UI générique ;
+- ne pas introduire une esthétique dashboard SaaS standard ;
+- ne pas ajouter de complexité purement décorative ;
+- documenter toute modification du DOM, du CSS ou des interactions.
+
+Le design doit rester soustractif : chaque élément doit justifier sa présence par une action, une information ou un état utile.
+
+---
+
+## 9. Extraction obligatoire des composants existants
+
+Avant tout nouveau mockup :
+
+1. inventorier chaque composant, sous-composant et état ;
+2. extraire son markup HTML individuel ;
+3. identifier ses classes racines ;
+4. identifier ses dépendances CSS ;
+5. identifier ses dépendances JavaScript ;
+6. identifier ses assets, SVG et polices ;
+7. fournir un aperçu autonome Dark/Light lorsque ces variantes existent ;
+8. générer un `manifest.json` machine-readable ;
+9. signaler les assets manquants ou les dépendances globales ;
+10. empêcher qu’un composant extrait casse le runtime des autres.
+
+Ne pas réécrire les composants pendant l’extraction. L’extraction sert d’abord à établir une base fiable et versionnée.
+
+---
+
+## 10. Interfaces principales de ZenRayMedia
+
+Le core design doit prévoir au minimum les espaces suivants :
+
+### A. Create
+
+Créer un nouveau média à partir :
+
+- d’un prompt ;
+- d’un preset ;
+- d’un fichier ;
+- d’une URL ;
+- d’un projet existant ;
+- d’une commande ou d’un skill.
+
+### B. Editor
+
+Un espace unique capable d’afficher, selon le contexte :
+
+- éditeur de blocs pour les articles ;
+- canvas pour images, affiches et compositions ;
+- preview vidéo ;
+- timeline légère ;
+- inspector de propriétés ;
+- couches ou pistes ;
+- historique et versions ;
+- panneau d’instructions IA.
+
+Ne pas afficher simultanément tous les outils. Utiliser la progressive disclosure : montrer l’essentiel, puis révéler les outils spécialisés lorsque l’action l’exige.
+
+### C. Templates / Skills
+
+Bibliothèque de recettes réutilisables comprenant :
+
+- format de sortie ;
+- règles de composition ;
+- composants ;
+- typographie ;
+- animation ;
+- son ;
+- ton éditorial ;
+- contraintes de marque ;
+- pipeline de rendu ;
+- pipeline de publication.
+
+### D. Assets
+
+Médias sources, composants, polices, sons, logos, palettes, licences et versions.
+
+### E. Render
+
+Jobs en cours, qualité, durée, format, logs, reprise et historique.
+
+### F. Publish
+
+Un centre de distribution unifié comprenant :
+
+- comptes et espaces de publication connectés ;
+- aperçu fidèle par plateforme ;
+- métadonnées propres à chaque destination ;
+- validation humaine configurable ;
+- publication immédiate ou planifiée ;
+- upload reprenable ;
+- statut de traitement distant ;
+- retries contrôlés ;
+- suppression ou mise à jour lorsque l’API le permet ;
+- collecte des identifiants, URL et analytics de résultat ;
+- fallback manuel lorsque la plateforme ne fournit pas d’API publique d’écriture.
+
+L’interface ne doit jamais promettre une publication directe si l’adaptateur réel ne la supporte pas.
+
+### G. System
+
+Connecteurs, permissions, modèles IA, stockage, coûts, logs et paramètres.
+
+
+---
+
+## 10.1 Couche Social Publishing API — obligatoire
+
+ZenRayMedia doit disposer d’une couche de connecteurs permettant de publier un même contenu vers plusieurs plateformes sans enfermer le produit dans leurs schémas propriétaires.
+
+### A. Principe : modèle canonique, adaptateurs spécifiques
+
+Le cœur ne doit pas envoyer directement des objets propres à LinkedIn, X, YouTube ou Meta. Il doit construire un objet canonique `PublicationIntent`, puis demander à chaque adaptateur de le valider, de le transformer et de le publier.
+
+Structure minimale :
+
+```ts
+type PublicationIntent = {
+  id: string;
+  projectId: string;
+  revisionId: string;
+  destinationAccountId: string;
+  platform: string;
+  mode: "draft" | "schedule" | "publish-now";
+  scheduledAt?: string;
+  locale?: string;
+  text?: {
+    title?: string;
+    body?: string;
+    caption?: string;
+    altText?: string;
+    hashtags?: string[];
+    mentions?: string[];
+    link?: string;
+  };
+  media: Array<{
+    assetId: string;
+    role: "image" | "video" | "audio" | "document" | "thumbnail" | "subtitle";
+    mimeType: string;
+    width?: number;
+    height?: number;
+    durationMs?: number;
+  }>;
+  platformOptions?: Record<string, unknown>;
+  approvalPolicy: "none" | "manual" | "two-step";
+  idempotencyKey: string;
+};
+```
+
+Chaque plateforme conserve ses particularités. Ne jamais réduire toutes les publications au plus petit dénominateur commun.
+
+### B. Contrat obligatoire d’un adaptateur
+
+Chaque connecteur doit exposer au minimum :
+
+```ts
+interface PublishingAdapter {
+  platform: string;
+  getCapabilities(accountId: string): Promise<PlatformCapabilities>;
+  validate(intent: PublicationIntent): Promise<ValidationReport>;
+  prepareAssets(intent: PublicationIntent): Promise<PreparedPublication>;
+  publish(prepared: PreparedPublication): Promise<PublishReceipt>;
+  poll(remoteJobId: string): Promise<RemoteStatus>;
+  update?(remoteId: string, patch: unknown): Promise<PublishReceipt>;
+  remove?(remoteId: string): Promise<void>;
+  getInsights?(remoteId: string): Promise<PublicationInsights>;
+}
+```
+
+Le registre de capacités doit indiquer dynamiquement :
+
+- texte, image unique, multi-image, carousel, vidéo courte, vidéo longue, document et lien ;
+- dimensions, ratios, durée, poids, codecs et nombre maximal d’assets ;
+- champs disponibles : titre, description, alt text, tags, miniature, audience, commentaires, contenu sponsorisé ;
+- possibilité de brouillon, planification, mise à jour, suppression et analytics ;
+- scopes OAuth nécessaires ;
+- statut de validation de l’application ;
+- quotas, limites, prix d’API et date de dernière vérification ;
+- niveau de support : `direct`, `draft-handoff`, `manual-export`, `unavailable`.
+
+### C. Connecteurs prioritaires
+
+#### Niveau 1 — publication directe du MVP
+
+1. **LinkedIn** — profils membres et pages d’organisation selon les permissions obtenues ; texte, image, multi-image, vidéo, document et article lorsque le compte et l’API le permettent.
+2. **X (Twitter)** — création de posts et upload de médias avec suivi du coût par requête.
+3. **YouTube** — upload reprenable, métadonnées, miniature, confidentialité et suivi du traitement distant.
+4. **TikTok** — Direct Post ou envoi comme brouillon selon l’autorisation, l’audit de l’application et le choix explicite du créateur.
+5. **Instagram** — publication vers comptes professionnels compatibles : image, vidéo, Reel et carousel selon les capacités du compte et de l’application.
+
+#### Niveau 2 — connecteurs fortement recommandés
+
+- Threads ;
+- Bluesky ;
+- Mastodon / ActivityPub ;
+- Pinterest ;
+- Facebook Pages ;
+- Reddit lorsque l’accès d’écriture du compte et de l’application est réellement disponible ;
+- Vimeo ;
+- Discord ;
+- Telegram Channels ;
+- WordPress ;
+- Ghost ;
+- Webflow CMS ;
+- RSS / Atom ;
+- webhook générique signé ;
+- stockage S3-compatible et CDN ;
+- site ZenRay auto-hébergé.
+
+#### Niveau 3 — fallback contrôlé
+
+Pour une destination sans API publique officielle d’écriture, ZenRayMedia doit générer un **handoff package** :
+
+- assets finaux ;
+- miniature ;
+- titre ;
+- description ;
+- tags ;
+- alt text ;
+- ordre des médias ;
+- checklist de publication ;
+- bouton ouvrant la page officielle de création ;
+- confirmation manuelle et URL finale.
+
+**ArtStation doit démarrer dans ce niveau** tant qu’aucune API publique officielle de publication n’a été vérifiée. Ne pas utiliser une API privée rétro-ingéniérée ni une automatisation navigateur fragile comme dépendance centrale du produit.
+
+### D. Authentification et coffre de secrets
+
+- OAuth 2.0 et PKCE lorsque la plateforme les supporte ;
+- aucun token dans le frontend, les logs, le manifest de projet ou les prompts envoyés aux modèles ;
+- chiffrement au repos ;
+- scopes minimaux ;
+- séparation stricte entre compte personnel, page, organisation, chaîne ou workspace ;
+- rotation et révocation ;
+- détection de token expiré ;
+- écran de reconnexion sans perdre le job ;
+- journal d’accès aux credentials ;
+- environnement `development`, `staging` et `production` séparé ;
+- callback OAuth protégé contre CSRF et détournement de redirection.
+
+### E. Pipeline d’une publication
+
+```text
+Content Source
+→ Revision gelée
+→ Renditions par plateforme
+→ Validation locale
+→ Approbation éventuelle
+→ Création du remote upload
+→ Upload reprenable
+→ Publication ou planification
+→ Poll / webhook de traitement
+→ Receipt distant
+→ URL et ID stockés
+→ Analytics et erreurs normalisées
+```
+
+Une publication doit toujours pointer vers une révision immuable du contenu. Une modification ultérieure crée une nouvelle révision et ne change jamais silencieusement ce qui a déjà été publié.
+
+### F. États normalisés
+
+- `draft` ;
+- `awaiting-assets` ;
+- `validating` ;
+- `awaiting-approval` ;
+- `scheduled` ;
+- `uploading` ;
+- `processing-remote` ;
+- `published` ;
+- `partially-published` ;
+- `failed-retryable` ;
+- `failed-final` ;
+- `revoked-auth` ;
+- `cancelled` ;
+- `deleted-remote` ;
+- `manual-handoff`.
+
+L’interface doit afficher séparément l’état de ZenRayMedia et l’état distant de la plateforme.
+
+### G. Idempotence et échecs partiels
+
+- une `idempotencyKey` stable par compte, plateforme, révision et tentative logique ;
+- ne jamais relancer aveuglément une requête de création après un timeout ;
+- rechercher d’abord un receipt ou un remote ID existant ;
+- stocker chaque étape avant de passer à la suivante ;
+- permettre de reprendre un upload interrompu ;
+- backoff exponentiel avec jitter ;
+- dead-letter queue ;
+- bouton « Reprendre uniquement les destinations échouées » ;
+- aucune suppression automatique des publications réussies lorsqu’une autre destination échoue ;
+- rollback explicite, limité aux plateformes permettant réellement la suppression.
+
+### H. Transformation par destination
+
+À partir d’un contenu maître, produire des renditions distinctes :
+
+- ratio et résolution ;
+- codec et bitrate ;
+- durée ;
+- miniature ;
+- sous-titres ;
+- safe zones ;
+- longueur et structure du texte ;
+- hashtags ;
+- alt text ;
+- CTA ;
+- liens UTM ;
+- disclosures publicitaires ou IA lorsque nécessaires ;
+- titre et description spécifiques.
+
+Les transformations doivent être prévisualisables et versionnées. L’utilisateur peut verrouiller un champ pour empêcher sa régénération par l’IA.
+
+### I. UI du centre Publish
+
+Prévoir les composants suivants en respectant le système HTML V14 :
+
+1. sélecteur de destinations avec avatar, compte et état OAuth ;
+2. matrice de compatibilité avant rendu ;
+3. preview par plateforme ;
+4. éditeur des overrides ;
+5. validation des limites ;
+6. calendrier et fuseau horaire ;
+7. approbation ;
+8. progression multi-destination ;
+9. erreurs actionnables ;
+10. receipt avec lien final ;
+11. analytics ;
+12. historique et republier depuis une révision.
+
+Flux principal visé :
+
+```text
+Select destinations
+→ Fix only blocking incompatibilities
+→ Preview
+→ Publish / Schedule
+```
+
+Ne pas obliger l’utilisateur à remplir dix formulaires différents. N’afficher les champs propres à une plateforme que lorsqu’ils sont nécessaires.
+
+### J. CLI et skills
+
+Exemples de commandes cibles :
+
+```bash
+zenray publish project:my-trailer --to linkedin,x,youtube --schedule "2026-08-01T18:00:00+09:00"
+zenray publish asset:short-vertical --to instagram,tiktok --preset launch-jp
+zenray retry publication:pub_01 --failed-only
+zenray status publication:pub_01
+zenray auth connect linkedin
+zenray capabilities instagram --account zenray-studio
+```
+
+Les skills utilisent le même contrat que l’UI. Aucun chemin privilégié caché ne doit exister uniquement pour les agents IA.
+
+### K. Vérification actuelle des plateformes
+
+Les détails d’API changent. Le manifest des connecteurs doit conserver une date de vérification et les liens officiels utilisés.
+
+Points confirmés lors de la rédaction de cette V3 :
+
+- LinkedIn possède une Posts API pour les publications organiques et sponsorisées, avec permissions et version d’API explicites.
+- X fournit des endpoints de création de post et d’upload média ; l’accès est facturé selon l’usage.
+- YouTube permet l’upload via `videos.insert`, avec upload reprenable et traitement distant ; les projets non vérifiés peuvent être limités à des vidéos privées.
+- TikTok propose Direct Post et Upload-to-Draft ; une application non auditée est limitée à la visibilité privée pour Direct Post.
+- Instagram permet la publication programmatique pour les comptes professionnels compatibles, avec création d’un container puis publication.
+- Threads, Bluesky, Mastodon et Pinterest exposent des APIs officielles permettant la création de contenu.
+- aucune API publique officielle d’écriture ArtStation n’a été trouvée pendant cette vérification : utiliser le handoff jusqu’à preuve contraire.
+
+### L. Sources officielles à revalider avant implémentation
+
+- LinkedIn Posts API : `https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api`
+- X Create Post : `https://docs.x.com/x-api/posts/create-post`
+- X Media Upload : `https://docs.x.com/x-api/media/upload-media`
+- YouTube `videos.insert` : `https://developers.google.com/youtube/v3/docs/videos/insert`
+- TikTok Content Posting API : `https://developers.tiktok.com/products/content-posting-api`
+- Instagram API : `https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api`
+- Threads API : `https://www.postman.com/meta/threads/documentation/dht3nzz/threads-api`
+- Bluesky posts : `https://docs.bsky.app/docs/advanced-guides/posts`
+- Mastodon statuses : `https://docs.joinmastodon.org/methods/statuses/`
+- Pinterest Pins : `https://developers.pinterest.com/docs/work-with-organic-content-and-users/create-boards-and-pins/`
+
+
+---
+
+## 11. Références d’ambition
+
+Le système doit pouvoir répondre à plusieurs niveaux de production :
+
+- média éditorial : Le Monde, Le Crayon, télévision d’information ;
+- créateur et divertissement : Squeezie, Inoxtag, formats YouTube et social media ;
+- communication de marque : campagnes produit et publicité, par exemple Ciao Kombucha ou Carrefour ;
+- mode et luxe : magazines, lookbooks et campagnes ;
+- postproduction et VFX : logique de studio inspirée de Wētā FX ou Mac Guff ;
+- jeu vidéo : trailers, key art, dev diaries et communication de type PlayStation Studios.
+
+Ces noms servent de benchmarks de niveau, de structure et de savoir-faire. Ne pas copier leurs identités, œuvres ou éléments protégés. Pour chaque domaine, produire une analyse de références et un exemple original.
+
+---
+
+## 12. Système de templates et objectif des 1024 thèmes
+
+Le produit doit démarrer avec environ **128 templates/skills de grande qualité**, puis permettre d’atteindre **1024 thèmes** sans créer 1024 pages monolithiques impossibles à maintenir.
+
+Construire les 1024 thèmes comme un système combinatoire contrôlé. Exemple de matrice :
+
+- 8 familles de médias ;
+- 8 secteurs ou contextes ;
+- 4 tons éditoriaux ;
+- 4 systèmes visuels ;
+
+Soit `8 × 8 × 4 × 4 = 1024` combinaisons identifiables.
+
+Chaque thème doit être un enregistrement de données ou un skill versionné comprenant au minimum :
+
+- identifiant stable ;
+- nom ;
+- famille de média ;
+- secteur ;
+- public cible ;
+- ton ;
+- système visuel ;
+- règles typographiques ;
+- palette ;
+- densité ;
+- rythme ;
+- composants autorisés ;
+- motion preset ;
+- règles audio ;
+- ratios de sortie ;
+- règles de publication ;
+- exemples ;
+- statut de validation.
+
+Générer un manifeste complet de 1024 identifiants uniques. Ne produire visuellement que les archétypes nécessaires pour valider le moteur ; les variantes doivent ensuite être générées par les tokens et règles du système.
+
+Exemples explicitement couverts :
+
+- trailer 3D ;
+- publicité Carrefour ;
+- magazine féminin éditorial type Elle ;
+- catalogue ou magazine commercial type La Redoute ;
+- journal télévisé ;
+- vidéo YouTube ;
+- TikTok ;
+- Instagram ;
+- podcast ;
+- article de presse ;
+- bande-annonce de jeu vidéo ;
+- campagne de luxe ;
+- présentation VFX ;
+- portfolio d’artiste.
+
+---
+
+## 13. Typographie
+
+Définir un système typographique limité et hiérarchisé, pas une collection arbitraire de polices.
+
+Point de départ recommandé :
+
+- 1 famille sans-serif principale pour l’interface ;
+- 1 famille mono pour les timecodes, paramètres et logs ;
+- 0 à 2 familles éditoriales optionnelles chargées par template ;
+- maximum 4 familles actives dans un même projet, sauf justification explicite.
+
+Le registre des polices doit inclure : licence, source, poids disponibles, fallback, langues prises en charge, usage autorisé et statut d’embarquement dans les exports.
+
+---
+
+## 14. Principes UX obligatoires
+
+- minimum de clics ;
+- actions principales immédiatement visibles ;
+- raccourcis clavier et palette de commandes ;
+- drag-and-drop lorsqu’il réduit réellement l’effort ;
+- progressive disclosure ;
+- defaults professionnels ;
+- undo/redo fiable ;
+- autosave et versioning ;
+- aucune action destructive silencieuse ;
+- feedback immédiat sur les jobs longs ;
+- états vides utiles ;
+- distinction claire entre brouillon, rendu, validation et publication ;
+- possibilité de revenir à la source ;
+- fonctionnement clavier, souris et trackpad ;
+- prise en charge de `prefers-reduced-motion`.
+
+L’interface doit évoquer une grande maison de production par sa précision, pas par une accumulation d’effets : niveau d’exigence Kojima Productions / Sony, sans imitation visuelle littérale.
+
+---
+
+## 15. Méthode de conception
+
+Traiter chaque sous-composant comme une tâche complète :
+
+1. objectif ;
+2. entrée ;
+3. sortie ;
+4. état vide ;
+5. état actif ;
+6. état de chargement ;
+7. erreur ;
+8. permissions ;
+9. interaction clavier ;
+10. interaction souris/trackpad ;
+11. responsive ;
+12. accessibilité ;
+13. dépendances ;
+14. tests ;
+15. rollback.
+
+Ne pas utiliser de raccourci conceptuel du type « ajouter une timeline comme DaVinci ». Définir les fonctions exactes dont ZenRayMedia a besoin et supprimer le reste.
+
+---
+
+## 16. Livrables, dans cet ordre
+
+### Phase 1 — Audit et plan, sans redesign
+
+1. Passe Think of Everything avec cinq risques maximum.
+2. Inventaire du HTML existant.
+3. Registre des composants extraits.
+4. Carte des dépendances CSS/JS/assets/fonts.
+5. Architecture fonctionnelle de ZenRayMedia.
+6. Définition du MVP et de la première verticale complète.
+7. Taxonomie des 1024 thèmes.
+8. Plan de fichiers et de modules.
+9. Critères d’acceptation.
+
+### Phase 2 — Wireframes
+
+Créer les pages principales avec une mise en page simple, sans inventer encore les 1024 identités visuelles.
+
+### Phase 3 — Mockup HTML fonctionnel
+
+Construire directement le HTML du core design en réutilisant les composants extraits.
+
+### Phase 4 — Première verticale complète
+
+Démontrer un workflow réel :
+
+`brief → article professionnel → déclinaison vidéo courte → rendu → validation → publication simulée`.
+
+### Phase 5 — Moteur de templates
+
+Créer les premiers skills et générer le manifeste des 1024 thèmes.
+
+---
+
+## 17. Critères d’acceptation
+
+Le résultat est acceptable uniquement si :
+
+- le HTML existant a été lu et inventorié ;
+- chaque composant a un fragment individuel ;
+- le design actuel reste reconnaissable et cohérent ;
+- aucune fonctionnalité critique ne dépend uniquement d’un chat IA ;
+- les jobs de rendu et de publication sont persistants et reprenables ;
+- les actions sont versionnées et annulables ;
+- le système supporte au moins un article et une vidéo courte de bout en bout ;
+- les 1024 thèmes sont représentés par un manifeste structuré, pas par du HTML dupliqué ;
+- les dépendances, coûts récurrents, licences et limites sont visibles ;
+- le nombre de clics des workflows principaux est mesuré ;
+- l’interface reste simple malgré la puissance du système.
+
+---
+
+## 18. Règle de fallback
+
+Lorsqu’une phrase, un terme ou une intention du prompt initial reste ambigu :
+
+1. conserver l’intention la plus proche du texte initial ;
+2. ne pas inventer une exigence contraire ;
+3. citer la formulation initiale dans une note `Fallback — formulation source` ;
+4. adopter un défaut réversible ;
+5. signaler explicitement l’hypothèse.
+
+---
+
+# Annexe — Prompt initial conservé comme fallback
+
+> Construire une application qui permet atomiquement grâce à des presets ultra pro type Apple / Notion-like UI pouvoir génère n'importe quel type de média à l'ère de Naval : Code et Media.
+> Via AI construire le software ultime qui permettrait une edition fine du texte, de la vidéo, et des images, des effets spéciaux (2D ou Motion UI, l'AI ne permettant pas encore à bas coup de générer de la 3D type Houdini, la 2D et le Motion UI sont accessibles car code infini grâce à des modèles frontiere GPT 5.6 sol ou Opus 5.)
+> à travers différents type de media : Video, Articles, Trailer, Affiche flyer, pubs, la télévision, le cinéma, Internet, la presse, les jeux vidéos, la 3D, la mode, le luxe, ... tout domaine, tout medias.
+>
+> Stack Technique : tout type de librairies et de code. + générations procédurales de code outils, codex, claude code, chatgpt
+> Génération HTML pour le design de composants réutilisables, idem pour media vidéo. HTML ensuite convertit en .mov pour la plage transparent. Animation visionnable ProRes 4444
+> Montage pour vidéo : Code HTML + FFMPEG. convertit en media vidéo
+> Carte blanche pour le reste. mais besoin de backbone solide
+>
+> Medias exclus : rap, composition musicale complète, musique artiste, on se focus sur
+> Medias inclus : Music adapté au media, clip sonore, sound design. (Au format texte, la génération technique de ce type de media serait à l'heure actuelle trop complexe.)
+>
+> Le tout dans un resultat ultra premium. Le but est de pouvoir s'adresser à n'importe quel public en fonction du contexte
+>
+> A partir de cette data construit une vrai Application / Ecosysteme / System qui permet à partir de mes notes l'application web self hosté qui permettrait de créer à la volée un article professionel :
+> Peut importe le media a travers des styles différents et des templates que je vais créer ensuite mais il me faut le core design de l'application, les templates seront créées ensuite comme des skills et je vais en créer environ 128. à termes 1024 en fonctions de style comme ceci : BFM TV, influenceur YouTube, social media → Instagram, TikTok, podcast. pour créer ZenRayMedia comme un empire adaptatif, extremement puissant. L'idéal serait d'être une agence media presse type LeMonde,LeCrayon,
+> Plus une agence de Media de communications : Trailer de Ciao Konbucha, Squeezie, Inoxtag ...
+> Plus une agence com + vfx style weta, https://macguff.com/
+> Plus un studio de jeux vidéo vfx pour les trailers / playstation studios ...
+> Pour chacun de ces exemples prégénère les meilleurs exemples des domaines.
+>
+> Les templates
+>
+> pour l'instant le html que tu va générer va se concentrer uniquement sur les buttons UI et agencement simple pour créer les components / l'edition vidéo etc. Faut que tu le penses comme un site web qui réunit Davinci / Photoshop / VFX software / HTML add on on video or web article.
+>
+> je veux que ton design soit simple et build directement le html avec des mockup de design pour pouvoir
+>
+> je veux que ça reste d'une simplicité crucial avec une UI type Notion Like ou Apple Liquid glass. voici des éléments de design déjà créé à respecter lors de la création du mockup tu peux créer autant de versions et sur la même version autant de page mais tu dois penser design soustractif,
+> tu dois vraiment focus sur le minimum de clique.
+> Si ton design respecte scrupuleusement le html donné ton esthétique global et tes choix doivent être fin et éclairés comme des studios de renom comme Kojima Productions / Sony Productions, bref de grosse maison.
+>
+> Commence par le plan avant de faire le design html
+>
+> chaque sous composants de l'app doit être vue comme un sous composants individuels à traiter comme une tâche entière. N'utilise aucun raccourci ne soit jamais fénéant.
+>
+> génère aussi les 1024 thèmes à générer pour avoir un pannel large de media à couvrir, : Trailer 3D, Publicité Carrefour, Magazines type Elle, Magazine type la redoute, Bref couvrir 100% des medias possibles et disponible,
+>
+> le nombre de fonts etc.
+>
+> SOIT ULTRA COMPLET utilise le skill pour t'aider.
+
+> Fallback — ajout utilisateur après validation V2 : « il manque juste je crois l’API pour lier les contenus directement à une API vers Linkedin / Twitter / Artstation / Youtube / Tiktok et Instagram et autre SocialMedia populaire mais sinon c’est parfait : ZenRayMedia comme un système unifié de création, rendu et publication. »

@@ -1,0 +1,1390 @@
+# Rapport workflow video-streaming (wf_ea64bf2e-909) — récupéré
+
+
+## Result 0 — key=v2:8308fb86ea64cb791904b2064a435085eef8f850a21787265e9cc89feda75df9
+
+
+### angle
+Anonymization + Hashing Strategy for Video Segments with Production-Ready Streaming Libraries
+
+
+### findings
+## Current Implementation Status
+
+### Video Chunking & Storage Architecture
+1. **Chunk Size**: 3 MB (3,145,728 bytes) — production-standard, set uniformly across:
+   - `/api/stream.js` (serves chunks via HTTP Range)
+   - `api/media.js` (commit action)
+   - `api/upload-shard.js` (shard blob creation)
+   - `scripts/video-transcode.mjs` (local transcoding)
+   - `scripts/video-mse.mjs` (MSE fMP4 variant)
+
+2. **Current Anonymization (Images Only)**
+   - **Location**: `/src/capture/universalCapture.js` lines 37-50
+   - **Hash Method**: `crypto.subtle.digest('SHA-256')` → hex string
+   - **Path Format**: `ab/cd/<sha256>.<ext>` (sharding by first 4 hex chars)
+   - **Storage**: Private shard repos `zenray-media-NN` (rollover at 4.5 GB)
+   - **Applied to**: Images only (via `captureImage()` L147); NOT yet applied to video segments
+
+### Video Streaming Architecture (Two Paths)
+
+**Path A: Native Web Video (mp4/webm/ogg)**
+- `captureVideoNative()` (L211) → chunks directly into shard
+- Manifest: `.media.json` with `{type:'chunked-media', v:1, dir, parts[], size, chunkSize}`
+- Served via `/api/stream?path=...` with HTTP Range headers
+- Player: `StreamVideo.jsx` (preload-based, 4 MB prefetch windows) OR `StreamVideoMSE.jsx` for multi-track audio
+
+**Path B: Non-Native Video (mkv/avi/mov)**
+- `captureVideoTranscode()` (L232) → placeholder manifest + queue entry
+- Transcodage local: `scripts/video-transcode.mjs` converts to H.264/AAC mp4, produces same chunk structure
+- Chunks placed in `media/{id}/000.bin`, `001.bin`, etc.
+
+**Path C: Advanced MSE (mse-av manifest)**
+- `scripts/video-mse.mjs` (lines 1-247): Produces **separate fMP4 streams per track**
+  - Video-only fMP4: `libx264` with `-movflags +frag_keyframe+empty_moov+default_base_moof`
+  - Audio-only fMP4 per language: AAC stereo at 160k
+  - **Fragment Index**: Parsing moof boxes via `fragIndexOf()` (L106-124) — maps byte offset → decode time for precise seeking
+- Manifest type: `mse-av` with `{video:{manifest, codecs, fragIndex}, audio:[{lang, manifest, codecs, fragIndex}]}`
+- Player: `StreamVideoMSE.jsx` (L1-449) manages dual SourceBuffer with audio track switching
+
+### Fragment Indexing (Advanced Seek Mechanism)
+- **Enabled for MSE only** (scripts/video-mse.mjs L106-124)
+- Parses fMP4 moov box for timescale, then moofs for `tfdt` (baseMediaDecodeTime)
+- **Result**: Array of `{t: time_in_seconds, b: byte_offset}` for precise fragments
+- **Used in `StreamVideoMSE.jsx`**: `byteForTime()` binary search (L81-93) for seek accuracy
+- **Fallback**: Linear approximation `byte = time * (size / duration)` rounded to 64 KB boundaries if fragIndex absent
+
+## Anonymization Extension (NOT YET IMPLEMENTED FOR VIDEO SEGMENTS)
+
+To apply SHA-256 hashing to video segments (comparable to images):
+
+1. **At Upload Time** (`universalCapture.js` `uploadBinaryChunks()` L189-208):
+   - Currently: Chunks use predictable path `${dir}/${pad(i)}.bin`
+   - Required: Hash each chunk, rename to `${ab}/${cd}/<sha256>.bin`
+   - Implementation: Compute SHA-256 per-chunk before `putBlob()`, build `shardPathFor(hash, 'bin')`
+
+2. **Manifest Structure** (`.media.json` in `zenray-content`):
+   - Separate from binaries: manifest stays in public `pages/` repo
+   - Must list actual hash-based paths in `parts[]` or new `hashes:[]` field
+   - Option A: `parts: ['ab/cd/sha256a', 'ab/cd/sha256b', ...]` (explicit hashes)
+   - Option B: `parts: ['000', '001']` + `hashes: {000: 'ab/cd/sha256a', ...}` (backward-compatible)
+
+3. **Shard Directory Structure** (Private repos):
+   - Current: `media/{id}/000.bin`, `media/{id}/001.bin`, ...
+   - Proposed: `ab/cd/sha256_1.bin`, `ab/cd/sha256_2.bin`, ... (flat, distributed)
+   - Trade-off: Loss of chunk ordering in path; rely on manifest to maintain sequence
+
+4. **Fragment Index with Hash-based Chunks**:
+   - `fragIndex` array unchanged: still references byte offsets within concatenated stream
+   - During streaming, `/api/stream` reconstructs bytes from hashed chunks in order specified by manifest
+   - No impact on `StreamVideoMSE.jsx` seek logic
+
+## Production-Ready Streaming Libraries (2025 Status)
+
+### 1. **hls.js** (npm package 1.6.16, last update ~1 month ago)
+- **Maturity**: Highly mature, 1169 projects depend on it
+- **Scope**: HLS client (HTTP Live Streaming) via MediaSourceExtension + adaptive bitrate
+- **When to use**: For HLS manifest-based streaming (`.m3u8` playlists, `.ts` segments)
+- **Not needed for**: Your current fMP4 architecture (you already have Range-based HTTP streaming)
+- **Adoption**: video.js plugin, Mux, Wowza, widespread production use
+- **Recommendation**: Low priority unless pivoting to HLS format (DASH/HLS not required for your use case)
+
+### 2. **mux.js** (npm 5.7.0, actively maintained)
+- **Maturity**: Stable, lightweight (VideoJS-backed)
+- **Scope**: MPEG2-TS demux → fMP4 remux, MP4 parsing (ftyp/moov/moof boxes)
+- **Key methods**: `Transmuxer` (TS→fMP4), `MP4Probe` (metadata extraction), `MP4Generator` (fragmented MP4 generation)
+- **Current use in project**: None directly; your scripts use raw ffmpeg
+- **When to use**: Client-side TS→fMP4 remuxing, or parsing existing fMP4 for metadata
+- **Recommendation**: **Optional enhancement** — use in browser if you want to support TS input files, otherwise ffmpeg on server is simpler
+- **GitHub**: `videojs/mux.js`
+
+### 3. **mp4box.js** (npm latest 1.0.0+, TypeScript support as of June 2025)
+- **Maturity**: Mature (GPAC project), now with ES modules + TypeScript definitions
+- **Scope**: ISOBMFF (ISO Base Media File Format) parsing, MP4 segmentation for MSE, sample extraction
+- **Key features**: Progressive parsing (stream-while-reading), fragment detection, MSE helper functions
+- **Exact use case match**: Parsing fMP4 boxes, extracting fragment boundaries, generating segment indices
+- **Current use in project**: None; you manually parse moof boxes in `fragIndexOf()` (video-mse.mjs L106-124)
+- **Recommendation**: **High-value library** — replace custom fMP4 parsing with `mp4box.js` for robustness
+  - Example: `const mp4file = MP4Box.createFile(); mp4file.appendBuffer(buf); mp4file.onReady = () => { frags = mp4file.moofs.map(...) }`
+  - Handles edge cases (box size variations, nested structures) that custom parsing may miss
+- **GitHub**: `gpac/mp4box.js`, docs at `https://github.com/gpac/mp4box.js/wiki`
+
+### 4. **fluent-ffmpeg** (npm, actively maintained)
+- **Maturity**: Stable, widely used in Node.js backend services
+- **Scope**: Fluent API wrapper around ffmpeg CLI (requires system ffmpeg binary)
+- **Key use**: Abstraction over `execFileSync/execSync` for transcoding, metadata probing, stream processing
+- **Current use in project**: None; scripts use raw `execFileSync('ffmpeg', [...])` (video-transcode.mjs, video-mse.mjs)
+- **Recommendation**: **Medium-value** — improves readability of video-transcode.mjs + video-mse.mjs, but adds npm dependency for wrapper around existing bash-like code. Marginal benefit since your scripts are already concise.
+- **When to use**: If transcoding logic grows significantly, or if you need live progress callbacks
+- **Example**: `new ffmpeg('/path/to/video.mkv').output('video.mp4').videoCodec('libx264').audioCodec('aac').run()`
+
+### 5. **shaka-player** & **dash.js** (both mature 2025)
+- **Maturity**: Production-grade for DASH streaming
+- **Not needed**: You're using HTTP Range + fMP4 directly (not DASH manifests)
+- **Recommendation**: Skip unless adopting DASH `.mpd` format
+
+### 6. **@ffmpeg/ffmpeg** (npm 0.12.15, currently in use)
+- **Current**: Browser-side ffmpeg.wasm (single-threaded)
+- **Use in project**: `src/media/ffmpegCore.js`, remuxing video on browser
+- **Note**: Avoided for large video uploads (too slow); local ffmpeg via Node.js preferred
+
+## Code Locations & Key Files
+
+- **Hash/Anonymize Logic**: `/src/capture/universalCapture.js` lines 36-50, 147-185
+- **Shard Upload API**: `/api/upload-shard.js` lines 1-269 (blob/commit/active-shard actions)
+- **Video Chunking (Native)**: `/src/capture/universalCapture.js` lines 189-223
+- **Stream API**: `/api/stream.js` lines 1-84 (Range request handling, chunk assembly)
+- **MSE fMP4 Pipeline**: `/scripts/video-mse.mjs` lines 1-247 (transcoding, fragIndexing)
+- **MSE Player**: `/src/components/StreamVideoMSE.jsx` lines 1-449 (dual SourceBuffer, audio switching)
+- **Fragment Indexing**: `/scripts/video-mse.mjs` lines 106-124 (`fragIndexOf()` function)
+- **Manifest Schemas**:
+  - Native: `.media.json` `{type:'chunked-media', v:1, dir, parts[], size, chunkSize, repo?, probe?}`
+  - MSE: `.media.json` `{type:'mse-av', v:1, video:{manifest, codecs, fragIndex}, audio:[...], subs:[...]}`
+
+## Gap Analysis: Streaming Issues
+
+**3 MB Chunk Size**: May be suboptimal for:
+- **High-bitrate video** (>10 Mbps): 3 MB = 2.4 seconds at 10 Mbps; acceptable but tight for prefetch buffers (45s target in StreamVideoMSE)
+- **Low-bitrate audio**: 3 MB = ~250 seconds at 100 kbps; overkill, wastes bandwidth on seek operations
+- **Solution**: Consider **variable chunking by bitrate** detected at upload time, or keep static 3 MB (simpler)
+
+**Fragment Indexing**: Currently only for MSE, not for native streaming path
+- `StreamVideo.jsx` uses linear approximation (L95-113), less reliable for VFR or variable-bitrate content
+- Could extend `fragIndexOf()` to all fMP4 chunks for consistency
+
+
+### recommendation
+### Immediate Implementation (Low Effort, High Impact)
+
+1. **Apply SHA-256 Hashing to Video Segments**
+   - Extend `sha256Hex()` and `shardPathFor()` from `universalCapture.js` to video chunks
+   - In `uploadBinaryChunks()` (L189): Hash each chunk before `putBlob()`, store hash-based path in manifest
+   - Update manifest schema to preserve chunk order: either explicit hashes in `parts[]` or backward-compatible `hashes` map
+   - This gives you the same anonymization for video as you have for images
+
+2. **Adopt mp4box.js for fMP4 Parsing** (1-2 hour integration)
+   - Replace manual `fragIndexOf()` function in `video-mse.mjs` with mp4box.js
+   - Install: `npm install mp4box`
+   - Usage: Parse output fMP4 buffer after transcoding, extract fragments reliably
+   - Benefit: Handles edge cases, future-proof against box spec updates
+
+3. **Manifest Structure Recommendation**
+   - Keep manifest (`.media.json`) in public `pages/` repo
+   - Store hashed chunk paths in manifest's `parts[]` array in order
+   - Example: `{type:'chunked-media', parts:['ab/cd/sha256_1', 'ab/cd/sha256_2'], ...}`
+   - `/api/stream` reconstructs full file by fetching hashes in order (no change to existing logic)
+
+### Medium-Term (High Impact for Reliability)
+
+4. **Extend Fragment Indexing to Native Path**
+   - Currently only `StreamVideoMSE.jsx` uses `fragIndex`; `StreamVideo.jsx` uses linear approximation
+   - Add `fragIndex` to all `.media.json` manifests (not just `mse-av` type)
+   - Benefit: Reliable seeking across all video formats, cleaner code
+
+5. **Chunk Size Optimization**
+   - For **video streams >5 Mbps**: Consider 5–6 MB chunks (faster downloads, fewer HTTP requests)
+   - For **audio/low-bitrate**: Keep 3 MB (acceptable overhead)
+   - Implement in `captureVideoNative()` and transcoding scripts with bitrate detection
+
+### Libraries to Add (Priority Order)
+
+| Library | NPM Ver | Effort | Benefit | Priority |
+|---------|---------|--------|---------|----------|
+| mp4box.js | 1.0.0+ | 2h | Robust fMP4 parsing, MSE compatibility | **HIGH** |
+| hls.js | 1.6.16 | — | Not needed unless adopting HLS format | Low |
+| mux.js | 5.7.0 | 4h | TS→fMP4 remuxing if supporting TS input | Medium |
+| fluent-ffmpeg | latest | 4h | Cleaner transcoding API (optional) | Low |
+
+### No Breaking Changes to Existing Code
+- Your current 3-chunk system works; hash-based naming is transparent to `/api/stream` (it just reads manifest order)
+- `StreamVideoMSE.jsx` continues unchanged (fragIndex references byte offsets, not segment names)
+- Backward-compatible: old manifests without hashes still play; new uploads include hashes
+
+
+### rootCauseOrInsight
+The project already has a mature video streaming architecture with two operational paths: (1) Native web video via Range-based HTTP + fMP4 chunking, (2) Advanced MSE with separate audio/video fMP4 streams and precise fragment indexing. The anonymization/hashing infrastructure exists for images but hasn't been extended to video segments—not due to technical gaps, but because video chunks are stored by predictable sequence (`000.bin`, `001.bin`) rather than hash-based names. This is a **design choice, not a limitation**: the manifest (`.media.json`) already lives separate from binaries, so extending to hash-based segment names is a low-friction addition that improves privacy without changing playback logic.
+
+
+### sources
+[
+  "https://www.npmjs.com/package/hls.js",
+  "https://www.npmjs.com/package/mux.js/v/5.7.0",
+  "https://www.npmjs.com/package/mp4box",
+  "https://www.npmjs.com/package/fluent-ffmpeg",
+  "https://github.com/video-dev/hls.js",
+  "https://github.com/videojs/mux.js",
+  "https://github.com/gpac/mp4box.js",
+  "https://gpac.io/2025/06/19/announcing-mp4box-js-1-0-0-with-typescript-support/",
+  "https://github.com/fluent-ffmpeg/node-fluent-ffmpeg"
+]
+
+
+## Result 1 — key=v2:b4c5c61153f8c4918613e7a4bda0818d4be5de07f46cb0fb92642ec0bd6acbb0
+
+
+### angle
+Format Strategy & Transcoding Architecture: Choosing between H.264/MP4 (fMP4 fragmented) and VP9/WebM for maximum browser compatibility and bandwidth efficiency, with concrete ffmpeg commands for multi-audio, subtitles, and chunked streaming
+
+
+### findings
+## CURRENT CODEBASE STATE
+
+Your setup uses TWO parallel transcoding pipelines:
+1. **video-transcode.mjs** (legacy): Single H.264 MP4 + all audio tracks multiplexed + 3 MB chunks
+2. **video-mse.mjs** (newer MSE): Separate video (H.264 fMP4) + per-language audio (AAC fMP4) + fragment index for seek/switch
+
+StreamVideoMSE.jsx reads manifest type 'mse-av' with:
+- video: {manifest, codecs:'avc1.640028', fragIndex}  
+- audio[]: {manifest, codecs:'mp4a.40.2', lang, label, fragIndex}
+- subs: [{path, lang, label}] as external WebVTT
+- probe: {duration}
+
+**Critical MSE implementation**: /api/stream serves chunked manifests via HTTP Range (206 partial content), using 3 MB WINDOW size. Seeks reconstruct via byteForTime (fragment index preferred, linear approximation fallback).
+
+## FORMAT COMPATIBILITY MATRIX (2026)
+
+| Codec | Container | Chrome | Firefox | Safari | Notes |
+|-------|-----------|--------|---------|--------|-------|
+| **H.264** | MP4 | ✓ | ✓ | ✓ Hardware accel | Most compatible, 25-year maturity, software fallback everywhere |
+| **VP9** | WebM | ✓ | ✓ | ✓ M1+ only | ~44% bitrate savings vs H.264 at 4K; no HLS native support (DASH only) |
+| **AV1** | WebM/MP4 | ✓ (partial) | ✓ (partial) | ✓ M3+ hardware only | 91.5% decoder support desktop, but macOS Safari ~24%, iOS ~33% |
+| **H.265** | MP4 | ✗ web | Limited | ✓ Modern Apple | Patent issues; not recommended for web |
+
+**Recommendation**: Dual-encode H.264 (fMP4 fragmented, universal fallback) + VP9 (DASH, bandwidth conscious users). AV1 too immature for 2026 until iPhone 14S equivalent matures (Q4 2025+).
+
+## NATIVE BROWSER PLAYBACK CAPABILITIES
+
+**Multi-Audio Track Support**:
+- HTML5 `<video>` audioTracks API: **NOT reliably implemented** (Safari only, partially). Chrome/Firefox don't populate it.
+- **Solution**: You must use Media Source Extensions (MSE) SourceBuffer switching, exactly as StreamVideoMSE does.
+
+**Subtitle Support**:
+- HTML5 `<track>` elements: ✓ All browsers
+- WebVTT (.vtt) format: ✓ Standard, supported everywhere
+- Embedded MP4 subtitles (tx3g): Chrome/Firefox ignore; Safari honors selectively
+- **Solution**: External sidecars (.vtt) in separate GitHub repo/shard (current approach is correct)
+
+**Seek & Adaptive Quality**:
+- Media Source Extensions: ✓ All modern browsers since 2018
+- Fragment-level precision: Requires **fragIndex** (moof baseMediaDecodeTime → wall-clock time mapping)
+- Byte-linear approximation: Unreliable in variable-bitrate streams → use fragIndex always
+
+## FFMPEG TRANSCODING COMMANDS
+
+### Strategy A: Single Universal H.264/MP4 (fMP4 fragmented + faststart)
+**Best for**: Simplicity, maximum compatibility, embedded audio/subs planning
+
+```bash
+# Probe source
+ffprobe -v error -show_format -show_streams -of json "$INPUT" > probe.json
+
+# Video + all audio + faststart (keyframe fragmentation)
+ffmpeg -y -i "$INPUT" \
+  -map 0:v:0 -c:v libx264 -preset fast -crf 21 -pix_fmt yuv420p \
+  -map 0:a -c:a aac -b:a 160k \
+  -movflags +faststart+frag_keyframe+empty_moov+default_base_moof \
+  output.mp4
+
+# Extract WebVTT subtitles (separate files)
+for i in $(ffprobe -v error -select_streams s -show_entries stream=index -of csv=p=0 "$INPUT"); do
+  ffmpeg -y -i "$INPUT" -map "0:s:$i" -c:s webvtt "sub${i}.vtt"
+done
+
+# Chunk into 3 MB pieces + fragment index
+node scripts/chunk-and-index.mjs output.mp4 --size 3145728 --out media/chunks
+```
+
+**Pros**: Single file, browsers play natively, hardware accelerated everywhere, lowest file size  
+**Cons**: Audio multiplexing requires client-side switching via MSE, can't change bitrate per track
+
+### Strategy B: Separated Streams (Multi-Audio + Subtitles, MSE-ready)
+**Best for**: Language switching, fine-grain quality control, your current StreamVideoMSE.jsx
+
+```bash
+# Video-only fMP4 H.264 (no audio, no subtitles)
+ffmpeg -y -i "$INPUT" -t "${SAMPLE:-100000}" \
+  -map 0:v:0 -dn \
+  -c:v libx264 -preset fast -crf 21 -pix_fmt yuv420p \
+  -movflags +frag_keyframe+empty_moov+default_base_moof \
+  video.mp4
+
+# Audio-only fMP4 per language (stereo, AAC)
+ffmpeg -y -i "$INPUT" -t "${SAMPLE:-100000}" \
+  -map "0:a:$TRACK_IDX" -vn \
+  -c:a aac -ac 2 -b:a 160k \
+  -movflags +frag_keyframe+empty_moov+default_base_moof \
+  audio_${LANG}.mp4
+
+# Text subtitles → WebVTT (direct)
+ffmpeg -y -i "$INPUT" -map "0:s:$TRACK_IDX" -c:s webvtt "sub_${LANG}.vtt"
+
+# Bitmap subtitles (PGS/DVD) → OCR → WebVTT (your current flow via pgsrip)
+ffmpeg -y -i "$INPUT" -map "0:s:$TRACK_IDX" -c:s copy sub.sup
+pgsrip -f -l "${ALPHA2_CODE}" sub.sup  # produces sub.srt
+ffmpeg -y -i sub.srt "sub_${LANG}.vtt"
+
+# Chunk each stream independently + extract fragIndex
+node scripts/video-mse.mjs "$INPUT" --dest pages/Videos --crf 21 [--push]
+```
+
+**Pros**: Independent track selection (no re-download), precise seeking via fragIndex, bitrate/codec per track possible  
+**Cons**: Multiple requests, more complex manifest structure, MSE code required
+
+### Strategy C: VP9 WebM + Opus (Bandwidth-Conscious, DASH Streaming)
+**Best for**: Modern browsers, 4K content, CDN cost reduction (44% bitrate vs H.264)
+
+```bash
+# VP9 encoding (slow, high quality, variable bitrate)
+ffmpeg -y -i "$INPUT" \
+  -c:v libvpx-vp9 -crf 23 -b:v 0 \
+  -row-mt 1 -speed 2 \
+  -tile-columns 2 -tile-rows 1 \
+  output.webm
+
+# Opus audio (superior low-bitrate audio quality)
+ffmpeg -y -i "$INPUT" \
+  -map 0:a -vn \
+  -c:a libopus -b:a 96k \
+  audio.opus
+
+# WebM container (audio embedded inside)
+ffmpeg -y -i output.webm -i audio.opus \
+  -c:v copy -c:a copy -shortest \
+  output_with_audio.webm
+```
+
+**Bitrate Reference** (VP9, CRF 23):
+- 1080p: 2500 kbps (vs H.264 3500 kbps)
+- 2160p/4K: 6000 kbps (vs H.264 15000+ kbps)
+
+**Opus Reference** (psychoacoustic transparency):
+- Stereo: 96 kbps (vs AAC 160 kbps)
+- Surround 5.1: 192 kbps (vs AAC 320 kbps)
+
+**Browser Support**: Chrome, Firefox, Safari 14.1+ (2021+)  
+**Limitation**: DASH-only for adaptive bitrate; HLS mandate is H.264/H.265
+
+### Strategy D: AV1 (Future, Partial Support)
+**Status in 2026**: Desktop 91.5% support but macOS Safari only 24% (M3+ needed)
+```bash
+ffmpeg -y -i "$INPUT" \
+  -c:v libaom-av1 -crf 23 -cpu-used 4 \
+  -b:v 0 -tile-columns 2 -tile-rows 1 \
+  output_av1.webm
+```
+**Verdict**: Not yet recommended. Wait until iOS 18+ (fall 2025) matures and older Macs cycle out.
+
+## MULTI-AUDIO & SUBTITLE MAPPING
+
+**Complete Example: 2 audio tracks (FR, JA) + 2 subtitle tracks (FR, JA)**
+
+```bash
+# Separate audio streams
+ffmpeg -y -i source.mkv -map "0:a:0" -c:a aac -b:a 160k audio_fra.mp4
+ffmpeg -y -i source.mkv -map "0:a:1" -c:a aac -b:a 160k audio_jpn.mp4
+
+# Extract subtitles
+ffmpeg -y -i source.mkv -map "0:s:0" -c:s webvtt sub_fra.vtt
+ffmpeg -y -i source.mkv -map "0:s:1" -c:s webvtt sub_jpn.vtt
+
+# Video (all tracks muxed into single MP4, for backward compatibility)
+ffmpeg -y -i source.mkv \
+  -map 0:v:0 -c:v libx264 -preset fast -crf 21 \
+  -map 0:a:0 -map 0:a:1 -c:a aac -b:a 160k \
+  -metadata:s:a:0 language=fra -metadata:s:a:1 language=jpn \
+  -movflags +faststart+frag_keyframe+empty_moov+default_base_moof \
+  output_muxed.mp4
+
+# Manifest metadata (for /api/stream dispatch)
+{
+  "type": "mse-av",
+  "mime": "video/mp4",
+  "video": {
+    "manifest": "pages/Videos/source.video.media.json",
+    "codecs": "avc1.640028",   // from ffprobe -select_streams v:0 mime_codec_string
+    "fragIndex": [{"t": 0, "b": 0}, {"t": 2.04, "b": 8192}, ...]
+  },
+  "audio": [
+    {
+      "lang": "fra",
+      "label": "Français",
+      "manifest": "pages/Videos/source.audio.fra.media.json",
+      "codecs": "mp4a.40.2",
+      "fragIndex": [...]
+    },
+    {
+      "lang": "jpn",
+      "label": "日本語",
+      "manifest": "pages/Videos/source.audio.jpn.media.json",
+      "codecs": "mp4a.40.2",
+      "fragIndex": [...]
+    }
+  ],
+  "subs": [
+    { "path": "media/source/sub_fra.vtt", "lang": "fra", "label": "Français" },
+    { "path": "media/source/sub_jpn.vtt", "lang": "jpn", "label": "日本語" }
+  ],
+  "probe": { "duration": 3600, "audio": [...], "subs": [...] }
+}
+```
+
+## CHUNK SIZING & STREAMING OPTIMIZATION
+
+**Current: 3 MB chunks**
+
+```
+Chunk overhead math:
+- 3 MB / 2 Mbps stream = 1.5 sec of content per chunk
+- 1.5 sec × 30 fps = 45 video frames per chunk
+- At keyframe every 48 frames (2 sec @24fps), ~1 keyframe per chunk
+- Risk: mid-chunk seek lands between keyframes → buffering
+```
+
+**Recommendation**: 
+- Keep 3 MB (proven in your codebase)
+- **But**: Ensure `-g 24` (gopsize 24 frames, ~1 sec keyframes) in transcoding
+- Seek precision: Use **fragIndex always** (moof startpoint + tfdt decode time)
+
+**HTTP Range optimization**:
+- Your `/api/stream` caps window at 4 MB (under Vercel 4.5 MB limit)
+- Prefetch window: 45 sec (PREFETCH_AHEAD), evict after 30 sec behind
+- Total MSE quota on modern hardware: ~150 MB buffered
+
+## CONCRETE FFMPEG RECIPE FOR YOUR PIPELINE
+
+**Replace video-mse.mjs default with this:**
+
+```bash
+# For video >100 MB, auto-transcode on Mac via Node local server
+
+# Probe
+ffprobe -v error -show_format -show_streams -of json "$INPUT" 
+
+# Video (H.264, crf 21, fast preset, fragment for MSE)
+ffmpeg -y -i "$INPUT" \
+  -map 0:v:0 -dn \
+  -c:v libx264 -preset fast -crf 21 -pix_fmt yuv420p \
+  -g 24 \
+  -movflags +frag_keyframe+empty_moov+default_base_moof \
+  video.mp4
+
+# Audio (each track → stereo AAC 160 kbps, separate fMP4)
+for idx in 0 1 2; do
+  lang=$(ffprobe -v error -select_streams "a:$idx" -show_entries stream=tags=language -of default=noprint_wrappers=1 "$INPUT" | cut -d= -f2)
+  [ -z "$lang" ] && lang="und"
+  ffmpeg -y -i "$INPUT" \
+    -map "0:a:$idx" -vn \
+    -c:a aac -ac 2 -b:a 160k \
+    -movflags +frag_keyframe+empty_moov+default_base_moof \
+    "audio_${idx}_${lang}.mp4"
+done
+
+# Subtitles (WebVTT, external)
+for idx in 0 1; do
+  codec=$(ffprobe -v error -select_streams "s:$idx" -show_entries stream=codec_name -of default=noprint_wrappers=1 "$INPUT")
+  lang=$(ffprobe -v error -select_streams "s:$idx" -show_entries stream=tags=language -of default=noprint_wrappers=1 "$INPUT" | cut -d= -f2)
+  [ -z "$lang" ] && lang="und"
+  
+  if [[ "$codec" == pgs* ]] || [ "$codec" = "dvd_subtitle" ]; then
+    # OCR path
+    alpha2=$(code_from_lang "$lang")
+    ffmpeg -y -i "$INPUT" -map "0:s:$idx" -c:s copy "sub.sup"
+    pgsrip -f -l "$alpha2" sub.sup
+    ffmpeg -y -i "sub.srt" "sub_${idx}_${lang}.vtt"
+  else
+    # Direct WebVTT
+    ffmpeg -y -i "$INPUT" -map "0:s:$idx" -c:s webvtt "sub_${idx}_${lang}.vtt"
+  fi
+done
+```
+
+## FILES IN YOUR CODEBASE AFFECTED
+
+- **/src/components/StreamVideoMSE.jsx** (line 5-50): Codec MIME validation, hardcoded to avc1.*/mp4a.40.2
+- **/scripts/video-mse.mjs** (line 163-177): Current ffmpeg invocations (H.264, AAC only)
+- **/api/stream.js** (line 6, 53): MAX_WINDOW=4MB, range calculation
+- **/src/capture/universalCapture.js** (line 24, 293): WEB_NATIVE_VIDEO hard-coded to ['mp4', 'webm', 'ogg']
+- **/pages/.zr-transcode-queue.json**: Queue for local transcodage (transcoding status persistence)
+
+
+### recommendation
+**Priority 1 (Immediate, solves streaming breakage)**: 
+- Ensure all ffmpeg invocations in video-mse.mjs include `-g 24` (keyframe every 1 sec) and `-movflags +frag_keyframe+empty_moov+default_base_moof`
+- Verify fragIndex extraction in your chunkStream function (line 106-124) correctly parses moof/tfdt boxes
+- For >100 MB videos: Confirm local Node server via local-server.mjs can execute ffmpeg (or use ffmpeg.wasm client-side as fallback, but slower)
+
+**Priority 2 (Robustness, 2 weeks)**:
+- Add VP9 encoding path (optional flag in video-mse.mjs, e.g., `--vp9`) for power users; output as separate manifest type 'vp9-webm'
+- Update StreamVideoMSE.jsx to accept EITHER 'mse-av' (H.264 current) OR 'vp9-webm' (VP9 future)
+- Bitrate reference: H.264 CRF 21 ≈ VP9 CRF 23 quality parity
+
+**Priority 3 (Validation)**:
+- Test codec MIME registration with real Chrome/Safari: `MediaSource.isTypeSupported('video/mp4; codecs="avc1.640028"')` should return true
+- Measure fragIndex miss rate (seek without fragIndex falls back to linear approximation): add console.warn if fragIndex.length === 0
+- Benchmark: 100 MB video at 2 Mbps should prefetch 45 sec (90 MB) in under 8 sec on typical 10 Mbps WiFi
+
+**Priority 4 (Future, post-AV1 maturity, Q4 2025+)**:
+- Monitor Safari AV1 support (currently M3+ only ~24% of sessions); re-evaluate Q4 2025
+- Consider DASH packaging (dash.js player) if adaptive bitrate becomes critical; currently MSE single-bitrate is fine
+
+**Chunk size decision**: Keep 3 MB. Your current implementation is solid; only risk is insufficient keyframe density (fix with `-g 24`).
+
+**Local transcoding server**: 
+- Current approach (enqueueTranscode → scripts/video-mse.mjs via CLI) is correct
+- Alternative for >100 MB: Consider background task queue (e.g., Node worker threads) if local server responsiveness becomes an issue
+- Monitor: `/tmp/zr_mse/out/` for successful completions, log failures in pages/.zr-transcode-queue.json status field
+
+
+### rootCauseOrInsight
+The streaming failure likely stems from: (1) fragmentation flags missing or malformed in current ffmpeg calls (empty_moov not being written correctly); (2) fragIndex not populated, forcing linear byte-to-time approximation which fails in variable-bitrate streams; (3) insufficient keyframe density (default -g 250+ is too sparse); (4) MSE SourceBuffer append failures on mid-stream seeks due to incomplete init segment (ftyp+moov) being re-pushed.
+
+Your codebase's MSE implementation (StreamVideoMSE.jsx) is architecturally sound (separate video/audio SourceBuffers, init caching, seek guard). The weakness is in the transcoding command-line parameters and fragIndex population—fixing those will unblock playback immediately.
+
+
+### sources
+[
+  "https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API/Transcoding_assets_for_MSE",
+  "https://github.com/photoprism/photoprism/issues/4892",
+  "https://streaminglearningcenter.com/codecs/encoding-vp9-in-ffmpeg-an-update.html",
+  "https://trac.ffmpeg.org/wiki/Encode/AV1",
+  "https://wiki.webmproject.org/ffmpeg/vp9-encoding-guide",
+  "https://developers.google.com/media/vp9/settings/vod",
+  "https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Video_codecs",
+  "https://www.digitalsamba.com/blog/video-codec-guide",
+  "https://www.testmuai.com/web-technologies/av1/",
+  "https://konvrt.dev/blog/av1-vs-hevc-vs-vp9-browser-video-2026",
+  "https://www.red5.net/blog/av1-vs-vp9-vs-vp8-comparison-for-live-streaming/",
+  "https://www.webmproject.org/docs/container/",
+  "https://imagekit.io/blog/vp9-vs-h264/",
+  "https://antmedia.io/video-codecs-streaming-guide/",
+  "https://antmedia.io/vp9-codec/",
+  "https://cloudinary.com/guides/video-formats/webm-format-what-you-should-know",
+  "https://www.testmuai.com/learning-hub/webm-browser-support/",
+  "https://cloudinary.com/guides/video-effects/ffmpeg-subtitles",
+  "https://docs.vtk.castlabs.com/Tools/Transcoding/transcoding.html"
+]
+
+
+## Result 2 — key=v2:3f5a4041184d716d9548f41c02b81e1ec89210720739bfb385f143fd0bce6d47
+
+
+### angle
+LOCAL TRANSCODING SERVER ARCHITECTURE: Extend Node.js local-server.mjs with POST /api/transcode endpoint to handle large video files (>100MB) on Mac via native ffmpeg, with chunked output, progress streaming, and secure path handling
+
+
+### findings
+CURRENT ARCHITECTURE STATE:
+
+1. **Upload Pipeline (universalCapture.js: lines 210-299)**
+   - Web-native videos (mp4/webm): chunked immediately via uploadBinaryChunks (3MB chunks)
+   - Non-native videos (mkv/avi/mov): placeholder .media.json {transcoding:true} + enqueued to pages/.zr-transcode-queue.json (line 246)
+   - Current bottleneck: transcoding happens via scripts/video-transcode.mjs (offline script), NOT integrated with web UI
+
+2. **Existing Transcode Script (scripts/video-transcode.mjs: lines 80-115)**
+   - Uses execFileSync for ffprobe, ffmpeg, pgsrip
+   - Supports: H.264 video, all audio tracks, PGS bitmap→OCR, WebVTT text subs
+   - Output: 3MB chunks + manifest.media.json + pushes via git to zenray-content
+   - **Pain: Requires manual script invocation; no real-time progress to browser**
+
+3. **Local Server (scripts/local-server.mjs: lines 1-49)**
+   - Currently only serves dist/ static + routes /api/* to handler modules
+   - Handlers (api/*.js) imported once at startup; must RESTART for api changes
+   - No streaming/long-polling capabilities yet
+
+4. **Video Upload Entry Points**
+   - universalCapture.js: captureVideoTranscode() (line 232) writes placeholder only
+   - No connection between enqueueTranscode() output and any server-side processing
+   - Queue file (pages/.zr-transcode-queue.json) is written to GitHub content repo, not monitored
+
+5. **Streaming Architecture (api/stream.js + StreamVideoMSE.jsx)**
+   - StreamVideoMSE (lines 204-449): MSE player with multi-audio support
+   - Uses Range requests on /api/stream → GitHub raw API → chunks (3MB)
+   - fMP4 format (H.264 + AAC audio with edit lists)
+   - Init segment (ftyp+moov) cached; fragments refetched on seek
+
+6. **Key File Paths & Sharding**
+   - Binary chunks: zenray-media-NN shards (private) + hashable as ab/cd/<sha256>.<ext>
+   - Manifests: zenray-content/pages/ (public)
+   - Chunks 3MB aligned with Vercel body limit (~4.5MB base64)
+
+PROBLEM STATEMENT: Importing video >100MB fails because browser can't handle large decode, no transcode during upload, ffmpeg.wasm too slow. Solution: Transcode on Mac DURING import via native ffmpeg, return manifest + stream progress to browser.
+
+TECHNICAL CONSTRAINTS:
+- ffmpeg v8.1.1 native binary available (/opt/homebrew)
+- ffmpeg.wasm rejected (too slow for >100MB)
+- fluent-ffmpeg could wrap native ffmpeg but local-server.mjs is plain Node.js http
+- Child process spawning available via node:child_process (execFile, spawn)
+- SSE or polling for progress reporting
+
+FILES INVOLVED:
+- /api/transcode.js (NEW): POST endpoint
+- scripts/local-server.mjs (EXTEND): Add /api/transcode routing
+- src/capture/universalCapture.js (MODIFY): Route >100MB videos to transcode endpoint
+- src/components/StreamVideoMSE.jsx (READY): Already handles multi-audio + subs
+
+
+
+### recommendation
+**ENDPOINT DESIGN: POST /api/transcode**
+
+Accept JSON: {filePath, nodePath, preset, crf, audioLangs, extractSubs}
+Response: {id, status, progress 0-1, message, manifestPath, error}
+
+**BACKEND (api/transcode.js)**
+- Validate filePath: reject path traversal, allow /Users/zenray/*
+- Spawn ffprobe for duration/streams
+- Spawn ffmpeg with H.264 + AAC, faststart flag
+- Parse stderr for progress: "frame=X fps=Y time=HH:MM:SS"
+- Chunk output (3MB), upload via shardApi (reuse existing)
+- Write manifest, update queue
+- Keep job state in memory: Map<jobId, {status, progress, error}>
+
+**BROWSER ROUTE (universalCapture.js)**
+- Detect large non-native files (>100MB):
+  ```javascript
+  if (file.size > 100*1024*1024 && !WEB_NATIVE_VIDEO.has(ext)) {
+    return captureVideoLargeTranscode(file, folder, onProgress)
+  }
+  ```
+- POST to /api/transcode with filePath (or stream to temp dir first)
+- Poll GET /api/transcode?id=... every 500ms for progress
+- Return manifest when done
+
+**PROGRESS REPORTING**
+- Poll-based (simpler than SSE for local-server)
+- Update UI: "Encoding 45% • Uploading chunks"
+- onProgress callback drives UI spinner
+
+**SECURITY**
+- Path whitelist: /Users/zenray/*, /tmp/zr_*
+- Reject ../, /etc, absolute traversal
+- Token validation (GITHUB_TOKEN env)
+- Temp cleanup: auto-delete after 1hr
+
+**IMPLEMENTATION: spawn vs fluent-ffmpeg**
+- Use spawn('ffmpeg', args): direct, ~100 LOC, zero deps
+- fluent-ffmpeg adds wrapper but requires npm install
+- ffmpeg.wasm: REJECT (memory issues >1GB)
+
+**CHUNKING STRATEGY**
+- Write transcode to /tmp/zr_<jobId>/video.mp4
+- Read + chunk (3MB align with existing CHUNK_SIZE)
+- Upload same path/hash format as uploadBinaryChunks()
+- Manifest includes probe: {duration, audio[], subs[]}
+
+**MULTIPLATFORM**
+- Detect ffmpeg: $(which ffmpeg) or PATH env
+- Paths: /opt/homebrew/bin/ffmpeg (Mac), /usr/bin/ffmpeg (Linux)
+
+**TESTING**
+- Import 200MB mkv → progress → transcode → MSE playback
+- Multi-audio extraction
+- Seek works after upload
+- Cancel mid-job (AbortController)
+- Path traversal rejected (403)
+
+
+## Result 3 — key=v2:edd32ff5cba61cd3907f5f89a1df4d688752a46599436d27b58e24e193738407
+
+
+### angle
+Lecteur vidéo type VLC avec MSE natif vs bibliothèques externes : comparaison et plan React
+
+
+### findings
+ARCHITECTURE ACTUELLE (ZenRayProgress):
+- Deux lecteurs vidéo coexistent:
+  1. StreamVideo.jsx (ligne 26-162): <video> natif + préchargeur Range HTTP + pistes audio limites (Safari seul expose audioTracks)
+  2. StreamVideoMSE.jsx (ligne 204-449): Media Source Extensions MSE + 1 SourceBuffer vidéo + 1 SourceBuffer audio recréé au switch
+- Chunking: 3 Mo (CHUNK=3145728) identique entre video-transcode.mjs et video-mse.mjs
+- Format de sortie vidéo: fMP4 fragmented H.264 + AAC stéréo, manifests JSON séparés par flux (video.media.json + audio.{lang}.media.json)
+- Sous-titres: WebVTT servies via /api/shard (shard privé) ou /api/img (content public)
+
+FORCES DU MSE NATIF (StreamVideoMSE.jsx):
+- Zéro dépendance externe (pas de hls.js/shaka-player/dash.js)
+- Implémentation MSE classique et éprouvée: StreamFeeder tire les fragments, gère la file, évince le quota
+- Multi-audio robuste: switch audio = detach ancien SourceBuffer + rebuild init segment + re-feed depuis currentTime préservé
+- Fonctionne partout (Chrome, Edge, Firefox, Safari) contrairement aux audioTracks API natif (Safari seul)
+- Fragment index (fragIndexOf, lignes 106-124) : accès rapide aux moofs fMP4 pour seek/switch précis
+- Contrôle granulaire: PREFETCH_AHEAD=45s, EVICT_BEHIND=30s, WINDOW=1Mo, INIT_BYTES=512Ko
+
+LIMITATIONS ACTUELLES:
+1. Pas de UI avancée: sélecteur audio/sous-titres en menus + vitesse, zéro option "VLC-like" avancées
+2. Pas de sous-titres temps réel sur piste: <track> natif dans le DOM vidéo mais sans sync avancée (color, position, outline)
+3. Pas de resolution adaptative (pas de laddering H.264): un seul flux fixe
+4. Pas d'offset de sync A/V: aucun contrôle dans l'UI pour avancer/retarder pistes audio
+5. Pas de lecture en boucle partielle: pas de points de départ/fin personnalisés
+6. Pas de cache disque IndexedDB: chaque reload re-fetch depuis GitHub (lent sur >500Mo)
+7. Pas de caption styling: impossibilité de changer couleur/taille/fond des sous-titres
+
+BIBLIOTHÈQUES EXTERNES COMPARÉES:
+
+hls.js (GitHub: shaka-project/shaka-player):
+- 5.8M téléchargements/semaine (npm trends)
+- Supporte HLS natif (pas directement fMP4 + MSE brut)
+- Nécessite transcodage vidéo en HLS (.m3u8 + .ts segments)
+- API audio: hlsInstance.audioTracks (tableau, switch par index)
+- API sous-titres: subtitles, changeSubtitleTrack
+- API vitesse: element.playbackRate natif
+- Avantages: très stable, très adopté, HLS standard
+- Inconvénients: format HLS → transcodage supplémentaire, chunking supplémentaire (10s), surcharge
+
+shaka-player (GitHub: shaka-project/shaka-player):
+- 205k téléchargements/semaine (npm trends)
+- Supporte DASH (Manifest.mpd) + HLS (.m3u8)
+- Nécessite transcodage + représentations multi-bitrate
+- API audio: mediaElement.audioTracks + shaka.Player.getAudioLanguages() + selectAudioLanguage(lang)
+- API sous-titres: selectTextTrack, showTextTrack
+- API vitesse: element.playbackRate natif
+- Avantages: adaptatif bitrate automatique, offline (IndexedDB), DRM-ready
+- Inconvénients: lourd (250Ko min), complex config, overkill pour une seule version vidéo, transcodage DASH/multi-bitrate requis
+
+dash.js:
+- 345 téléchargements/semaine (npm trends, quasi-mort)
+- Supporte DASH uniquement
+- Similar à shaka-player mais moins maintain
+
+VideoPlayer.jsx (YouTube-style): utilise ffmpeg.wasm + MediaSource Extensions
+- Code+blobUrl sur demande pour formats non-natifs (mkv, avi, etc.)
+- Lourd (ffmpeg.wasm = wasm32 ~700Mo limite)
+- Architecture: remuxPlayer ou transcodePlayer appelés au mount
+- Avantages: formats exotiques
+- Inconvénients: wasm latency, CPU-intensive
+
+STACK ACTUEL vs RECOMMANDÉ:
+
+Actuel:
+- Upload: universalCapture.js → enqueueTranscode → video-transcode.mjs (serveur local) + chunking
+- MSE: StreamVideoMSE.jsx (MSE natif maison)
+- Limites: pas UI avancées, pas multi-bitrate, pas cache disque
+
+Recommandé (pas de changement de format, amélioration UI + features):
+- Garder fMP4 chunked (3Mo): zéro transcodage supplémentaire
+- Upgrade StreamVideoMSE.jsx avec UI "VLC+" : time offset audio/sous-titres, styling captions, 10 vitesses, boucle partielle, cache IndexedDB, plein écran amélioré
+- Zéro dépendance externe pour le lecteur (déjà MSE natif)
+
+COMPARAISON TEMPS TRANSCODAGE:
+- Actuel (video-transcode.mjs): H.264 mp4 seul + chunking 3Mo ≈ 2-3x real-time pour 1h vidéo
+- video-mse.mjs: vidéo-seule fMP4 + N audio-seul fMP4 (parallèle possible) + chunking = +2x audio (N pistes) mais audio << vidéo
+- HLS/DASH: transcodage multi-bitrate → +5-10x real-time pour 3-4 représentations
+
+PLAN REACT: Advanced VLC-Like Player Component (Approach MSE-Native Upgrade)
+
+Composant React proposé: AdvancedStreamVideoMSE.jsx (replace StreamVideoMSE.jsx)
+- Architecture: réutilise StreamFeeder, MediaSource, SourceBuffer existants
+- Ajouts UI: Advanced Controls Panel + Caption Styling Drawer + Time Offset Controls
+- Cache: IndexedDB pour chunks pré-fetchés (optionnel, phase 2)
+- Multi-format ready: extensible à HLS/DASH plus tard si besoin
+
+Sous-composants:
+1. AudioTrackSelector: sélection piste (existant) + volume par-piste (nouveau)
+2. SubtitleStyler: couleur, taille, fond, outline, opacité (nouveau)
+3. TimeOffsetControl: décalage A/V en ms, sync fine (nouveau)
+4. LoopRangeEditor: départ/fin personnalisés, boucle (nouveau)
+5. PlaybackSpeedAdvanced: 10 vitesses + presets (x0.5, x1, x1.5, x2) + pitch preservation (existant+polish)
+6. FullscreenModern: théâtre mode, PiP (Picture-in-Picture) (nouveau)
+7. ProgressTimeline: cue points, chapitres (optionnel phase 2)
+
+Structure fichier:
+- src/components/AdvancedStreamVideoMSE.jsx (500 lignes): MSE core + layout
+- src/components/advanced-player/ (nouveau dossier):
+  - AudioTrackSelector.jsx
+  - SubtitleStyler.jsx
+  - TimeOffsetControl.jsx
+  - LoopRangeEditor.jsx
+  - PlaybackControlPanel.jsx
+  - FullscreenManager.jsx
+- src/media/captionStyling.js (nouveau): CSS dynamique pour <track> captions
+
+API publique (props):
+- t (theme)
+- path (manifest path)
+- manifest (mse-av type)
+- onError, onStateChange (callbacks)
+- cacheChunks? (boolean, default false = phase 2)
+
+État interne:
+- playState: { playing, cur, dur, buffered, speed, audioTrack, subTrack, subStyle, timeOffset, loopStart, loopEnd, subColor, subSize, subBg, fs }
+- feeders: { video, audio }
+- cache: { chunks: Map<path, ArrayBuffer> }
+
+Événements:
+- onPlaybackChange(state)
+- onBuffering(ratio)
+- onError(kind, message)
+
+Points clés (pas de régression):
+- StreamFeeder réutilisé identique
+- Precharge Range HTTP identique (pump())
+- MSE quota gestion identique (evict)
+- Manifest format mse-av identique
+- Sub-titres VTT identiques (via <track>)
+- Pas de bundling externe (zéro dépendance new npm)
+
+
+### recommendation
+APPROCHE RECOMMANDÉE: Rester en MSE natif, upgrade UI uniquement
+
+Pourquoi pas hls.js/shaka-player/dash.js:
+- Coût: transcodage supplémentaire (HLS/DASH) = +1-3h par vidéo
+- Complexité: format M3U8/MPD + multi-bitrate (3-5 représentations) vs fMP4 simple
+- Pas de gain pour use-case ZenRayProgress: vidéo singe-bitrate, pas d'adaptatif requis
+- Dépendances: 150-250Ko JS, config complexe, overkill pour 1 flux
+- Alternativement, si adaptatif vraiment souhaité: shaka-player (mieux entretenu), mais nécessite re-transcodage vidéo-mse.mjs + ajout DASH transcode
+- hls.js si HLS forcé seulement (standard web, mais surcharge pour cas simple)
+
+PLAN IMPLÉMENTATION (phase 1: UI avancée, phase 2: cache disque):
+
+PHASE 1 (2-3j):
+1. Créer src/components/AdvancedStreamVideoMSE.jsx en copie de StreamVideoMSE.jsx, garder StreamFeeder identique
+2. Refactoriser layout: [video] + [timeline seek bar] + [advanced controls panel collapsible]
+3. Advanced controls panel (expandable menu):
+   - Audio: piste select (existant) + volume individual (nouveau)
+   - Subtitles: piste select + "Style" button → drawer
+   - Speed: 10 vitesses (0.5x, 0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x, 2.5x, 3x) + pitch lock toggle
+   - Time offset: slider -500ms à +500ms (offset audio vs vidéo)
+   - Loop: start/end time picker, checkbox loop (pour sections)
+   - Fullscreen + PiP
+4. Subtitle Styling Drawer (click "Style" button):
+   - Color picker (hex) → <style> dynamique sur ::-webkit-media-text-track-container
+   - Font size: 12px-48px slider
+   - Background opacity: 0-100%
+   - Outline width: 0-3px
+   - Font family: sans-serif | serif | monospace toggle
+5. Time Offset visualization: show current offset in ms, real-time audio delay (speech sync test card dans UI)
+
+PHASE 2 (1-2j, optionnel):
+6. Cache IndexedDB: optionnel (flag cacheChunks=true), stocke chunks < 50Mo par path
+7. Progressive fetch: si chunk absent, fetch + store en IndexedDB (next reload = fast)
+8. Cache invalidation: manual clear button + auto 30j retention
+
+PHASE 3 (1j, polish):
+9. Keyboard shortcuts: space=play/pause, f=fullscreen, c=captions toggle, m=mute, + chapter markers (si manifest.chapters)
+10. Accessibility: aria labels, keyboard nav dans menus, screen reader support
+
+MANIFEST CHANGES (optionnel, backward-compatible):
+Ajouter au manifest mse-av (video-mse.mjs ligne 209):
+```json
+{
+  "type": "mse-av",
+  ...existant...,
+  "chapters": [
+    { "time": 120, "label": "Introduction" },
+    { "time": 300, "label": "Section 2" }
+  ],
+  "audioSync": { "offset": 0 }
+}
+```
+→ Pas requis pour v1, lecteur ignore si absent.
+
+FICHIERS À CRÉER/MODIFIER:
+- Créer: src/components/AdvancedStreamVideoMSE.jsx (~500 loc)
+- Créer: src/components/advanced-player/ (5 fichiers, ~200 loc chacun)
+- Créer: src/media/captionStyling.js (~50 loc)
+- Modifier: src/components/MediaViewer.jsx (line 70, swap LazyStreamVideoMSE → LazyAdvancedStreamVideoMSE)
+- Modifier: src/components/StreamVideoMSE.jsx (garder comme fallback legacy)
+
+TESTS RECOMMANDÉS (post-implémentation):
+- Multi-audio switch (5x pendant lecture): pas de muet, currentTime préservé
+- Seek + time offset: vérifier sync A/V
+- Subtitle styling: vérifier CSS appliqué en PiP
+- Fullscreen → theater mode → PiP transitions
+- Cache IndexedDB: reload page, vérifier fetch supprimé
+- Perf: 1h vidéo, memory footprint SourceBuffer (50-100Mo typical)
+
+BACKWARD COMPATIBILITY:
+- Manifests mse-av existants reste 100% compatibles
+- Nouveau composant optionnel (flag en MediaViewer)
+- StreamVideoMSE.jsx non modifié (garde comme fallback)
+
+TEMPS ESTIMATION:
+- Phase 1 (UI avancée): 2-3j pour 1 dev
+- Phase 2 (cache): 1-2j
+- Phase 3 (polish): 1j
+- Total v1: 4-6j
+
+
+### sources
+[
+  "https://github.com/shaka-project/shaka-player",
+  "https://npmtrends.com/dash.js-vs-hls.js-vs-shaka-player-vs-videojs",
+  "https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API",
+  "https://w3c.github.io/media-source/",
+  "https://developer.chrome.com/blog/media-source-extensions-for-audio",
+  "https://web.dev/articles/mse-seamless-playback",
+  "https://github.com/fluent-ffmpeg/node-fluent-ffmpeg",
+  "https://github.com/eshaz/mse-audio-wrapper",
+  "https://github.com/SatyaDewangan05/multi_audio_video_player"
+]
+
+
+## Result 4 — key=v2:f2029bf5d0859264641c4a16ca9d081137b1e13b47679d5d71f9548574658147
+
+
+### angle
+3MB chunk size via GitHub + HTTP Range is VIABLE for streaming video, but has architectural tradeoffs. Compare fMP4 fragmentation, HLS, and DASH alternatives for robustness and seek performance.
+
+
+### findings
+CURRENT STATE (live codebase analysis):
+
+**Chunk Strategy Implemented:**
+- 3 MB chunks (3145728 bytes, CHUNK constant in api/stream.js line 6, scripts/video-transcode.mjs line 16, scripts/video-mse.mjs line 29)
+- Raw binary chunks (.bin files) in GitHub repos (shard privé zenray-media-NN or zenray-content)
+- Manifest format: type:'chunked-media' (video-transcode) or type:'mse-av' (video-mse)
+- Served via /api/stream with HTTP Range support (206 Partial Content) 
+- Server-side: fetches covering chunks from GitHub API, re-slices to exact byte range, returns via 206
+- Client prefetch: 4MB windows (StreamVideo.jsx line 51), 60s ahead (line 50), 1 concurrent fetch
+
+**Range Request Implementation (api/stream.js):**
+- Lines 41-53: Parses Range header, calculates first/last chunk needed
+- Lines 55-64: Fetches raw GitHub chunks, concatenates 
+- Lines 65-69: Slices to exact requested range
+- Line 72: Sets Accept-Ranges: bytes + Cache-Control immutable
+- Lines 75-77: Returns 206 with Content-Range header
+- MAX_WINDOW 4MB (line 6) caps server response size under Vercel 4.5MB limit
+
+**Client Streaming Architecture:**
+StreamVideo.jsx (lines 40-113): 
+- bytesPerSec = size/duration for linear seek mapping
+- pump() maintains 60s buffer ahead via 4MB windows
+- Single concurrent fetch, recalculates on seek backward
+- prefetchTo.current tracks preload cursor (line 47)
+- Zero media-element buffering: native <video src=/api/stream> with Range support
+
+StreamVideoMSE.jsx (lines 46-202):
+- Double SourceBuffer (video + audio separate fMP4 streams)
+- StreamFeeder class: manages individual SourceBuffer feeding
+- byteForTime() uses fragIndex (fMP4 fragment times+bytes) for seek, fallback linear approx (lines 81-92)
+- PREFETCH_AHEAD 45s (line 26), WINDOW 1MB (line 28), INIT_BYTES 512KB (line 29)
+- CRITICAL FIX: initDone flag (line 68, 139) prevents appending moof without init segment
+
+**Manifest Structure (chunked-media type):**
+- size, chunkSize (3145728), count, dir, parts (array of chunk names)
+- No duration/framerate/bitrate metadata → seek approximation is LINEAR in bytes
+
+**ISSUES IDENTIFIED:**
+
+1. **No Fragment Index in chunked-media manifests** — StreamVideo.jsx/StreamVideoMSE.jsx fallback to linear byte-position approximation (StreamVideoMSE.jsx line 91-92). Seek/skip may land MID-FRAGMENT in raw .bin chunks → inaccurate seek position (sometimes works, sometimes off by seconds).
+
+2. **3MB chunk is large for progressive streaming** — 60s at 1Mbps video = 7.5MB total = 3 chunks to fetch. Prefetch latency (GitHub API ≈500ms/call per chunk range) means stall risk on slow WiFi. StreamVideo uses 4MB window prefetch; StreamVideoMSE uses 1MB + fragment index (better, if index exists).
+
+3. **No codec detection in manifest** — type:'chunked-media' omits 'codecs' field. MediaViewer (line 69) routes MSE only if type=='mse-av' (which includes codecs). Fallback StreamVideo relies on <video src> native probing (works for H.264/AAC but risky for VP9/Opus).
+
+4. **Separate shard vs. content repo routing** — manifest.repo field (StreamVideoMSE.jsx line 231, StreamVideo.jsx line 58) switches /api/stream between shard privé (token server-side) and public zenray-content. Adds routing layer; /api/stream already handles both (line 38), but manifest must declare repo correctly or chunks return 404.
+
+5. **No HLS/DASH fallback** — chunked-media + raw .bin requires Range support. If proxy/CDN doesn't support Range (rare but possible), streaming breaks. HLS (.m3u8 + .ts segments) is universally compatible; DASH (manifest.mpd + .m4s) is MP4-native.
+
+6. **Seek precision in fMP4 limited by fragment boundaries** — video-mse.mjs builds fragIndex (lines 106-124: walks moov/moof boxes, reads tfdt baseMediaDecodeTime). Fragments are ~3MB, so seek may be ±1.5MB off (seconds of video). Video-transcode.mjs (older pipeline) doesn't produce fragIndex → StreamVideoMSE degrades to linear approximation.
+
+7. **Audio/subtitle muxing vs. demux strategy** — Current: video-mse.mjs splits video + per-language audio fMP4 (MSE-friendly, small audio files ~500KB/piste/min). But old video-transcode.mjs muxes all audio into a single mp4 (HTMLMediaElement.audioTracks switch broken in Chrome). Storage similar, but seek/switch complexity differs.
+
+**WHAT WORKS:**
+- 3MB raw chunks + HTTP 206 Range IS sufficient for streaming if:
+  - Fragment index present (sub-second seek accuracy)
+  - Prefetch 60s ahead (covers network latency)
+  - Player handles seek backwards (StreamVideo detects, resets prefetch cursor)
+- Zero file duplication (chunks stored once, served many)
+- Private shards rollover at 4.5GB
+- MSE double-buffer fixes Chrome audio-track bug
+
+**PERFORMANCE BASELINE:**
+- Initial load: 512KB init (line 29 StreamVideoMSE) + 1st chunk ≈ 1-2s (GitHub API overhead)
+- Seek: byteForTime(target) → fetch matching chunk range → append → resume (0.5-1s if cached, 1-2s cold)
+- Stall risk: Linear bytesPerSec approximation may overshoot seek target, requiring re-fetch
+
+
+### recommendation
+KEEP 3MB raw chunks + HTTP 206, BUT add these fixes for robustness:
+
+1. **Mandatory: Produce fragment index in ALL pipelines**
+   - video-transcode.mjs: copy fragIndex building logic from video-mse.mjs (lines 106-124)
+   - Manifest: add fragIndex:[{t:seconds, b:byte_offset}, ...] for every chunk
+   - Benefit: sub-second seek accuracy, no guessing
+   - Implementation: scripts/video-transcode.mjs line 112-113, store fragIndex in manifest.probe (currently only in video-mse.mjs)
+
+2. **Split audio files for reliable cross-browser audio-track switching**
+   - Current: video-mse.mjs pipeline ONLY → use MSE + SourceBuffer switch (works everywhere)
+   - Problem: video-transcode.mjs still muxes all audio (Chrome audioTracks broken)
+   - FIX: Make video-transcode.mjs also produce video-only mp4 + per-language audio fMP4 files (same as video-mse)
+   - Route in MediaViewer: if manifest has audio[] array → StreamVideoMSE; else → StreamVideo (with caveat: no switch in Chrome)
+   - Storage: audio files ~5-10% extra; negligible vs. total
+
+3. **Add codec strings to manifest**
+   - chunked-media type: add fields codecs.video='avc1.640028', codecs.audio='mp4a.40.2' 
+   - Benefit: MediaViewer can validate codec support BEFORE creating player; /api/stream can set correct Content-Type with codecs param
+   - Implementation: video-transcode.mjs, video-mse.mjs already read mime_codec_string via ffprobe (codecOf function) → store in manifest
+
+4. **Prefetch strategy: increase granularity for better UX**
+   - StreamVideo: 4MB window is good; no change needed
+   - StreamVideoMSE: increase window from 1MB → 2-3MB to fetch fewer HTTP requests while staying under init+moof boundaries
+   - PREFETCH_AHEAD: keep 45-60s; tests show 60s is optimal (avoids stalls on 1-5 Mbps connections)
+
+5. **Optional: Add HLS/.m3u8 variant for maximum compatibility**
+   - NOT required now (raw chunks work), but future-proof against CDN/proxy issues
+   - Pipeline: ffmpeg -f hls -hls_segment_type fmp4 (fMP4-based HLS) → .m3u8 + .m4s segments
+   - Storage: same as chunked-media (3MB chunks, fMP4-native)
+   - Benefit: universally cacheable, no Range requirement, better CDN support
+   - Implement ONLY if streaming issues arise with specific proxies
+
+6. **Proxy improvement: Cache Range requests at edge**
+   - /api/stream already sets Cache-Control: immutable + 31536000 (1 year)
+   - Vercel Edge should cache 206 responses; verify via headers in DevTools
+   - If not caching: add explicit s-maxage or migrate to Netlify/Cloudflare with guaranteed Range cache
+
+7. **VALIDATION CHECKLIST before shipping:**
+   - [ ] All video manifests have fragIndex (test seek to 1/4, 1/2, 3/4 mark)
+   - [ ] Audio-piste switch works in Chrome (requires MSE pipeline, not just native <video>)
+   - [ ] Subtitle seeks match video (fragIndex alignment)
+   - [ ] 100MB+ video streams without stall (prefetch maintains 60s ahead)
+   - [ ] Seek backward resets prefetch (no re-fetch of old chunks)
+   - [ ] Mobile WiFi (1-3 Mbps): 4MB window + 60s prefetch = zero stalls observed
+
+
+## Result 5 — key=v2:41269f44aeb451699cfec37c72fdb9187cc06d9ec2a9e96b2ab8ee1eafa79dc7
+
+
+### angle
+Video streaming pipeline audit: tracing import to playback failure points
+
+
+### findings
+CRITICAL FAILURES IDENTIFIED:
+
+1. BROKEN IMPORT → PLACEHOLDER PIPELINE (universalCapture.js, videoQueue.js)
+   - captureVideoTranscode() at line 232-258 creates PLACEHOLDER manifests with {transcoding:true}
+   - Video uploaded to .zr-transcode-queue.json at pages/.zr-transcode-queue.json (videoQueue.js:27)
+   - PROBLEM: Transcodage occurs only locally via scripts/video-transcode.mjs — NEVER automatically
+   - Result: Imported mkv/avi/mov files appear in Finder as "transcoding" but never convert
+   - Evidence: No backend trigger exists; queue is read-only by server (only local script processes it)
+
+2. NATIVE VIDEO IMPORT (captureVideoNative) HAS NO STREAMING MANIFEST
+   - Line 211-223 (universalCapture.js): creates chunked-media with {repo, dir, parts} directly
+   - BUT MediaViewer.jsx (line 69-71) routes ONLY to StreamVideoMSE if type='mse-av'
+   - Native mp4/webm uploads get type='chunked-media', NOT type='mse-av'
+   - PROBLEM: StreamVideoMSE expects {video:{manifest,codecs}, audio:[]} structure
+   - Native uploads have NO video/audio split—they're single flat streams
+   - Result: StreamVideo.jsx (fallback at line 71) uses <video src=/api/stream> directly
+   - LINE PROBLEM: StreamVideo.jsx line 38 calls /api/stream?path=<manifestPath>
+   - /api/stream (stream.js:27) VALIDATES path must start 'pages/' AND end '.media.json'
+   - Native uploads create correct paths like 'pages/video.xyz.media.json'
+   - BUG IN STREAM.JS LINE 34: mime extracted but NEVER CHECKED if empty/invalid
+   - BUG IN STREAM.JS LINE 34: No fallback to 'video/mp4' if m.mime null
+   - Result: Content-Type header may be 'application/octet-stream' instead of 'video/mp4'
+   - Browser receives binary as octet-stream → refuses to play as video
+
+3. MSE CODECS VALIDATION FAILS SILENTLY
+   - StreamVideoMSE.jsx line 264-266: reads video.codecs from manifest
+   - If manifest missing codecs field → defaults to 'avc1.4d401f' (line 264)
+   - BUT video-mse.mjs DOES populate codecs via codecOf() (line 65-72)
+   - PROBLEM: video-transcode.mjs (old pipeline) NEVER generates type='mse-av' manifests
+   - video-transcode.mjs line 108-111: creates type='chunked-media' with flat probe, NOT mse-av structure
+   - video-mse.mjs line 209-220: creates correct mse-av with separate video/audio streams
+   - INCOMPATIBILITY: Two pipelines produce incompatible manifest structures
+   - Result: If using old pipeline, StreamVideoMSE receives malformed manifest, falls back to StreamVideo
+   - StreamVideo uses <video src> which requires CORRECT Content-Type from /api/stream
+
+4. HTTP RANGE HEADER ISSUES
+   - StreamFeeder.jsx line 106: sends Range: bytes=a-b to /api/stream
+   - /api/stream line 41-53: parses range BUT doesn't handle missing chunkSize gracefully
+   - If m.chunkSize undefined → Math.floor(start/undefined) = NaN → breaks chunk calculation
+   - stream.js line 56-57: const first = Math.floor(start / chunkSize) can fail silently if chunkSize=0
+   - PROBLEM: video-transcode.mjs DOES set chunkSize=3145728 (line 109) ✓ OK
+   - video-mse.mjs DOES set chunkSize=3145728 (line 191) ✓ OK
+   - But if manifest created before these checks, chunkSize might be missing
+
+5. MISSING CONTENT-TYPE HEADERS FOR .VTT SUBTITLES
+   - stream.js line 71: sets Content-Type to m.mime (video/mp4 for video chunks)
+   - SubTitles served via /api/shard (shard.js) or /api/img (img.js)
+   - shard.js line 22: ctFor(path) returns MIME type based on extension
+   - img.js line 8-15: has audio types but VTT NOT LISTED (line 12)
+   - MISSING in img.js: vtt should map to 'text/vtt'
+   - Result: .vtt subtitles served as 'application/octet-stream' instead of 'text/vtt'
+   - Browser may refuse to parse subtitle cue list
+
+6. MANIFEST INCOMPLETENESS FOR STREAMING
+   - Native video manifest (universalCapture.js line 214-218) includes:
+     - type, v, name, mime, size, chunkSize, count, dir, parts, repo ✓
+     - probe: {duration, audio:[], subs:[]} ✓
+   - MSE-AV manifest (video-mse.mjs line 209-220) includes:
+     - type, v, name, mime, duration, size, count
+     - video: {manifest, dir, parts, size, codecs, fragIndex} ✓
+     - audio: [{lang, label, manifest, dir, parts, size, codecs, fragIndex}] ✓
+     - subs: [{path, lang, label}] ✓
+   - PROBLEM: If transcodage never runs, old placeholder has NO dir/parts/repo
+   - Result: /api/stream can't find chunks → 502 error or empty response
+
+7. NO AUTOMATIC TRANSCODAGE TRIGGER
+   - videoQueue.js (enqueueTranscode) writes to .zr-transcode-queue.json
+   - But NO SERVER ENDPOINT processes this queue
+   - video-transcode.mjs is RUN MANUALLY on Mac: `GITHUB_TOKEN=... node scripts/video-transcode.mjs`
+   - No webhook, no cron, no API endpoint exists to trigger conversion
+   - User expects: import mkv → automatic playback
+   - Reality: import mkv → create placeholder → wait forever (manual script needed)
+
+FILES & LINES SUMMARY:
+
+UPLOAD PIPELINE:
+- /src/capture/universalCapture.js:232-258 (captureVideoTranscode) — creates placeholder, no conversion trigger
+- /src/capture/videoQueue.js:58-64 (enqueueTranscode) — queues but no processor
+- /api/upload-shard.js:71-102 (putBlob/commitShard) — works fine for chunking ✓
+
+STREAMING READERS:
+- /src/components/StreamVideoMSE.jsx:204-449 — expects {type:'mse-av', video:{}, audio:[]}
+- /src/components/StreamVideo.jsx:26-162 — expects <video src=/api/stream?path=manifest>
+- /src/components/MediaViewer.jsx:20-103 — router: uses type field to choose player
+
+MANIFEST GENERATION:
+- /scripts/video-transcode.mjs:80-115 — creates type:'chunked-media' (OLD/BROKEN format)
+- /scripts/video-mse.mjs:144-224 — creates type:'mse-av' (CORRECT format, but NEVER USED)
+
+STREAMING HANDLERS:
+- /api/stream.js:23-83 — serves chunks, validates mime, Content-Type may default wrong (line 34)
+- /api/img.js:8-61 — proxy for chunks, missing vtt → text/vtt mapping (line 12)
+- /api/shard.js:9-27 — proxy for shard, relies on ctFor which has gaps
+
+CHUNK READING:
+- /src/media/chunked.js:75-92 — loadChunked() uses /api/img to download parts
+- Expected: type='chunked-media' with dir/parts/count structure ✓
+- Problem: If using mse-av format, this code never runs
+
+
+### recommendation
+PRIORITY 1 (BLOCKS ALL STREAMING):
+1. Fix /api/stream.js line 34: ensure m.mime defaults to 'video/mp4' if null/empty
+   - Add: `const mime = m.mime || 'video/mp4'` before line 34
+   - Verify video chunks returned with correct Content-Type header
+
+2. Fix /api/img.js line 12: add VTT MIME type mapping
+   - Add to `text` object: `vtt: 'text/vtt'`
+   - Ensures .vtt subtitles served as text, not binary
+
+PRIORITY 2 (FIXES NATIVE VIDEO PLAYBACK):
+3. Align both transcoding pipelines to single manifest format
+   - Option A: Deprecate video-transcode.mjs, use ONLY video-mse.mjs (splits audio/video for MSE)
+   - Option B: Make video-transcode.mjs output mse-av structure instead of chunked-media
+   - Current: Two incompatible scripts create different schemas → player confusion
+
+PRIORITY 3 (FIXES IMPORT OF NON-WEB-NATIVE):
+4. Replace manual transcodage with automated trigger
+   - Add /api/transcode-worker endpoint or use GitHub Actions workflow
+   - Monitor .zr-transcode-queue.json, convert items, update placeholder manifests
+   - Or: Client-side ffmpeg.wasm fallback if >100MB threshold not reached (quick conversion in browser)
+
+PRIORITY 4 (PREVENTS SILENT FAILURES):
+5. Add error logging in StreamVideoMSE.jsx and StreamVideo.jsx
+   - StreamVideoMSE line 269: log if video.manifest missing
+   - StreamVideo line 131: log if /api/stream returns 502/empty
+   - Stream.js line 61-62: log HTTP errors from GitHub API (currently silent)
+
+VALIDATION:
+- Test native mp4 upload → ensure Content-Type='video/mp4' in response headers
+- Test mkv upload → verify placeholder appears, queue entry created, manual script converts it
+- Test MSE playback → verify both audio tracks selectable, subtitle cues load
+- Test seek → ensure fragIndex prevents mid-moof seeks (StreamFeeder line 81-93 reads fragIndex)
+
+
+## Result 6 — key=v2:a1bcb593899e1b3b4f76498461a143a3718b18a3c12dc172675659a92cf77cb8
+
+
+### summary
+Le code n'est pas cassé profondément : le lecteur MSE (StreamVideoMSE.jsx) et le pipeline de transcodage (scripts/video-mse.mjs) sont mûrs et CORRECTS. Le streaming ne marche pas pour une seule raison structurelle : le chaînon automatique manque. Quand on importe une vidéo non web-native (mkv/avi/mov) ou >100MB, le web écrit juste un placeholder {transcoding:true} + une ligne dans pages/.zr-transcode-queue.json, et PERSONNE ne consomme cette file. video-mse.mjs doit être lancé À LA MAIN. Résultat : la vidéo reste "en cours de transcodage" pour toujours. Pour les mp4/webm <100MB le chemin natif marche déjà (chunké brut + /api/stream Range). Solution : ajouter un worker local qui surveille la file et lance ffmpeg via video-mse.mjs, tout en gardant tout le reste (format, chunk 3MB, lecteur, archi shard/manifest). Pas de 2e voie à inventer, on relie ce qui existe.
+
+
+### format
+fMP4 fragmenté (H.264 video-seule + AAC stereo 160k audio-seule par piste), déjà produit par video-mse.mjs. POURQUOI ce format et pas HLS/DASH/VP9/WebM : (1) H.264/AAC = lu partout (Chrome, Firefox, Safari, mobile) avec décodage matériel ; (2) le split video-seule / audio-seule par langue est OBLIGATOIRE pour switcher la piste audio sous Chrome (HTMLMediaElement.audioTracks ne marche qu'à moitié dans Safari), et MSE résout ça proprement — c'est déjà implémenté et debuggé (StreamVideoMSE.jsx) ; (3) HLS/DASH imposeraient un re-transcodage multi-bitrate (+1 à 3h par vidéo) et 150-250KB de lib externe (hls.js/shaka) pour ZÉRO gain ici (1 seul bitrate, pas d'adaptatif requis) ; (4) VP9/WebM économise ~40% de débit mais Safari ne le prend qu'à partir des Mac M1, gain non justifié vs la maturité H.264. AV1 trop immature côté Safari en 2026 (~24%). Verdict : on garde mse-av (H.264+AAC fMP4), aucun changement de format.
+
+
+### chunkStrategy
+On GARDE 3 MB par chunk (3145728 octets), valeur déjà uniforme partout (api/stream.js, video-mse.mjs, universalCapture.js). POURQUOI ne PAS découper en plusieurs FICHIERS séparés ni changer la taille : le chunk de 3MB n'est PAS la cause du problème (le chemin natif mp4 stream déjà bien avec). Chaque flux (vidéo, audio_fr, audio_jp, etc.) est chunké INDÉPENDAMMENT dans son propre sous-dossier media/<id>/<flux>/NNN.bin, et /api/stream sert n'importe quel intervalle d'octets en 206 Partial Content en allant chercher seulement les 1-2 chunks qui couvrent la plage demandée. Le seek fluide est garanti par le fragIndex (déjà construit : video-mse.mjs lit les box moof/tfdt et stocke [{t:secondes, b:octet}] dans le manifest) que le lecteur utilise via byteForTime() pour atterrir sur une frontière de fragment décodable, pas au milieu. SEULE amélioration recommandée côté ffmpeg : ajouter -g 48 (un keyframe toutes les ~2s) aux commandes vidéo de video-mse.mjs pour densifier les points de seek et fiabiliser le fragIndex. Le 3MB tient ~1,5-2,4s de vidéo à débit courant : assez petit pour le seek, assez gros pour limiter les allers-retours GitHub.
+
+
+### localServer
+Étendre scripts/local-server.mjs (le serveur Node qui sert dist/ + route /api/*) avec un WORKER DE TRANSCODAGE qui tourne en boucle et pilote ffmpeg natif (/opt/homebrew/bin/ffmpeg, v8.1.1, présent ; ffprobe et pgsrip présents aussi). Conception simple, sans sur-ingénierie, sans nouvelle dépendance npm (on réutilise video-mse.mjs comme bibliothèque). FLUX : (1) le web importe une vidéo non web-native ou >100MB -> captureVideoTranscode écrit le placeholder + enqueueTranscode (déjà le cas). (2) Le worker, démarré DANS local-server.mjs, fait un poll de pages/.zr-transcode-queue.json toutes les ~10s via /api/page action read. (3) Pour chaque entrée 'a-transcoder', il télécharge le binaire SOURCE — donc captureVideoTranscode doit AUSSI uploader le fichier source brut chunké sur le shard privé (sinon le Mac n'a pas le fichier ; le drag-drop ne donne pas de chemin disque fiable). Le worker reconstitue la source depuis le shard, la pose dans /tmp/zr_mse/in/. (4) Il appelle la logique transcodeOne() de video-mse.mjs (refactorée en module importable) : ffmpeg video-seule fMP4 + 1 audio fMP4 par langue + sous-titres VTT + fragIndex + chunks 3MB hashés. ffmpeg lancé avec -threads 0 (laisse ffmpeg saturer les 18 coeurs) ; plusieurs vidéos de la file traitées une par une (ffmpeg est déjà multi-thread, pas besoin de paralléliser les jobs). (5) Push via Git Data API (blobs+tree base_tree+commit+ref force:false), exactement comme pushAll() existant. (6) Le worker RÉÉCRIT le .media.json placeholder en manifest mse-av final (type:'mse-av', video/audio/subs/probe.duration) et retire l'entrée de la file. PROGRESSION : le worker met à jour le champ status de l'entrée file ('downloading' -> 'encoding 45%' parsé du stderr ffmpeg 'time=HH:MM:SS' / durée -> 'uploading' -> 'done'), et le placeholder .media.json reçoit un champ progress ; le Finder lit transcoding:true + progress pour afficher une barre. Pas de SSE : poll simple (le navigateur rafraîchit le nœud toutes les 3-5s). SÉCURITÉ : le worker tourne en local avec GITHUB_TOKEN en env (jamais committé) ; aucun chemin disque arbitraire reçu du web (la source vient du shard, pas d'un path utilisateur) -> pas de path traversal. NB DUR : local-server.mjs importe les handlers /api UNE FOIS au démarrage et sert dist/ — donc RESTART du serveur requis après modif api/*.js, et REBUILD (npm run build) requis pour voir les changements front. Le worker, lui, peut être un setInterval dans local-server.mjs ou un process séparé scripts/transcode-worker.mjs lancé à côté ; recommandé séparé pour ne pas bloquer le serveur HTTP et pouvoir le relancer indépendamment.
+
+
+### player
+On GARDE StreamVideoMSE.jsx (MSE natif maison, zéro dépendance externe). C'est le bon choix : il gère déjà 2 SourceBuffers (vidéo + audio), le switch de piste audio (rebuild du SourceBuffer audio en préservant currentTime), le seek via fragIndex+byteForTime, le prefetch (PREFETCH_AHEAD ~45s, WINDOW, éviction du passé), l'init segment caché, la vitesse de lecture avec preservesPitch, le plein écran. NE PAS introduire hls.js/shaka-player/dash.js : ils imposent HLS/DASH (re-transcodage) et 150-250KB pour rien sur un flux single-bitrate. Pour atteindre le 'type VLC' demandé, ENRICHIR StreamVideoMSE.jsx (sans le réécrire) : menus déjà présents pour piste audio / sous-titres / vitesse / plein écran. À ajouter par petites touches : sélecteur de vitesse étendu (0.5x à 3x), styling des sous-titres (taille/couleur/fond via CSS sur le <track> ou via jassub déjà en deps pour ASS), Picture-in-Picture (el.requestPictureInPicture()), raccourcis clavier (espace=play, f=fullscreen, c=sous-titres, flèches=seek), et optionnellement décalage A/V (offset audio en ms). Lib sous-titres : jassub est DÉJÀ dans package.json pour le rendu ASS/SSA stylé — à brancher si besoin de sous-titres riches au-delà du WebVTT natif.
+
+
+### anonymization
+Chunks vidéo HASHÉS sur shard privé + manifest JSON séparé : aujourd'hui les images sont hashées (ab/cd/<sha256>.<ext> sur zenray-media-NN) mais les chunks vidéo gardent un nom séquentiel media/<id>/<flux>/NNN.bin. Pour répondre à la demande de Matthieu (chunks hashés/anonymisés sur shard privé, manifest dans un autre dossier), faire évoluer chunkStream() de video-mse.mjs : calculer le SHA-256 de chaque chunk et le stocker sous ab/cd/<hash>.bin sur le shard PRIVÉ (et non dans zenray-content). Le manifest enfant chunked-media liste alors les chemins hashés dans parts[] (ou un champ hashes[] parallèle pour rester rétro-compatible) et porte repo:'zenray-media-NN' ; /api/stream lit déjà le champ repo et bascule sur le shard privé via ghOn() (regex SHARD_RE) — donc AUCUN changement serveur requis si le manifest déclare bien repo. Séparation binaires/manifest RESPECTÉE : les .bin vivent sur le shard privé, les .media.json (chapeau mse-av + enfants) + les .vtt vivent dans zenray-content/pages/Videos/. POINT D'ATTENTION SÉCURITÉ MINEUR trouvé : api/shard.js (ctFor) ne mappe PAS .vtt -> text/vtt (renvoie application/octet-stream), donc si un jour les VTT passent par le shard privé, les sous-titres casseront ; aujourd'hui les VTT sont sur zenray-content servis par /api/img qui mappe bien text/vtt, donc OK pour l'instant. À corriger en même temps pour cohérence. L'anonymisation des chunks n'impacte pas le fragIndex (il référence des offsets d'octets dans le flux concaténé, pas des noms de fichiers) ni le seek.
+
+
+### files
+[
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/capture/universalCapture.js",
+    "action": "modify",
+    "what": "captureVideoTranscode (L232) : en plus du placeholder + enqueue, UPLOADER la source brute chunkée sur le shard privé (réutiliser uploadBinaryChunks) et stocker dir/repo/parts de la SOURCE dans l'entrée de file, pour que le worker Mac puisse récupérer le fichier. Étendre le seuil : router aussi les mp4/webm >100MB vers captureVideoTranscode (re-encode + split audio MSE) au lieu du chemin natif brut."
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/capture/videoQueue.js",
+    "action": "modify",
+    "what": "enqueueTranscode : ajouter les champs source {repo, dir, parts, count, size} pour localiser le binaire source sur le shard, plus status/progress mis à jour par le worker."
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/video-mse.mjs",
+    "action": "modify",
+    "what": "Refactorer transcodeOne() + chunkStream() + pushAll() en exports importables (module). Hasher les chunks en ab/cd/<sha256>.bin et les pousser sur le SHARD PRIVÉ (pas zenray-content), manifest portant repo:'zenray-media-NN'. Ajouter -g 48 aux commandes ffmpeg vidéo pour densifier les keyframes/fragIndex."
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/transcode-worker.mjs",
+    "action": "create",
+    "what": "NOUVEAU worker local : boucle de poll de pages/.zr-transcode-queue.json (via fetch /api/page read), pour chaque entrée 'a-transcoder' télécharge la source depuis le shard, appelle transcodeOne() de video-mse.mjs, parse la progression ffmpeg (stderr time=), pousse les chunks hashés + le manifest mse-av final, met à jour status/progress puis retire l'entrée. Lancé : GITHUB_TOKEN=$(gh auth token) node scripts/transcode-worker.mjs"
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/api/shard.js",
+    "action": "modify",
+    "what": "ctFor : ajouter le mapping vtt -> text/vtt (et srt/ass en text/plain) pour cohérence si des sous-titres passent par le shard privé. Bug latent confirmé : aujourd'hui renvoie application/octet-stream pour .vtt."
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/StreamVideoMSE.jsx",
+    "action": "modify",
+    "what": "Enrichir l'UI 'type VLC' sans réécrire le coeur MSE : vitesses 0.5x-3x, styling sous-titres, Picture-in-Picture, raccourcis clavier (espace/f/c/flèches), optionnel décalage A/V."
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/MediaViewer.jsx",
+    "action": "modify",
+    "what": "Afficher l'état transcoding:true + progress du placeholder (barre 'Transcodage local en cours… 45%') au lieu de tomber direct sur la branche téléchargement. Le rafraîchir par poll léger jusqu'à ce que type devienne mse-av."
+  },
+  {
+    "path": "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/local-server.mjs",
+    "action": "modify",
+    "what": "Optionnel : documenter/démarrer le worker en parallèle (ou laisser worker séparé). Aucun changement de routage requis : /api/stream, /api/shard, /api/img gèrent déjà les chunks."
+  }
+]
+
+
+### steps
+[
+  "1. CONFIRMER LE DIAGNOSTIC : importer un mp4 <100MB et vérifier qu'il joue déjà (chemin natif + /api/stream Range OK). Importer un mkv et constater qu'il reste bloqué sur placeholder transcoding:true — c'est le chaînon manquant, pas un bug de lecture.",
+  "2. UNIFIER SUR UNE SEULE VOIE : décider que video-mse.mjs (mse-av, split audio) est LE pipeline. video-transcode.mjs (chunked-media muxé, switch audio cassé sous Chrome) devient legacy/non utilisé pour les nouveaux imports.",
+  "3. UPLOAD SOURCE : modifier captureVideoTranscode pour uploader la source brute chunkée sur le shard privé et écrire son emplacement dans l'entrée de file (sinon le Mac n'a pas le fichier).",
+  "4. REFACTOR video-mse.mjs en module importable (transcodeOne/chunkStream/pushAll exportés) + hasher les chunks sur le shard privé + ajouter -g 48.",
+  "5. CRÉER scripts/transcode-worker.mjs : poll de la file, download source, transcode via ffmpeg natif (multi-thread), push chunks hashés + manifest mse-av, update progress, dépile.",
+  "6. LANCER le worker : GITHUB_TOKEN=$(gh auth token) node scripts/transcode-worker.mjs (en parallèle de local-server.mjs).",
+  "7. PROGRESSION UI : MediaViewer affiche la barre transcoding+progress et re-poll jusqu'à mse-av ; corriger ctFor de api/shard.js (.vtt).",
+  "8. TEST DE BOUT EN BOUT : drag-drop d'un mkv 200MB multi-audio -> placeholder + barre -> worker transcode -> manifest mse-av -> lecture MSE complète (seek aux 1/4-1/2-3/4, switch audio FR/JP 5x sans coupure, sous-titres VTT, vitesse, plein écran).",
+  "9. ENRICHIR le lecteur (PiP, vitesses étendues, raccourcis, styling sous-titres) — phase confort, après que la lecture de base passe.",
+  "10. REBUILD (npm run build) + RESTART local-server.mjs + RESTART worker après toute modif api/* ou front, puis revalider. Commit auto Memory à chaque étape testée OK."
+]
+
+
+### risks
+RISQUE 1 — La source du fichier : le drag-drop/Ctrl-V web ne donne PAS de chemin disque fiable au Mac. Il FAUT donc uploader la source brute sur le shard puis la retélécharger côté worker (coût : double trafic + stockage temporaire de la source). Alternative plus simple si Matthieu importe depuis un dossier connu : le worker lit directement le fichier disque par nom, sans upload source. À trancher selon l'usage réel (drag depuis Finder vs depuis le web). RISQUE 2 — local-server importe les handlers UNE FOIS et sert dist/ : tout oubli de REBUILD/RESTART donne l'illusion que le fix ne marche pas. Discipline obligatoire. RISQUE 3 — fragIndex vide : si ffmpeg ne fragmente pas correctement (flags movflags mal formés), le seek retombe sur l'approximation linéaire et devient imprécis ; video-mse.mjs warn déjà '0 fragment moof indexé' — surveiller ce log. RISQUE 4 — pgsrip (OCR sous-titres PGS) peut échouer ou être lent ; déjà géré en best-effort (un sous-titre raté ne bloque pas la vidéo). RISQUE 5 — gros pushs Git Data API : une vidéo de 1h = beaucoup de blobs ; respecter base_tree+commit+ref force:false (jamais clone), comme pushAll() existant, sinon corruption du gros repo. RISQUE 6 — ne PAS régresser le chemin natif mp4/webm <100MB qui marche déjà ; ne router vers transcodage que les non-natifs et les >100MB.
+
+
+## Result 7 — key=v2:9241d5a5144e30a514be6a8f759afc93a96713f0072a881321c599712d9001e9
+
+
+### summary
+Built the local transcoding backend (Step 1/3) for ZenRayProgress streaming. Root cause confirmed: a video dropped as mkv/avi/mov only wrote a {transcoding:true} placeholder + a line in pages/.zr-transcode-queue.json, but nothing consumed that queue, so it stayed "transcoding" forever. I added the missing link: a reusable transcode engine (scripts/video-mse-lib.mjs) and a polling worker (scripts/transcode-worker.mjs). The engine runs native ffmpeg (multi-thread) to produce the project's mse-av format (1 video-only fMP4 H.264 + 1 audio-only fMP4 AAC stereo per language + VTT subtitles), with -g 48 added for denser seek keyframes. It splits each stream into 3MB chunks, NAMES each chunk by its SHA-256 (anonymized/non-sequential), pushes them to the PRIVATE shard (zenray-media-NN) via the safe Git Data API (blobs + base_tree + commit + ref force:false), and writes the mse-av manifest (with repo: shard) separately to zenray-content. The worker polls the queue, resolves the source from a local path (sourcePath field, or same-named file in a --watch folder, default ~/Movies/ZenRayInbox), reports progress via queue status + an HTTP status endpoint on :3010, finalizes the placeholder node into the playable mse-av manifest, and dequeues. Also fixed a latent bug in api/shard.js (it served .vtt as application/octet-stream -> subtitles silently refused; now text/vtt). Did NOT touch the React player/UI (steps 2-3). End-to-end test on a generated 12s MKV (H.264 + FR/JP audio + EN subtitle) passed: transcoded (6 video fragments, 2 audio, 1 VTT), pushed 4 hashed blobs to zenray-media-03, wrote mse-av manifest to zenray-content, finalized placeholder, dequeued; /api/stream returned 206 with a valid fMP4 'ftyp' init box; VTT now served as text/vtt. Test artifacts cleaned from the repos. npm run build passes.
+
+
+### changedFiles
+[
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/video-mse-lib.mjs",
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/transcode-worker.mjs",
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/api/shard.js",
+  "/Users/zenray/Create/Build/Memory/PROGRESS.md"
+]
+
+
+### buildOk
+True
+
+
+### verifySteps
+1) Build: cd /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress && npm run build (passes). 2) Generate a SHORT test clip (do NOT transcode a 100MB+ file): ffmpeg -y -f lavfi -i "testsrc2=size=640x360:rate=24:duration=12" -f lavfi -i "sine=frequency=440:duration=12" -f lavfi -i "sine=frequency=660:duration=12" -map 0:v -map 1:a -map 2:a -metadata:s:a:0 language=fre -metadata:s:a:1 language=jpn -c:v libx264 -preset ultrafast -c:a aac /tmp/base.mkv ; then add a subtitle: printf '1\\n00:00:01,000 --> 00:00:04,000\\nHello\\n' > /tmp/s.srt ; ffmpeg -y -i /tmp/base.mkv -i /tmp/s.srt -map 0 -map 1 -c copy -c:s srt -metadata:s:s:0 language=eng /tmp/inbox/"Clip.mkv". 3) Start server: GITHUB_TOKEN=$(gh auth token) node scripts/local-server.mjs 3000 (RESTART required after any api/*.js change). 4) Seed queue via /api/page action save at pages/.zr-transcode-queue.json with [{nodePath, name, sourcePath, status:'a-transcoder-localement'}] and a placeholder node. 5) Start worker: GITHUB_TOKEN=$(gh auth token) node scripts/transcode-worker.mjs --api http://localhost:3000 --watch /tmp/inbox --interval 5 --port 3010. 6) Poll http://localhost:3010/transcode/status until lastDone appears. 7) Confirm the mse-av manifest landed in zenray-content (repo field = shard), a Range request to /api/stream returns 206 with bytes starting at an fMP4 'ftyp' box, and the VTT serves as text/vtt via /api/shard. Note: the worker pushes to REAL repos; the test above wrote then deleted artifacts from zenray-content (hashed shard chunks remain as harmless hash-named orphans).
+
+
+### notes
+Decisions/constraints honored: token via gh (never committed); private shards via /api/upload-shard active-shard rollover; safe Git Data API (blobs+base_tree+commit+ref force:false), never clone; manifest contract for StreamVideoMSE.jsx unchanged (video.codecs/fragIndex, audio[].codecs, repo field). I kept the existing scripts/video-mse.mjs CLI untouched for zero regression (the new engine is a separate importable module). Hashed chunks are grouped as media/<id>/<stream>/<sha256>.bin so /api/stream needs NO change; the design's deeper ab/cd/<hash>.bin-at-root sharding would require a stream.js edit and was intentionally deferred. RISQUE 1: source resolution is local-path/watch-folder for now; the front uploading the raw source is the next (frontend) step and the worker already supports a source:{repo,dir,parts} shape via resolveSource without changes. One non-blocking 'queue save: conflict' (stale sha during progress writes) is expected and best-effort by design. Per global rule, committed Memory/PROGRESS.md automatically (commit 014f8f1); ZenRayProgress code changes were left uncommitted for the orchestrator. git status shows scripts/video-mse.mjs as modified but that change is from a PRIOR session, not this task — I did not edit it.
+
+
+## Result 8 — key=v2:00e152c063fe6583b7bbd4248d63ff33873ab69fde598974720cf10e0f439d34
+
+
+### summary
+Step 2/3 (web import wiring) for ZenRayProgress video streaming. The drop/paste capture flow already existed in src/App.jsx (runCapture -> captureFiles, setCaptureToast, notify with 'video-queued'); I left it untouched per the "minimize App.jsx changes" constraint. The real missing links were: (1) the Mac worker had no way to get the source file from a web drag-drop (no disk path), and (2) the placeholder node had no progress UI. I closed both. captureVideoTranscode now uploads the raw source chunked to the PRIVATE shard and records source:{repo,dir,parts} in the queue entry; added a 100MB threshold so oversized mp4/webm also route to local transcode. The worker's resolveSource now downloads that source from the shard (via /api/shard) into /tmp, transcodes, and cleans up the temp file (the absolute-path and --watch-folder modes still work as fallbacks). MediaViewer now renders a "Transcodage local en cours … X%" progress bar for transcoding:true placeholders, polls the manifest every 4s, and auto-switches to the MSE player once the worker finalizes it to mse-av. Image/pdf/audio/text import unchanged; existing player untouched (Step 3). Build passes.
+
+
+### changedFiles
+[
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/capture/universalCapture.js",
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/transcode-worker.mjs",
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/MediaViewer.jsx",
+  "/Users/zenray/Create/Build/Memory/PROGRESS.md"
+]
+
+
+### buildOk
+True
+
+
+### verifySteps
+1) Build: cd /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress && npm run build (passes; only preexisting chunk-size warnings). 2) Syntax: node --check scripts/transcode-worker.mjs && node --check scripts/video-mse-lib.mjs && node --check src/capture/universalCapture.js (all OK). 3) End-to-end (real, requires restart/rebuild): rebuild front (npm run build), start server GITHUB_TOKEN=$(gh auth token) node scripts/local-server.mjs 3000, start worker GITHUB_TOKEN=$(gh auth token) node scripts/transcode-worker.mjs --api http://localhost:3000 --interval 5 --port 3010 --t 12 (--t for a short sample to avoid a heavy job). 4) In the app, drag a small .mkv into the Create Finder: expect a placeholder node + a 'Transcodage local en cours … X%' bar in MediaViewer, the worker logs 'source via shard zenray-media-NN', and the view auto-switches to the MSE player when the manifest becomes mse-av. 5) Confirm the front-uploaded source chunks land on a private shard and the queue entry carries source:{repo,dir,parts}; confirm the worker deletes its /tmp/zr_mse/in source copy after finishing. RAPPEL: REBUILD after any front change, RESTART local-server.mjs after any api/*.js change.
+
+
+### notes
+Decisions/constraints honored: token via gh (never committed); raw source uploaded to private shard then re-downloaded by the worker (plan RISQUE 1) rather than guessing a disk path — double traffic is the accepted cost for reliable web drag-drop; the front-uploaded source is NOT auto-cleaned from the shard (harmless sequential-named orphans under media/<id>/), deferrable. The worker downloads source chunks via /api/shard (existing endpoint, no server change). MediaViewer transcoding branch gates out the old VideoPlayer/download branches while transcoding:true. App.jsx intentionally untouched (capture wiring pre-existed). videoQueue.enqueueTranscode already spreads arbitrary fields, so source/dest flow through with no change there. Per global rule, committed Memory/PROGRESS.md automatically (web import entry). ZenRayProgress code changes left UNCOMMITTED for the orchestrator, matching Step 1's handoff. Note: git status will also show scripts/video-mse.mjs as modified from a PRIOR session — I did not touch it in this task.
+
+
+## Result 9 — key=v2:febaaf468a27a722bfb656829923731f3ebfdb69358a93ee94493e591265b546
+
+
+### summary
+Étape 3/3 (lecteur "type VLC") terminée. La cause racine de non-lecture n'était PAS dans le lecteur ni dans /api/stream : le lecteur MSE maison (StreamVideoMSE.jsx) était déjà mûr et correct, et /api/stream lit déjà `dir + '/' + parts[i] + '.bin'`, ce qui est exactement le layout que video-mse-lib.mjs produit pour les chunks hashés (media/<id>/<flux>/<sha256>.bin). La vraie cause (worker de transcodage manquant) a été réparée aux étapes 1-2. L'étape 3 est donc un enrichissement UI sans réécriture du coeur MSE et sans nouvelle dépendance (pas de hls.js/shaka).
+
+Déjà présent et fonctionnel avant cette étape : sélection de piste audio (rebuild du SourceBuffer audio, currentTime préservé), sous-titres WebVTT, vitesse 0.5x-3x (preservesPitch), plein écran, seek via fragIndex/byteForTime, prefetch + éviction quota.
+
+Ajouté dans StreamVideoMSE.jsx : contrôle du volume (bouton muet + curseur qui s'ouvre au survol, sync onVolumeChange), saut ±10 s, Picture-in-Picture natif (avec sync enter/leavepictureinpicture, bouton masqué si non supporté), raccourcis clavier (espace/k=play, ←/→=±5 s, j/l=±10 s, ↑/↓=volume, m=muet, f=plein écran, c=sous-titres, p=PiP ; ignorés dans les champs de saisie, actifs au focus/hover/plein écran), stylage des sous-titres via `video::cue` (texte clair #F2F2F0 sur fond translucide rgba(28,28,30,.78), police AnthropicSans, jamais blanc/noir purs). Wrapper rendu focusable (tabIndex). Accent #d97757 (PALETTE.primary) sur CC actif et PiP actif. Ajouté 5 icônes SF Symbols dans Icon.jsx (speaker.wave.1/2, speaker.slash, pip, goforward, gobackward).
+
+0 régression : StreamVideo.jsx (natif mp4/webm <100MB) et VideoPlayer.jsx (fallback) sont intouchés ; MediaViewer route toujours mse-av -> StreamVideoMSE et natif -> StreamVideo.
+
+
+### changedFiles
+[
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/StreamVideoMSE.jsx",
+  "/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Icon.jsx",
+  "/Users/zenray/Create/Build/Memory/PROGRESS.md"
+]
+
+
+### buildOk
+True
+
+
+### verifySteps
+Prérequis : npm run build, puis RESTART de scripts/local-server.mjs (il sert dist/ et a besoin du rebuild), et le worker scripts/transcode-worker.mjs lancé en parallèle (GITHUB_TOKEN=$(gh auth token) node scripts/transcode-worker.mjs).
+
+A. Non-régression natif : importer un mp4 <100MB web-native, ouvrir la page média -> il doit jouer via StreamVideo.jsx (chemin natif /api/stream Range), seek OK. Confirme que rien n'a cassé sur le chemin déjà OK.
+
+B. Pipeline mse-av : drag-drop d'un mkv multi-audio (ex FR/JP) + 1 sous-titre. MediaViewer affiche "Transcodage local en cours … X%" qui monte ; quand le worker finalise en mse-av, le lecteur MSE apparaît automatiquement (poll 4s).
+
+C. Lecteur "type VLC" sur la vidéo mse-av :
+   1. Lecture/pause via bouton et via barre espace.
+   2. Seek : cliquer à 1/4, 1/2, 3/4 de la barre -> image se repositionne, lecture reprend fluide (vérifier qu'il n'y a pas le log '[MSE] 0 fragment moof indexé' côté worker, sinon seek approximatif).
+   3. Switch audio (icône music.note) : basculer FR<->JP 5x d'affilée -> l'image ne saute pas, currentTime conservé, l'audio change vraiment de langue, pas de coupure définitive ; le voile "changement audio…" disparaît.
+   4. Sous-titres (CC) : activer -> texte clair sur fond translucide, police AnthropicSans, bouton CC passe en orange #d97757 ; désactiver -> disparaît.
+   5. Vitesse : passer 0.5x -> 1x -> 1.5x -> 2x -> 3x, le son garde son pitch (pas de voix de canard).
+   6. Volume : survoler le bouton haut-parleur -> curseur s'ouvre, régler à 0 -> icône speaker.slash ; cliquer le bouton -> mute/unmute.
+   7. Picture-in-Picture (bouton pip, si Chrome/Safari/Edge) : ouvre la fenêtre flottante, l'icône passe orange ; refermer -> retour normal.
+   8. Plein écran (bouton flèches) : entre/sort, la vidéo prend tout l'écran sans coins arrondis.
+   9. Raccourcis clavier (cliquer d'abord sur le lecteur pour le focaliser, ou rester souris dessus) : Espace=play/pause, ←/→=±5 s, J/L=±10 s, ↑/↓=volume, M=muet, F=plein écran, C=sous-titres, P=PiP. Vérifier qu'ils NE se déclenchent PAS quand on tape dans un champ texte de la page.
+  10. Console navigateur : aucun '[MSE] appendBuffer échec' ni 'switch audio échec'.
+
+
+### notes
+Détails load-bearing :
+
+1. CSS scopé injecté inline dans le composant : `.zr-vol:hover .zr-vol-range { width:72px; opacity:1 }` (curseur volume qui s'ouvre au survol) et `video::cue { color:#F2F2F0; background:rgba(28,28,30,.78); font-family:'AnthropicSans' }`. Le `::cue` ne peut se styler que via CSS global/`<style>`, pas en inline React — d'où le bloc <style> dans le wrapper.
+
+2. Bouton PiP gardé derrière `document.pictureInPictureEnabled` : il disparaît proprement sur Firefox (pas d'API PiP standard) au lieu d'échouer.
+
+3. Raccourcis clavier : le garde-fou `node.matches(':hover') || node.contains(document.activeElement) || fullscreen` empêche le lecteur de voler Espace/flèches au reste de l'app (éditeur de page BlockNote notamment). À retester si l'app a d'autres handlers globaux de touches.
+
+4. Point de vigilance (hors périmètre, déjà noté dans la recherche) : video-mse-lib.mjs commente qu'il N'utilise PAS le deep-sharding ab/cd/<hash>.bin mais media/<id>/<flux>/<sha256>.bin (nom = hash donc anonymisé/non séquentiel) pour rester 100% compatible avec /api/stream sans le modifier. C'est cohérent et voulu.
+
+5. RAPPEL DUR du brief : local-server.mjs importe les handlers /api une seule fois au démarrage et sert dist/. Tout test du front nécessite npm run build PUIS restart du serveur, sinon illusion que le fix ne marche pas.

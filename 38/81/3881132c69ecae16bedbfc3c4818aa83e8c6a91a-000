@@ -1,0 +1,98 @@
+# ZenRayMedia — ce que l'éditeur doit savoir faire avant les 1024 thèmes
+
+## La doctrine, d'abord
+
+**ZenRayMedia est un ÉDITEUR**, au sens où Unreal en est un : une scène, un catalogue de pièces
+qu'on pose dessus, des paramètres, un rendu déterministe. Ce n'est ni un générateur de pages ni
+un moteur de gabarits — c'est un plan de travail.
+
+La visée tenue, et elle contraint chaque décision technique : **un Photoshop ou un DaVinci hyper
+rapide**. On ouvre, on pose un média, on choisit un thème et un format, on exporte. Tout ce qui
+ajoute une attente entre ces quatre gestes est à refuser, même si cela ajoute une capacité.
+
+C'est de là que découlent les choix déjà faits : rendu déterministe (aucun aléa à re-jouer),
+polices embarquées (aucun aller-retour réseau), chaque composant en fichier autonome (ouvrable
+seul, vérifiable seul, remplaçable seul).
+
+## Le risque que ce document existe pour éviter
+
+> « Si on génère 1024 fichiers et qu'on ne met jamais à jour ZenRayMedia, ça va le faire tout
+> d'un coup et on va être méga surpris par rapport au résultat final qui, à la base, devait nous
+> simplifier la vie. » — Matthieu, 2026-07-25
+
+Le diagnostic est juste et il faut le prendre au sérieux. **6 thèmes sur 1024 existent.** Chacun
+a été vérifié en ouvrant un fichier HTML à la main, jamais dans l'application. L'éditeur n'a
+donc jamais été mis à l'épreuve du catalogue qu'il est censé consommer.
+
+Trois choses cassent à coup sûr si on continue sans lui :
+
+| Ce qui casse | Pourquoi | À quel volume |
+|---|---|---|
+| Le sélecteur de thème | Une liste plate de 1024 entrées est inutilisable | dès ~40 |
+| Le chargement | `import.meta.glob` charge tous les gabarits au démarrage | dès ~100 (plusieurs Mo) |
+| L'inventaire de composants | Il est **famille-dépendant** — un thème de jeu n'a ni rail ni infolettre | **déjà cassé** |
+
+Le troisième point n'est pas une prévision : il est arrivé aujourd'hui, en construisant
+T-04-1-1. Échafauder un thème de jeu depuis un thème de presse produisait un gabarit avec une
+« carte horizontale » et une « colonne latérale ». Il a fallu écrire un inventaire séparé.
+
+## Chantier A — le sélecteur, avant tout le reste
+
+Le catalogue est déjà structuré : 16 familles × 8 sous-familles × 8 variantes. Le sélecteur doit
+**exposer cette structure** au lieu de l'aplatir.
+
+- Navigation à trois niveaux (famille → sous-famille → variante), pas une liste.
+- Aperçu au survol : la vignette d'un composant, pas le nom du thème. Un nom d'archétype
+  (« Révélation cinématique ») ne dit rien tant qu'on n'a pas vu le rendu.
+- Recherche par ce qu'on cherche vraiment : le média de calibrage, la classe typographique,
+  la dominante de couleur. `calibration.ref` existe déjà dans chaque `theme.json`.
+- Filtre par format servi : un thème qui ne déclare pas `F-still-1080x1920` ne doit pas
+  apparaître quand on travaille en vertical.
+
+## Chantier B — le chargement paresseux
+
+`import.meta.glob` en mode direct charge tous les gabarits au démarrage. À 1024 × ~400 ko, c'est
+un chargement initial de plusieurs centaines de mégaoctets — l'inverse exact d'un « hyper
+rapide ».
+
+- Passer en `import.meta.glob(..., { eager: false })` : le gabarit n'arrive qu'à la sélection.
+- Extraire un **index léger** (id, nom, famille, formats, polices, une vignette) séparé des
+  gabarits. L'index se charge, les gabarits non.
+- Les polices en base64 dans chaque gabarit sont le bon choix pour un fichier livré, et le
+  mauvais pour l'aperçu. L'aperçu doit servir les polices depuis `/zrm-fonts/`.
+
+## Chantier C — l'inventaire de composants par famille
+
+Constaté aujourd'hui. Chaque famille a son vocabulaire, et il n'est pas négociable :
+
+- **Presse** : bandeau-titre, navigation, surtitre, titre, carte, filet, rail, infolettre.
+- **Jeu** : écran-titre, menu, ligne d'invite, roue de dialogue, coin d'ATH, carte d'objectif,
+  carton de chapitre, barre d'actions, planche de signes.
+- Le moteur n'a pas à connaître ces listes ; il doit lire `component-registry.json`, qui les
+  déclare déjà. C'est l'INTERFACE qui suppose encore un inventaire de presse.
+
+## Chantier D — ce que l'upload doit permettre de voir
+
+Poser un média dans un thème est le geste central du produit, et il n'est pas encore éprouvé sur
+un thème de jeu. Ce qu'il faut vérifier dans l'application, pas en théorie :
+
+- Une image de scène en fond d'écran-titre (`--scene`), pas en bloc dans le flux.
+- Les zones de sécurité : un ATH place son information dans les coins, le centre appartient à
+  l'image. Le compilateur connaît `safe` par format, l'interface ne l'expose pas.
+- Le contraste : sur une image claire, du texte blanc disparaît. Le Critique sait mesurer un
+  contraste sur un aplat, pas sur une photographie.
+
+## Ce qui est déjà fait et n'a pas à être refait
+
+- Compilation composant par composant + registre (`zrm-build-theme.mjs`).
+- Polices embarquées, avec refus de compiler si une police déclarée ne produit aucun `@font-face`.
+- Détection de police mesurée + atelier de calibrage (`zrm-detect-font.mjs`).
+- Relevé de palette (presse uniquement — ne transfère pas au jeu, voir le skill).
+- Index des 1 942 familles Google Fonts + installation à la demande.
+- Échafaudage d'un thème depuis un modèle (`zrm-new-theme.mjs`).
+
+## Ordre proposé
+
+**B avant A.** Un sélecteur riche sur un chargement lourd donne une interface belle et lente,
+c'est-à-dire ratée au regard de la visée. Le chargement paresseux d'abord, la navigation ensuite,
+l'inventaire par famille pendant. D en continu, à chaque nouveau thème de famille inédite.

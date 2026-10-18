@@ -1,0 +1,166 @@
+# Terminal yt-dlp intégré — conception
+
+Objectif : un terminal intégré à l'UI (fond noir, texte vert défilant, style Matrix) qui lance `yt-dlp` en un clic pour télécharger proprement une vidéo/audio hébergée sur YouTube (les liens `.media.json` de type `youtube`, cf. `src/lib/youtubeLink.js`), avec barre de progression en direct et récupération du fichier à la fin.
+
+Ce document ne modifie aucun fichier de code : il fixe l'architecture à implémenter plus tard.
+
+---
+
+## 1. Pourquoi pas Vercel
+
+Les fonctions serverless Vercel (tout ce qui vit dans `api/` et est routé par `api/[...route].js`) sont conçues pour des requêtes courtes et sans état :
+
+- **Durée limitée** : une fonction Vercel Hobby/Pro est coupée après quelques dizaines de secondes (60s en pratique sur ce projet). Un `yt-dlp` sur une vidéo de 20-30 minutes, avec remux/merge audio+vidéo, peut prendre plusieurs minutes. La fonction serait tuée avant la fin.
+- **Pas de disque persistant entre requêtes** : chaque invocation Vercel démarre un environnement neuf. Or un téléchargement se fait forcément en plusieurs étapes (lancer yt-dlp → suivre sa progression → récupérer le fichier fini) qui doivent partager un même fichier sur disque entre plusieurs appels réseau. Impossible sur Vercel : rien ne garantit que la requête suivante retombe sur le même conteneur.
+- **Coût et empreinte** : exécuter un process externe (`yt-dlp`, potentiellement `ffmpeg` pour le remux) sur l'infrastructure serverless publique consomme du temps de calcul facturé pour une tâche qui n'a besoin de tourner que sur la machine de Matthieu.
+
+Le projet a déjà résolu exactement ce problème pour le transcodage vidéo natif : voir `scripts/local-server.mjs` lignes 37-75 (section commentée `TRANSCODAGE VIDÉO NATIF`). Le commentaire en tête de cette section dit précisément pourquoi : *« Plus de Terminal, plus de ffmpeg.wasm »* — un process lourd et long doit tourner en local, jamais sur le serveur public. Le terminal yt-dlp réutilise ce même choix d'architecture pour la même raison.
+
+---
+
+## 2. Architecture recommandée
+
+Reprendre **à l'identique** le patron jobs + SSE déjà en place dans `scripts/local-server.mjs` (lignes 42-75 et 82-112), en l'étendant avec deux nouvelles routes locales :
+
+- `POST /api/ytdlp-download` — démarre un téléchargement, renvoie `{ ok, jobId }`.
+- `GET /api/ytdlp-events?jobId=` — flux SSE de progression du job.
+
+Ces routes vivent **dans `scripts/local-server.mjs` uniquement**, pas dans `api/[...route].js` (détail au point 4, Sécurité).
+
+### 2.1 Structure des jobs (miroir de `jobs`/`queue`/`pump`/`runJob`)
+
+Même schéma que l'existant (`local-server.mjs` L42-52) :
+
+```js
+const ytJobs = new Map()   // jobId -> { jobId, url, status, progress, stage, name, filePath, error, listeners }
+const ytQueue = []
+let ytRunning = false
+const ytPump = () => { /* identique à pump(), une queue série dédiée */ }
+```
+
+Garder une file **dédiée** (pas la même que les transcodages vidéo) : un téléchargement yt-dlp et un transcodage HLS sont deux ressources différentes (bande passante réseau vs CPU/GPU), pas besoin de les sérialiser ensemble. Mais rester série (un seul `yt-dlp` à la fois) pour ne pas saturer la connexion de Matthieu ni distinguer plusieurs process concurrents dans le terminal.
+
+### 2.2 `POST /api/ytdlp-download`
+
+Reçoit `{ url, folder, format }` (JSON, pas un flux binaire cette fois — contrairement au transcodage, ici c'est yt-dlp qui télécharge, pas le navigateur qui uploade) :
+
+```js
+if (url.pathname === '/api/ytdlp-download' && req.method === 'POST') {
+  const { url: videoUrl, format } = req.body // 'video' | 'audio'
+  const jobId = randomUUID().slice(0, 8)
+  const outDir = path.join('/tmp/zr_ytdlp', jobId)
+  await mkdir(outDir, { recursive: true })
+  const job = { jobId, url: videoUrl, format, status: 'queued', progress: 0, stage: 'en file', outDir, listeners: new Set() }
+  ytJobs.set(jobId, job); ytQueue.push(job); ytPump()
+  return res.json({ ok: true, jobId })
+}
+```
+
+`runYtdlpJob(job)` spawn le process, calqué sur `runJob()` (L54-75) :
+
+```js
+const args = [
+  job.url,
+  '--newline',                                   // une ligne de progression à la fois (au lieu d'écraser la ligne courante) -> facile à parser en streaming
+  '--no-playlist',                                // un seul lien = une seule vidéo, jamais toute une playlist par accident
+  '-f', job.format === 'audio' ? 'bestaudio' : 'bestvideo+bestaudio/best',
+  ...(job.format === 'audio' ? ['-x', '--audio-format', 'mp3'] : ['--merge-output-format', 'mp4']),
+  '-o', path.join(job.outDir, '%(title)s.%(ext)s'),
+]
+const proc = spawn('yt-dlp', args, { cwd: ROOT, env: process.env })
+```
+
+### 2.3 Parser la sortie yt-dlp et la traduire au format `@@P`/`@@DONE`
+
+Avec `--newline`, yt-dlp émet des lignes de ce type sur stdout pendant un téléchargement :
+
+```
+[download]  42.7% of  118.32MiB at    3.21MiB/s ETA 00:23
+[download] 100% of 118.32MiB in 00:36
+[Merger] Merging formats into "Ma Video.mp4"
+[ExtractAudio] Destination: Ma Video.mp3
+```
+
+Regex à appliquer ligne par ligne (même boucle `onLine` que L58-62 dans `local-server.mjs`, adaptée) :
+
+```js
+const onLine = (line) => {
+  let m = line.match(/^\[download\]\s+([\d.]+)%/)
+  if (m) { update(job, { progress: Math.round(Number(m[1])), stage: 'téléchargement' }); return }
+  if (/^\[Merger\]|^\[ExtractAudio\]/.test(line)) { update(job, { progress: 99, stage: 'finalisation' }); return }
+  if (/^\[download\] Destination:\s+(.+)/.test(line)) { job.filePath = RegExp.$1.trim(); return }
+  if (/ERROR:/.test(line)) job.error = line.slice(0, 200)
+}
+```
+
+Pour rester cohérent avec le reste de l'app (qui affiche déjà des barres de progression pilotées par le format `@@P <percent> <stage>`, cf. `scripts/video-hls.mjs` L47-52), on réutilise **le même objet de snapshot SSE** (`{ jobId, status, progress, stage, name, error, filePath }`) plutôt que de réinventer un format : le composant terminal peut alors partager le même hook de progression que `captureVideoServerHls` dans `src/capture/universalCapture.js` (L537-563).
+
+À la fin du process (`proc.on('close', ...)`), si `job.filePath` a été capturé et existe sur disque → `status: 'done'`. Sinon → `status: 'error'`.
+
+### 2.4 `GET /api/ytdlp-events?jobId=`
+
+Copie conforme de la route SSE existante (`local-server.mjs` L100-108), rien de nouveau à concevoir ici — même `sseSend`, mêmes petits soucis résolus (fermer la connexion si le job est déjà terminé, nettoyer `listeners` sur `close`).
+
+### 2.5 Récupération du fichier
+
+Une fois `status: 'done'`, le fichier est sur le disque local de Matthieu dans `/tmp/zr_ytdlp/<jobId>/`. Deux options, à trancher selon l'usage réel :
+
+- **Simple (recommandé pour la V1)** : une route `GET /api/ytdlp-file?jobId=` qui stream le fichier depuis `job.filePath` avec les bons headers (`Content-Disposition: attachment`). Le navigateur déclenche alors un téléchargement natif classique (`<a href="/api/ytdlp-file?jobId=...">`), pas besoin de passer par `streamDownload` de `src/lib/fetchAsset.js` — ce module sert à recoller des **morceaux chiffrés multi-URLs** (chunks d'archive shardée), ce qui n'est pas le cas ici : il n'y a qu'un seul fichier local déjà entier sur le disque du serveur local.
+- **`streamDownload` pertinent seulement si** une évolution future republie le fichier téléchargé vers le drive ZenRay en plusieurs morceaux chiffrés (shard), auquel cas on retomberait sur le pipeline d'upload existant (`upload-shard.js`) et non sur un téléchargement direct.
+
+Purge : comme pour les jobs vidéo (L74), supprimer `job.outDir` après un délai (10 min) ou immédiatement après que le navigateur a confirmé la récupération du fichier.
+
+---
+
+## 3. UI « terminal Matrix »
+
+### 3.1 Composant
+
+Nouveau fichier : `src/components/YtdlpTerminal.jsx`.
+
+Insertion suggérée : comme bouton d'action à côté du menu qui gère déjà les liens YouTube (`createYoutubeLinkNode`, appelé quelque part dans le menu « Nouveau » de `src/App.jsx`, à côté du bouton « Worker auto-upload » L2908) — un item de menu « Télécharger via yt-dlp… » qui ouvre une modale/panneau contenant `<YtdlpTerminal url={...} />`.
+
+### 3.2 Comportement
+
+- **Zone terminal** : `<pre>` ou `<div>` en police mono (`FONTS.mono`, déjà défini dans le design system du projet), fond `#000`, texte vert (`#00ff41` façon Matrix classique, ou `#39ff14` plus lisible — à valider visuellement), défilement automatique vers le bas (`scrollTop = scrollHeight` à chaque nouvelle ligne), une ligne par événement de progression reçu en SSE (`stage` + `progress`), pas besoin d'afficher le stdout brut de yt-dlp intégralement — le flux `@@P`/snapshot suffit et reste lisible.
+- **Effet "pluie de caractères" discret** (optionnel, cosmétique) : un `<canvas>` en fond absolu derrière le texte, animation légère de colonnes de caractères aléatoires qui tombent, opacité faible (~10-15%) pour ne pas nuire à la lisibilité du vrai log. Purement décoratif, à faire en dernier (V2+), aucune dépendance avec la logique de téléchargement.
+- **Barre de progression** : liée à `job.progress` (0-100) reçu via `EventSource('/api/ytdlp-events?jobId=...')`, même pattern que `captureVideoServerHls` (`universalCapture.js` L549-557) : `es.onmessage` parse le JSON, met à jour un state `{ progress, stage, status }`.
+- **État final** : quand `status === 'done'`, afficher un bouton « Télécharger `<nom du fichier>` » qui pointe vers `/api/ytdlp-file?jobId=...` (lien direct, cf. 2.5) — pas de `streamDownload` nécessaire en V1 puisqu'il n'y a qu'une seule URL à récupérer (le cas `list.length === 1` de `fetchAsset.js` L37, qui fait déjà exactement ce clic natif).
+- **État erreur** : afficher `job.error` en rouge dans le terminal, bouton « Réessayer ».
+
+### 3.3 Hook réutilisable
+
+Extraire la logique SSE (`fetch` du job + `EventSource` + parsing) dans un petit hook `useYtdlpJob(url, format)` dans le même fichier ou `src/lib/ytdlpJob.js`, pour ne pas dupliquer la logique déjà écrite dans `captureVideoServerHls` — même schéma, même service.
+
+---
+
+## 4. Sécurité
+
+Cette fonctionnalité **ne doit exister que via `scripts/local-server.mjs`**, jamais sur le déploiement Vercel public. Deux gardes-fous, déjà en place dans le projet, à respecter :
+
+1. **La route n'existe pas dans `api/[...route].js`.** Ce fichier est le seul point d'entrée déployé sur Vercel (commentaire L1-4 du fichier : *« SEULE fonction serverless de `/api` »*). Les routes `ytdlp-download`/`ytdlp-events` ne doivent **jamais** être ajoutées à l'objet `routes` (L69-97) ni importées en haut du fichier. Tant qu'elles ne sont définies que dans `scripts/local-server.mjs` (comme `transcode-local`/`transcode-events` le sont déjà, L82-112), elles sont physiquement absentes du build Vercel — pas besoin d'un `if (process.env.VERCEL)` fragile, l'absence de code est la garantie la plus sûre.
+2. **Le gate `ZENRAY_API_SECRET`** (`api/[...route].js` L34-67) protège déjà tout le reste de l'API sensible en prod. Comme cette route n'y transitera jamais, ce gate n'a pas besoin d'être étendu pour elle — mais si un jour on envisageait de l'exposer aussi côté Vercel (déconseillé, voir point 1 du présent document), il faudrait alors impérativement l'ajouter au `authOk()` comme route NON publique (ne pas l'ajouter à `PUBLIC_ROUTES`, L41).
+3. **`local-server.mjs` n'écoute que sur `127.0.0.1`** (L159-163, commentaire explicite sur le risque réseau local). yt-dlp étant un process qui **exécute une commande système** avec une URL fournie en paramètre, exposer cette route sur un réseau plus large que la loopback serait une porte ouverte à l'exécution de commande arbitraire depuis n'importe quel appareil du réseau — donc, comme pour tout le reste du serveur local, ce binding loopback est la garantie de fond, pas une option.
+
+**Rappel du risque si ces trois points n'étaient pas respectés** : une route web publique qui accepte une URL et spawn un process (`yt-dlp <url>`) est une **command injection / SSRF potentielle** si mal validée (arguments non échappés, URL non contrôlée pouvant contenir des flags additionnels, ou un attaquant pouvant faire télécharger n'importe quoi sur le disque du serveur). Exposée sur Vercel, sans authentification, ce serait une surface d'attaque sérieuse et un vecteur de déni de service (CPU/bande passante). D'où la règle simple : ce code reste **absent** du build public, point.
+
+Validation d'entrée minimale à prévoir malgré tout (défense en profondeur, même en local) : n'accepter que des URLs `youtube.com`/`youtu.be` (réutiliser `parseYouTube` de `src/ref/embed.js`, déjà utilisé par `youtubeLink.js` L13/L36), jamais une URL arbitraire passée telle quelle à `spawn`.
+
+---
+
+## 5. Plan par étapes
+
+### V1 — minimale
+- Un seul lien à la fois (pas de file d'attente visible, juste la queue série interne).
+- Un seul format par défaut (`best` vidéo+audio fusionnés en mp4).
+- Progression basique : pourcentage + étape (`téléchargement` / `finalisation`), pas de vitesse/ETA affichés.
+- Terminal Matrix simple : texte vert défilant, pas d'effet de pluie de caractères.
+- Téléchargement du fichier fini via lien direct `/api/ytdlp-file?jobId=`.
+- Gating : uniquement dans `scripts/local-server.mjs`, jamais dans `api/[...route].js`.
+
+### V2 — extensions
+- **File d'attente visible** : plusieurs liens collés à la suite, traités un par un, avec une liste des jobs en cours/terminés (reprendre le pattern `GET /api/transcode-status` L110-112 → équivalent `/api/ytdlp-status`).
+- **Choix de qualité/format** dans l'UI (vidéo 1080p/720p, audio seul mp3/wav) — traduit en argument `-f`/`-x` yt-dlp.
+- **Historique des téléchargements** : petit fichier JSON local (`~/.zenray/ytdlp-history.json` ou similaire) listant date, URL, nom de fichier, pour retrouver un téléchargement précédent sans le relancer.
+- **Effet de pluie de caractères** en fond du terminal (cosmétique, canvas séparé du log réel).
+- **Push automatique vers le drive** : une fois le fichier téléchargé localement, option pour l'envoyer directement dans `pages/Videos` via le pipeline d'upload existant (`upload-shard.js`), au lieu de rester seulement sur le disque local de Matthieu.

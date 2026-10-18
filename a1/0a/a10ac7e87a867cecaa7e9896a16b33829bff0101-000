@@ -1,0 +1,20 @@
+# Sources d'origine de Matthieu — conservées telles quelles
+
+Rapatriées de `~/Downloads/` le 2026-07-25. **Ne rien modifier ici** : c'est la sauvegarde de
+référence. Tout travail dérivé vit ailleurs dans le dépôt.
+
+| Élément | Ce que c'est | Pourquoi il compte |
+|---|---|---|
+| `ZenRayMedia_Volume_A_Corrected_256/` | **256 méta-prompts, un par thème** du volume A, rangés par famille et sous-famille, avec index, checklist, manifest et catalogue source | C'est **la spécification réelle** d'un thème : 32 packages de composants minimum, namespace `.zrm-theme-t-FF-S-V`, tokens préfixés, 15 états, 96 assets planifiés, tests et critères de refus |
+| `ZenRayMedia_Prompt_V3.md` | Prompt maître V3 | Ordre d'exécution, priorités en cas de contradiction, mission produit |
+| `tempZenRayMedia/` | `ui-components-zenray-v14.html` | La source de vérité visuelle du shell |
+| `*.zip` | Archives d'origine des livrables ci-dessus | Sauvegarde brute |
+
+Le livrable Le Monde (43 composants autonomes) a été déplacé à part, dans
+`src/zenraymedia/themes/T-01-1-1--une-nationale-du-matin/_reference/` : il appartient à son thème.
+
+## Ce que ces sources changent
+
+`docs/zenraymedia/07-PROMPT-THEME-DEPUIS-CAPTURES.md` a été écrit **avant** que je les lise. Le
+contrat réel d'un thème est celui des 256 prompts : un studio de microcomposants sérialisables,
+pas un gabarit. Le prompt 07 et `scripts/zrm-build-theme.mjs` doivent s'y conformer, pas l'inverse.

@@ -1,0 +1,634 @@
+# ZenRayMedia — Plan directeur
+
+> Document de conception. Aucun code applicatif n'est écrit avant validation de ce document.
+> Écrit le 2026-07-25. Faits techniques vérifiés sur cette machine le même jour (voir §8).
+
+---
+
+## 0. En une phrase
+
+**ZenRayMedia transforme une note en média fini de qualité professionnelle, dans n'importe quel format et
+n'importe quel registre, parce que le contenu, le style et le format y sont trois objets séparés.**
+
+---
+
+## 1. La thèse
+
+Trois observations, une conclusion.
+
+1. **Le levier sans permission.** Le code et le média sont les deux seules formes de levier qui se
+   reproduisent sans coût marginal et sans autorisation. Un logiciel qui fabrique du média est le produit
+   des deux.
+2. **Le goulot n'est pas la création, c'est la mise en forme.** Une idée est écrite en dix minutes. La
+   transformer en objet publiable — habillage, rythme, typographie, format, export — prend des jours. C'est
+   ce trajet-là qui n'est pas fait, et c'est exactement le trajet qu'un ordinateur peut faire.
+3. **Le style est du code.** Une identité visuelle est un ensemble fini de décisions : palette, échelle
+   typographique, grille, courbes d'animation, texture, grain, rythme de coupe. Un ensemble fini de
+   décisions est un fichier de données. Mille identités, c'est mille fichiers de données — pas mille
+   logiciels.
+
+**Conclusion :** on ne construit pas un éditeur de plus. On construit une **machine à appliquer des
+directions artistiques** à du contenu, et on la nourrit d'un catalogue.
+
+---
+
+## 2. Le théorème central (le seul à retenir)
+
+```
+Livrable = Rendu( Brief × Thème × Format )
+```
+
+- **Brief** — ce qu'on dit et à qui. Sans style, sans dimension.
+- **Thème** — comment ça regarde et comment ça bouge. 1024 valeurs possibles.
+- **Format** — dans quelle boîte ça sort. Dimensions, durée, contraintes de diffusion.
+
+Les trois axes sont **orthogonaux** : changer l'un ne touche pas les deux autres.
+
+Conséquences directes, et ce sont elles qui font l'« empire adaptatif » :
+
+| Action | Coût | Résultat |
+|---|---|---|
+| Changer le thème | 1 clic | Le même article devient une double page de magazine de mode ou un bandeau de chaîne d'info. |
+| Changer le format | 1 clic | La même vidéo devient un 16:9 YouTube, un 9:16 TikTok et une affiche A3. |
+| Ajouter un thème | 1 fichier de données | +1024 combinaisons de sortie, zéro ligne de moteur touchée. |
+| Ajouter un format | 1 fichier de données | Tous les thèmes existants le supportent immédiatement. |
+
+**Test de validité du théorème** (à repasser à chaque ajout) : si un thème doit modifier le moteur pour
+exister, le découplage est cassé — c'est le moteur qui manque d'un point d'extension, pas le thème qui a
+raison.
+
+---
+
+## 3. Périmètre
+
+### Dans le périmètre
+
+| Domaine | Ce qui est produit |
+|---|---|
+| Texte | Article web, dossier de presse, script, sous-titres, légendes, accroches, versions multilingues. |
+| Image fixe | Affiche, couverture, vignette, carrousel, planche de magazine, visuel publicitaire. |
+| Vidéo | Montage, habillage, générique, trailer, format vertical, capsule d'info. |
+| Effets 2D / Motion UI | Bandeaux, titrages animés, transitions, incrustations, HUD, compteurs, cartes animées. |
+| Print | PDF haute définition, gabarit A3/A4, fond perdu, repères de coupe. |
+| Son (fonctionnel) | Choix d'un lit musical existant, placement, fondus, éléments sonores courts, mixage sous voix. |
+
+### Hors périmètre (décision, pas oubli)
+
+| Exclu | Raison |
+|---|---|
+| Composition musicale, écriture de morceaux, rap, production d'artiste | Exclu explicitement. Ni généré, ni imité. |
+| 3D générative type Houdini | Non atteignable à bas coût par génération de code en 2026-07. La 3D entre par **import d'assets rendus** (séquence PNG alpha, EXR, MOV), traités comme n'importe quel média. |
+| Publication automatique sur les réseaux | Nécessite OAuth des comptes. Reste en export vers dossier + copie du texte. Aligné sur la dette déjà consignée dans ZenRayProgress. |
+| Édition manuelle image par image | Contraire à la thèse. Tout passe par un thème ou un ajustement de paramètre nommé. |
+
+---
+
+## 4. Architecture — huit couches, huit responsabilités
+
+Chaque couche ne connaît que celle du dessous. Une couche qui en saute une est un bug d'architecture.
+
+```
+  8  WIRE      Publication      → Create ZenRayProgress · dossier local · presse-papiers · flux
+  7  FORGE     Fabrication      → ffmpeg · encodage · muxage · vérification de conformité
+  6  STAGE     Rendu            → Chromium déterministe · horloge virtuelle · capture RGBA
+  5  FORMAT    Contrat de sortie→ dimensions · durée · zones de sécurité · spécification de livraison
+  4  THEME     Direction art.   → tokens · typographie · mouvement · texture · son
+  3  CUT       Partition        → séquence de plans, blocs, textes, emplacements média, timecodes
+  2  BRIEF     Intention        → message · public · registre · preuves · contraintes
+  1  VAULT     Sources          → notes · médias · références · marque
+```
+
+### 1. VAULT — les sources
+
+Ce qui existe déjà, jamais recopié : les pages Create de ZenRayProgress, les fichiers Markdown de Memory,
+les médias déjà stockés dans ZenRayShards, les références visuelles.
+**Règle :** ZenRayMedia ne duplique aucun média. Il en référence le chemin. Les binaires restent où ils sont.
+
+### 2. BRIEF — l'intention
+
+L'objet le plus important du système, et le plus court. Un brief tient en un écran :
+*ce que je dis*, *à qui*, *sur quel ton*, *avec quelles preuves*, *ce qu'on doit faire après l'avoir vu*.
+Il ne contient **aucune** décision de style ni de format.
+
+### 3. CUT — la partition
+
+Traduction du brief en structure : une suite de **beats** (unités narratives). Chaque beat porte un rôle
+(`hook`, `contexte`, `preuve`, `démonstration`, `bascule`, `chute`, `appel`), un texte, zéro ou plusieurs
+emplacements média, une durée relative et un poids d'accent.
+Le Cut est **agnostique du support** : le même Cut produit un article (les beats deviennent des sections)
+et un trailer (les beats deviennent des plans).
+
+### 4. THEME — la direction artistique
+
+Un fichier de données. Il ne contient pas de mise en page : il contient les **décisions** qui la produisent.
+Sept groupes de décisions (détaillés en §10.2).
+
+### 5. FORMAT — le contrat de sortie
+
+Dimensions, densité, durée cible, images par seconde, zones de sécurité, espace colorimétrique, poids
+maximum, codec, et les règles de repli quand le contenu ne rentre pas.
+
+### 6. STAGE — le rendu déterministe
+
+Le cœur technique. Une page HTML, une horloge virtuelle, une capture image par image. Détail en §6.
+**C'est la couche qui décide de la qualité de tout le reste.**
+
+### 7. FORGE — la fabrication
+
+Assemblage ffmpeg : concaténation, incrustation alpha, mixage audio, encodage final, vérification.
+Aucun paramètre magique : chaque réglage vient du Format.
+
+### 8. WIRE — la publication
+
+Écriture du livrable dans Create (page, `.media.json`, `.img.json`), export vers un dossier local,
+copie du texte prêt à coller. Réutilise intégralement les pipelines existants de ZenRayProgress.
+
+---
+
+## 5. Modèle de données — les six contrats
+
+Ces six schémas sont la colonne vertébrale demandée. Ils sont stables : tout le reste peut bouger.
+
+### 5.1 `Brief`
+
+| Champ | Type | Rôle |
+|---|---|---|
+| `id` | `string` | Identifiant stable. |
+| `title` | `string` | Titre de travail. |
+| `message` | `string` | **La phrase unique** que le public doit retenir. Contrainte : une seule phrase. |
+| `audience` | `string` | À qui on parle, en clair. |
+| `register` | `enum` | `presse` · `créateur` · `institutionnel` · `luxe` · `technique` · `divertissement` · `pédagogique` · `promotionnel`. |
+| `intent` | `enum` | `informer` · `convaincre` · `vendre` · `émouvoir` · `enseigner` · `annoncer` · `documenter`. |
+| `evidence[]` | `Ref[]` | Preuves : captures, chiffres, citations, médias. Un média = une référence de chemin, jamais une copie. |
+| `constraints` | `object` | Langue(s), durée maximale, mentions obligatoires, interdits. |
+| `sources[]` | `Ref[]` | Notes d'origine (pages Create, fichiers Markdown). |
+
+### 5.2 `Cut`
+
+| Champ | Type | Rôle |
+|---|---|---|
+| `briefId` | `string` | Lien vers le brief. |
+| `beats[]` | `Beat[]` | La partition. |
+| `Beat.role` | `enum` | `hook` · `context` · `proof` · `demo` · `turn` · `payoff` · `cta`. |
+| `Beat.text` | `string` | Texte porté par le beat. |
+| `Beat.slots[]` | `Slot[]` | Emplacements média : `{kind: image\|video\|3d\|chart\|code, ref, fit}`. |
+| `Beat.weight` | `0..1` | Poids d'accent — pilote la durée en vidéo et la taille en mise en page. |
+| `Beat.tempo` | `enum` | `still` · `calm` · `drive` · `snap`. |
+| `audio.bed` | `Ref?` | Lit musical existant. Jamais généré. |
+| `audio.cues[]` | `Cue[]` | `{at, kind: whoosh\|impact\|tick\|riser, gain}`. |
+
+### 5.3 `Theme`
+
+Voir §10.2 pour les sept groupes. Identifiant : `T-FF-S-V` (famille, sous-famille, variante).
+
+### 5.4 `Format`
+
+| Champ | Exemple |
+|---|---|
+| `id` | `F-vertical-1080x1920-30s` |
+| `kind` | `web` · `video` · `still` · `print` · `overlay` |
+| `canvas` | `{w:1080, h:1920, dpi:72}` ou `{w:3508, h:4961, dpi:300, bleed:3mm}` |
+| `time` | `{fps:30, target:30, min:15, max:45}` |
+| `safe` | `{top:220, bottom:320, sides:64}` — zones d'interface des plateformes |
+| `color` | `sRGB` · `Display-P3` · `CMYK-FOGRA39` |
+| `delivery` | `{codec, pixfmt, maxBytes, container}` |
+
+### 5.5 `Job`
+
+Une demande de fabrication : `{cutId, themeId, formatId, seed, overrides}`.
+**`seed` est obligatoire** : toute variation aléatoire (grain, dispersion, micro-décalage) en dérive, sinon
+le rendu n'est pas reproductible.
+
+### 5.6 `Deliverable`
+
+`{jobId, path, bytes, checksum, probe, previewRef, createdAt}` — `probe` = sortie `ffprobe` réelle, pas une
+promesse. Un livrable sans `probe` est considéré non vérifié.
+
+---
+
+## 6. STAGE — le moteur de rendu déterministe
+
+### 6.1 La règle d'or
+
+> **Aucune animation ne lit l'horloge réelle. Toute animation doit pouvoir être positionnée à un instant `t`
+> arbitraire et rendre exactement la même image, dix fois de suite, sur n'importe quelle machine.**
+
+Concrètement : mouvement exprimé en animations CSS ou WAAPI, positionnées par `currentTime`.
+**Interdit :** `requestAnimationFrame` avec delta d'horloge, `setInterval`, `Date.now()`, `Math.random()`
+non graine, vidéo HTML lue en temps réel, police chargée de façon asynchrone sans attente explicite.
+
+Pourquoi cette sévérité : une capture en temps réel duplique et saute des images de façon imprévisible. Le
+jour où un rendu de trois minutes doit être refait pour corriger un mot, un pipeline non déterministe oblige
+à tout revoir à l'œil. C'est la différence entre un outil et un jouet.
+
+### 6.2 Le cycle de rendu
+
+```
+Cut + Theme + Format
+        ↓
+ compilation      → une page HTML autonome (styles inclus, polices en base64, médias en fichiers locaux)
+        ↓
+ préchauffage     → attente polices prêtes + images décodées + premier plan stabilisé
+        ↓
+ boucle de pose   → pour chaque image n : t = n/fps ; positionner toutes les animations à t ; capturer
+        ↓
+ flux RGBA        → transmis directement à ffmpeg, jamais 900 fichiers sur le disque
+        ↓
+ encodage         → ProRes 4444 alpha, ou plat, ou image fixe, selon le Format
+        ↓
+ vérification     → ffprobe : durée, nombre d'images, présence réelle de la couche alpha
+```
+
+### 6.3 Trois modes de capture, un seul contrat
+
+| Mode | Usage | Sortie |
+|---|---|---|
+| `still` | Affiche, vignette, planche, carrousel | PNG/AVIF/PDF |
+| `plate` | Vidéo complète, fond opaque | MP4 / ProRes 422 |
+| `overlay` | Habillage à incruster sur des rushes | **ProRes 4444 `yuva444p10le`** |
+
+Le mode `overlay` est la fonction qui n'existe nulle part ailleurs à ce prix : il rend l'application
+compatible avec DaVinci, Premiere, After Effects et Final Cut sans les remplacer. Un habillage produit ici
+s'importe partout.
+
+### 6.4 Parallélisme
+
+Le parallélisme se fait **par plan**, jamais par image (une image dépend de l'état de la page).
+Un plan = un contexte de navigateur isolé. Cible : 16 plans simultanés (règle machine : 16-17 cœurs actifs).
+
+---
+
+## 7. Les sept pipelines de sortie
+
+| # | Pipeline | Entrée | Chaîne | Sortie |
+|---|---|---|---|---|
+| P1 | **Article web** | Cut + Theme | compilation HTML → page Create | Page publiée dans ZenRayProgress |
+| P2 | **Image fixe** | Cut + Theme + Format still | Stage `still` → AVIF/PNG | Visuel, vignette, carrousel |
+| P3 | **Print** | Cut + Theme + Format print | Stage `still` en 300 dpi → PDF | A3/A4 avec fond perdu |
+| P4 | **Vidéo plate** | Cut + Theme + Format video | Stage `plate` → ffmpeg | MP4 H.264/HEVC (`hvc1` obligatoire) |
+| P5 | **Habillage alpha** | Cut + Theme | Stage `overlay` → ProRes 4444 | `.mov` alpha importable en NLE |
+| P6 | **Montage** | Timeline JSON + rushes | graphe de filtres ffmpeg | Vidéo assemblée |
+| P7 | **Texte diffusable** | Cut + Theme | gabarit texte | Légendes, fils, descriptions, sous-titres |
+
+**P6 mérite une précision.** Le montage est déclaratif : la timeline est une liste de segments
+`{source, in, out, transform, transition, audio}` compilée en un unique graphe de filtres. Aucune commande
+ffmpeg n'est écrite à la main dans le produit ; il n'existe qu'**un seul compilateur de timeline**, testé.
+
+---
+
+## 8. Stack — état vérifié de la machine (2026-07-25)
+
+| Élément | Version / état constaté | Conséquence pour le plan |
+|---|---|---|
+| ffmpeg | **8.1.1** | Base de la Forge. |
+| `prores_ks` | pixels supportés : `yuv422p10le yuv444p10le` **`yuva444p10le`** | La couche alpha ProRes 4444 est **disponible et confirmée**. C'est le fondement du pipeline P5. |
+| `prores_videotoolbox` | présent (matériel) | Encodage accéléré possible pour les rendus sans alpha. Support alpha **à vérifier** avant usage (§17-Q4). |
+| `qtrle` | `rgb24 rgb555be argb gray` | Repli alpha sans perte (`argb`), très lourd. Réservé aux cas où ProRes ne convient pas. |
+| `hevc_videotoolbox`, `h264_videotoolbox`, `libsvtav1` | présents | Encodage matériel pour les livrables plats. Rappel dur du projet : tout MP4 HEVC porte `-tag:v hvc1`. |
+| Chromium headless | **installé** (`ms-playwright/chromium-1228`, `chromium_headless_shell-1228`) | Le Stage n'exige aucune installation nouvelle. |
+| `@playwright/test` | déjà dans les dépendances de développement de ZenRayProgress | Le pilotage du navigateur est déjà dans le projet. |
+| Node | **v26.0.0**, npm 11.12.1 | Aucune contrainte. |
+| Disque | **385 Gio libres** sur 1,8 Tio | Contrainte réelle : voir §16.2. |
+| Polices | 120 dans `~/Library/Fonts`, 83 système | **Contrainte majeure** : voir §11. |
+| Existant réutilisable | `@ffmpeg/ffmpeg` (navigateur), `three`, `tldraw`, `marked`, `fflate`, BlockNote, Masonic | Rien à réécrire côté interface. |
+
+**Décision d'exécution qui découle de ce tableau :** le rendu vidéo **ne peut pas** vivre sur Vercel. Les
+fonctions serverless du projet sont plafonnées à ~4,5 Mo de corps de réponse (incident déjà payé le
+2026-07-21 : fichiers tronqués à 4,2 Mo via `/api/stream`). **La Forge est un processus local sur le Mac ;
+Vercel ne sert que l'interface et les manifestes.** Ce n'est pas une limitation : c'est ce que veut dire
+« auto-hébergé ».
+
+---
+
+## 9. Le rôle de l'IA — quatre postes, pas un chatbot
+
+L'IA n'est pas une zone de texte dans l'application. Elle occupe quatre postes nommés, chacun avec une
+entrée et une sortie **typées** (donc vérifiables).
+
+| Poste | Entrée | Sortie | Contrainte |
+|---|---|---|---|
+| **Le Rédacteur** | Notes brutes | `Brief` | Une seule phrase pour `message`. Refuse de rendre un brief à deux messages. |
+| **Le Monteur** | `Brief` + `Theme.rhythm` | `Cut` | Nombre de beats imposé par le thème, pas par l'humeur. |
+| **Le Directeur artistique** | Référence de calibrage | `Theme` | Produit un fichier de tokens valide au schéma, jamais du CSS libre. |
+| **Le Critique** | `Deliverable` + `Format` | Liste de défauts | Vérifie zones de sécurité, contraste, lisibilité, durée, débordements. Sortie vide = validé. |
+
+**Le Critique est le poste qui fait la différence entre premium et amateur.** Sans lui, la machine produit
+mille médias moyens. Il est le seul poste obligatoire dans le cycle : aucun livrable ne sort sans son passage.
+
+**Génération procédurale d'outils.** Les postes sont pilotés par des skills (Claude Code / Codex), pas par
+des appels API dans le produit. Conséquence : aucune clé API n'est nécessaire pour la V0, et le coût de
+génération reste dans l'abonnement existant. Un appel API direct depuis l'application reste possible plus
+tard (déjà consigné en priorité 999 dans ZenRayProgress) mais n'est pas une dépendance.
+
+---
+
+## 10. Le catalogue de thèmes
+
+### 10.1 Correction structurelle nécessaire
+
+Le plan initial prévoit « les templates seront créées comme des skills… environ 128, à terme 1024 ».
+**Ce n'est pas réalisable tel quel, et c'est mieux ainsi.** Chaque skill charge sa description dans le
+contexte de chaque session — 27 skills aujourd'hui pour environ 4 000 tokens d'index. 1024 skills
+représenteraient un index de l'ordre de 150 000 tokens, chargé à chaque session, avant même de travailler.
+Le système s'effondrerait sous son propre catalogue.
+
+**Le bon découpage :**
+
+| Objet | Nature | Quantité |
+|---|---|---|
+| Le thème | **Donnée** — un fichier de tokens validé par schéma | 1024 |
+| L'atelier de thèmes | **Skill** — crée, valide, prévisualise, calibre un thème | 1 |
+| Le catalogue | **Index interrogeable** — chargé à la demande, jamais en entier | 1 |
+
+Un atelier, mille thèmes. On garde exactement l'ambition, on retire le mur.
+
+### 10.2 Anatomie d'un thème — sept groupes de décisions
+
+| Groupe | Contient | Exemple de décision |
+|---|---|---|
+| 1. **Surface** | Fond, matière, grain, vignettage, texture papier ou verre | « papier couché mat, grain 3 %, aucune ombre portée » |
+| 2. **Palette** | Encre, accent, alerte, dégradés, contraste minimum | « noir 92 %, accent rouge signal, contraste ≥ 7:1 » |
+| 3. **Typographie** | Familles, échelle, graisses, interlettrage, largeur de mesure, casse | « serif de labeur 11/15, titres condensés 700, mesure 62 signes » |
+| 4. **Grille** | Colonnes, gouttières, marges, alignement optique, rythme vertical | « 12 colonnes, gouttière 24, rythme 8 » |
+| 5. **Mouvement** | Courbes, durées, décalages en cascade, entrées/sorties, coupe | « entrée 240 ms `cubic-bezier(.16,1,.3,1)`, cascade 40 ms, coupe sèche » |
+| 6. **Habillage** | Bandeaux, cartouches, filets, logos, crédits, mentions | « bandeau bas plein, ticker continu, horloge en haut à droite » |
+| 7. **Son** | Rôle du lit musical, niveau sous voix, éléments sonores autorisés | « lit à −28 LUFS, impacts autorisés, pas de riser » |
+
+Un thème **hérite** de sa sous-famille, qui hérite de sa famille. Une variante ne redéfinit en moyenne que
+5 à 12 valeurs. C'est ce qui rend 1024 thèmes tenables : on n'écrit pas 1024 systèmes, on écrit
+**16 systèmes, 128 déclinaisons, 1024 réglages**.
+
+### 10.3 Nomenclature
+
+`T-<famille 2 chiffres>-<sous-famille 1>-<variante 1>` → `T-03-4-7`.
+Nom public = archétype de genre. La marque de référence vit dans un champ privé `calibration.ref`, jamais
+affichée, jamais publiée (voir le risque de marque en `02-RISQUES`).
+
+### 10.4 Les 16 familles
+
+| # | Famille | Cœur du registre |
+|---|---|---|
+| 01 | Presse & éditorial | Autorité, hiérarchie, lisibilité longue |
+| 02 | Télévision & broadcast | Continuité, habillage permanent, urgence |
+| 03 | Cinéma & trailer | Tension, silence, révélation |
+| 04 | Jeu vidéo | Puissance, interface, promesse de jouabilité |
+| 05 | Publicité & retail | Prix, bénéfice, appel à l'action |
+| 06 | Luxe & mode | Rareté, vide, matière |
+| 07 | Social vertical | Accroche en 1,5 s, pouce, sous-titres |
+| 08 | Créateur & YouTube | Familiarité, rythme de parole, chapitrage |
+| 09 | Musique & sound | Pulsation, pochette, identité d'artiste |
+| 10 | Tech & produit | Démonstration, précision, keynote |
+| 11 | Corporate & institution | Confiance, conformité, chiffres |
+| 12 | Science & pédagogie | Progression, schéma, preuve |
+| 13 | Sport & compétition | Score, direct, exploit |
+| 14 | Événement & affiche | Date, lieu, mémorabilité |
+| 15 | Architecture, design & art | Composition, matière, portfolio |
+| 16 | Japon & Asie | Densité verticale, CJK, codes locaux |
+
+Catalogue complet des 1024 : fichiers `05-THEMES-1024-A/B/C/D.md`.
+
+---
+
+## 11. Typographie — la contrainte que personne ne voit venir
+
+**Fait mesuré :** 120 polices dans `~/Library/Fonts`, 83 système, 1 dans `/Library/Fonts`.
+**1024 thèmes ne peuvent donc pas signifier 1024 typographies.** Et c'est heureux : un thème ne se distingue
+pas par sa police mais par son **système typographique**.
+
+### 11.1 Le budget réel
+
+| Élément | Cible | Justification |
+|---|---|---|
+| Familles distinctes | **64** | Au-delà, l'œil ne distingue plus ; en dessous de 32, les familles de thèmes se ressemblent. |
+| Systèmes typographiques | **1024** | Combinaison famille × échelle × graisse × interlettrage × casse × mesure. |
+| Format | **Variable de préférence** | Une police variable couvre une famille de graisses en un fichier. |
+
+### 11.2 Les six systèmes archétypaux
+
+| Système | Signature | Familles types |
+|---|---|---|
+| Labeur | Serif, mesure 60-70 signes, interlignage 1,45 | Presse, édition, science |
+| Grotesque neutre | Sans, échelle serrée, hiérarchie par la taille seule | Tech, corporate, produit |
+| Condensé d'impact | Sans condensé, casse haute, interlettrage négatif | TV, sport, publicité |
+| Didone / haute couture | Contraste extrême, capitales espacées, énormément de vide | Luxe, mode, parfum |
+| Monospace technique | Chiffres tabulaires, grille visible | Jeu vidéo, données, code |
+| CJK vertical | Composition verticale, ruby, densité | Japon & Asie |
+
+### 11.3 Règles héritées de ZenRayProgress, non négociables
+
+- **80 % Serif / 15 % Sans / 5 % Mono** dans le **chrome de l'application**. Cette règle vaut pour
+  l'interface. **Elle ne s'applique pas au contenu rendu** : un thème « chaîne d'info » impose son condensé,
+  c'est son travail.
+- **Jamais de gras** dans le chrome : regular (400) par défaut, medium (500) au maximum.
+- **Plancher 12 px** sur poste fixe pour tout texte fonctionnel de l'interface.
+- **Jamais Inter** ni police par défaut dans le chrome.
+
+### 11.4 Licences — point à traiter avant toute distribution
+
+Rasteriser une police dans une vidéo et redistribuer un fichier de police sont deux droits différents. Le
+catalogue portera pour chaque famille : `{license, embeddable: bool, redistributable: bool, source}`.
+Toute famille sans licence vérifiée est marquée `local-only` et exclue des exports destinés à un client.
+
+---
+
+## 12. Son — une partition, pas un rendu
+
+Périmètre confirmé : **aucune composition**. Le son est traité comme une **couche de placement**.
+
+| Élément | Traitement |
+|---|---|
+| Lit musical | Référence vers une piste existante (bibliothèque personnelle, licence libre). Choisi par correspondance d'humeur, jamais généré. |
+| Niveau | Imposé par le thème, en LUFS. Sous voix : −28 LUFS. Sans voix : −16 LUFS. Chaîne déjà existante et validée (skill `interview-audio`). |
+| Éléments sonores | Bibliothèque finie et nommée : `whoosh`, `impact`, `tick`, `riser`, `sub-drop`, `page-turn`, `shutter`, `keystroke`. Chacun est un fichier, pas une génération. |
+| Placement | Automatique sur les frontières de beats, ajustable au timecode. |
+| Sortie | Un plan de mixage textuel `{piste, début, durée, gain, fondu}` compilé en filtres ffmpeg. |
+
+**Ce que ça donne concrètement :** ZenRayMedia ne fait pas de musique, il fait du **montage sonore**. C'est
+exactement la frontière posée dans le brief, et c'est la seule tenable techniquement aujourd'hui.
+
+---
+
+## 13. Interface — une surface, trois mouvements
+
+### 13.1 La règle des trois actions
+
+> **De la note au livrable : trois actions maximum.**
+> `1.` choisir la note · `2.` choisir le thème · `3.` rendre.
+> Toute quatrième action doit être justifiée par écrit dans ce document, ou elle n'existe pas.
+
+### 13.2 La surface
+
+Une seule vue. Pas de page de réglages, pas d'assistant en plusieurs étapes, pas de modale.
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│  ⌘K  — la barre de commande est le seul point d'entrée                     │
+├──────────────┬─────────────────────────────────────────┬──────────────────┤
+│              │                                         │                  │
+│   BRIEF      │              STAGE                      │      DECK        │
+│              │                                         │                  │
+│  la note,    │   l'aperçu au ratio réel du format,     │  la colonne des  │
+│  éditable    │   scrutable image par image             │  thèmes ; un     │
+│  en place    │                                         │  clic = restyle  │
+│              │                                         │  instantané      │
+│              │                                         │                  │
+├──────────────┴─────────────────────────────────────────┴──────────────────┤
+│  RENDER BAR — pastilles de formats · un seul bouton · progression          │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Brief** — l'éditeur de note. BlockNote est déjà dans la stack. On écrit, on ne configure pas.
+- **Stage** — l'aperçu **réel**, pas une approximation : c'est la même page HTML que celle qui sera capturée.
+  Ce qu'on voit est ce qui sort. Une barre de défilement temporelle apparaît uniquement si le format a une durée.
+- **Deck** — la colonne de thèmes. Vignettes vivantes, filtrage par famille via la barre de commande.
+  **Un clic restyle** : aucune validation, aucun rechargement.
+- **Render bar** — les formats sont des pastilles à cocher, le rendu est **un seul bouton**. La progression
+  s'affiche dans le bouton lui-même, jamais dans une fenêtre séparée.
+
+### 13.3 Design soustractif — la liste de ce qui est retiré
+
+| Retiré | Remplacé par |
+|---|---|
+| Menu de fichiers | La barre de commande (`⌘K`) |
+| Page de réglages | Les réglages vivent dans le thème, pas dans l'application |
+| Assistant multi-étapes | Une seule surface, toujours utilisable |
+| Modales de confirmation | Actions réversibles + historique |
+| Sélecteur de couleurs, de police, de taille | Le thème décide. Si on veut autre chose, on change de thème. |
+| Barre d'outils d'édition vidéo | Le montage est déclaratif ; on édite le Cut, pas la timeline |
+| Panneau de calques | Le Cut **est** la structure |
+
+**Ce tableau est le cœur de la proposition.** Un logiciel de post-production expose 400 contrôles pour que
+l'utilisateur invente son style. ZenRayMedia en expose une douzaine parce que **le style est déjà décidé** —
+il vient du thème. C'est ce qui permet la simplicité sans perdre la puissance.
+
+### 13.4 Héritage visuel — non négociable
+
+L'interface hérite intégralement de `ui-components-zenray-v14.html`. Contrat détaillé dans
+`03-UI-CONTRAT-COMPOSANTS.md`. Rappel des primitives : `.glass` (fond `rgba(255,255,255,.26)`,
+`backdrop-filter: blur(22px) saturate(70%) brightness(1.28)`, rim inset haut/bas identique, ombre
+`0 2px 10px rgba(0,0,0,.14)`), `.noise` à 5 % en `mix-blend-mode: overlay`, tokens `--plan-*` pour les
+surfaces d'application, bascule dark/light par classe.
+
+---
+
+## 14. Intégration avec ZenRayProgress — ce qu'on ne réécrit pas
+
+ZenRayMedia n'est pas une application séparée : c'est une **vue supplémentaire** de ZenRayProgress qui
+réutilise tout ce qui existe déjà. Ce tableau est la liste des choses à **ne jamais réimplémenter**.
+
+| Besoin | Existant réutilisé | Fichier de référence |
+|---|---|---|
+| Stocker un livrable | ZenRayShards v2, chunks chiffrés | `src/config/chunkPolicy.js` — 19 MiB / 95 Mo, **jamais redéfinir ces nombres** |
+| Publier une page | Pages Create (`.md`, `.media.json`, `.img.json`) | `server/page.js` |
+| Rendre cherchable | Index de recherche chiffré CDN + delta | `src/search/searchIndexClient.js`, action `index-add` |
+| Lire un manifeste sans écrire | `action=read&raw=1` — **hors quota** | Incident payé 2026-07-20 : `readJson()` en boucle = site en 403 |
+| Vignettes | Source unique 1080 px / q90 | `src/config/thumbnail.js` |
+| Lire une vidéo dans l'app | Service Worker + déchiffrement | `public/zr-stream-sw.js`, `VideoPlayer2.jsx` |
+| Import paresseux résilient | Helper unique | `src/lib/lazyRetry.js` |
+| Anonymat public | Chemins hachés, messages de commit neutres | Règle P0 anti-fuite |
+
+**Deux règles de projet qui s'appliquent immédiatement à ZenRayMedia :**
+1. Tout MP4 HEVC produit porte `-tag:v hvc1` (sinon illisible sur iPhone — bug déjà payé le 2026-07-05).
+2. Aucun nom d'œuvre, de client ou de projet dans un chemin, un message de commit ou un nom de branche public.
+
+---
+
+## 15. Feuille de route — quatre paliers, une porte
+
+### V0 — « Une note devient un article publié » (le palier qui prouve tout)
+
+Contenu : Vault → Brief → Cut → **1 famille de thèmes (4 thèmes)** → Format `web` → Wire vers Create.
+Aucune vidéo. Aucun ffmpeg.
+**Critère de sortie : un article réellement publié et partagé, pas une démonstration locale.**
+
+### V1 — « Le même contenu devient une image et une affiche »
+
+Ajout : Stage mode `still`, formats `still` et `print`, 16 thèmes (1 par famille).
+**Critère de sortie : un visuel publié sur un réseau, issu du même brief que l'article de la V0.**
+
+### V2 — « Le même contenu devient une vidéo »
+
+Ajout : Stage `plate` + `overlay`, Forge ffmpeg, P4 et P5, plan sonore.
+**Critère de sortie : un `.mov` ProRes 4444 alpha importé avec succès dans un logiciel de montage tiers.**
+
+### V3 — « Le catalogue »
+
+Ajout : les 1024 thèmes, l'atelier de thèmes, le Critique automatisé, le montage déclaratif P6.
+
+### La porte (à lire avant de commencer)
+
+Une contrainte personnelle déjà posée s'applique : **zéro nouveau chantier d'infrastructure jusqu'au
+2026-09-09** (retour du Japon), parce que l'énergie doit aller au terrain japonais et à la publication, pas
+à l'outillage. Au 2026-07-25, il reste **46 jours**.
+
+ZenRayMedia n'est pas de l'infrastructure — c'est une machine à publier, exactement le levier identifié dans
+le pivot Media + Code. Mais il **devient** de l'infrastructure au moment précis où on commence par le moteur
+de rendu, le catalogue de mille thèmes ou l'architecture de stockage. Le risque n'est pas théorique : c'est
+le schéma déjà constaté (plans soignés, jamais envoyés).
+
+**Règle de sécurité proposée, à valider :** tant que le 2026-09-09 n'est pas passé, seule la **V0** est
+autorisée, et elle est bornée à **une session de construction**. Si la V0 ne produit pas un article publié
+au bout de cette session, le chantier s'arrête et reprend en septembre. Le reste du plan reste écrit, prêt,
+et ne coûte rien à attendre — un document ne périme pas.
+
+---
+
+## 16. Économie du système
+
+### 16.1 Coût de génération
+
+| Poste | Ordre de grandeur | Remarque |
+|---|---|---|
+| Un thème produit par l'atelier | ~3 000 tokens | 1024 thèmes ≈ 3 M tokens si tout est généré individuellement. |
+| Un thème par héritage de sous-famille | ~300 tokens | **La stratégie retenue** : 16 familles + 128 sous-familles écrites en profondeur, 1024 variantes par réglage. Ordre de grandeur : ~450 k tokens au total. |
+| Une génération de Cut | ~2 000 tokens | Par livrable. |
+| Un passage du Critique | ~1 500 tokens | Par livrable. Obligatoire. |
+
+### 16.2 Coût disque — le calcul à ne pas rater
+
+Une séquence RGBA 4K non compressée pèse environ **33 Mo par image** (3840 × 2160 × 4 octets).
+30 secondes à 30 images/s = 900 images = **~30 Go pour un seul plan**.
+
+**Conséquence architecturale, pas une optimisation :** les images ne touchent jamais le disque. Elles sont
+transmises directement à l'encodeur. Avec 385 Gio libres, un pipeline qui écrit ses images remplit le
+disque en une douzaine de rendus.
+
+Poids des livrables, à titre de repère : ProRes 4444 en 1080p ≈ 330 Mbit/s ≈ **41 Mo/s** — 30 secondes
+≈ 1,2 Go. Rappel de la politique de découpage du projet : un fichier > 95 Mo passe en chunks de 95 Mo servis
+par `raw.githubusercontent`, pas par le CDN.
+
+### 16.3 Coût temps
+
+| Étape | Repère |
+|---|---|
+| Capture d'une image 1080p | ~30 à 80 ms |
+| Un plan de 5 s à 30 i/s (150 images) | ~10 s |
+| Un trailer de 60 s découpé en 12 plans, 16 en parallèle | ~1 à 2 min |
+
+Le rendu n'est pas le goulot. **Le goulot est la décision de style — et c'est précisément celui que le
+catalogue supprime.**
+
+---
+
+## 17. Ce qui n'est pas décidé (questions ouvertes, défaut recommandé)
+
+| # | Question | Défaut recommandé si pas de réponse |
+|---|---|---|
+| Q1 | ZenRayMedia est-il une vue dans ZenRayProgress ou une application séparée ? | **Une vue** — réutilise stockage, recherche, publication, interface. Zéro duplication. |
+| Q2 | Le Deck affiche-t-il les 1024 thèmes ou une sélection ? | **12 thèmes suggérés** par le registre du brief, le reste via la barre de commande. Sinon le Deck devient un catalogue à parcourir, et on a perdu la simplicité. |
+| Q3 | Les livrables vidéo vont-ils dans ZenRayShards ou restent-ils locaux ? | **Locaux d'abord** (dossier d'export), publication explicite ensuite. Un rendu raté n'a rien à faire dans le stockage définitif. |
+| Q4 | `prores_videotoolbox` gère-t-il l'alpha ? | Non supposé. **`prores_ks` par défaut** pour tout ce qui porte une couche alpha ; le matériel n'est utilisé que pour les livrables plats. À mesurer avant de changer. |
+| Q5 | Combien de thèmes en V0 ? | **4**, dans une seule famille. Un catalogue ne se juge pas avant d'avoir publié une fois. |
+| Q6 | Qui écrit les 1024 thèmes ? | L'atelier, par lots de 64 (une famille), avec relecture humaine sur les 16 thèmes de tête seulement. |
+
+---
+
+## 18. Documents liés
+
+| Fichier | Contenu |
+|---|---|
+| `00-PROMPT-REFINED.md` | Le brief affiné phrase par phrase, original conservé. |
+| `02-RISQUES-THINK-OF-EVERYTHING.md` | Analyse d'impact et pré-mortem, verdict GO/NO-GO. |
+| `03-UI-CONTRAT-COMPOSANTS.md` | Inventaire extrait de `v14` + contrat visuel des maquettes. |
+| `04-WBS-COMPOSANTS.md` | Découpage atomique : chaque sous-composant = une tâche entière. |
+| `05-THEMES-1024-A/B/C/D.md` | Le catalogue complet des 1024 thèmes. |

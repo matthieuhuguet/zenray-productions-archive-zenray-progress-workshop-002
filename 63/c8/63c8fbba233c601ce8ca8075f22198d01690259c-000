@@ -1,0 +1,458 @@
+# Catalogue des thèmes — Volume A : familles 01 à 04 (256 thèmes)
+
+> **Lecture du catalogue.** Chaque famille pose un système (7 groupes de décisions). Chaque sous-famille en
+> hérite et fixe un registre. Chaque variante ne redéfinit que 5 à 12 valeurs.
+> La colonne **Calibrage** est un champ **privé** (`calibration.ref`) : elle sert à viser le haut du panier
+> du métier. Elle n'est **jamais** affichée dans l'application, jamais publiée, jamais poussée sur un dépôt
+> public. Le nom public d'un thème est l'archétype de genre de la colonne « Thème ».
+
+---
+
+# Famille 01 — Presse & éditorial
+
+**Système.** Surface : papier, grain 2 %, aucune ombre. Palette : encre 92 %, un seul accent. Typographie :
+serif de labeur, mesure 62-68 signes, hiérarchie par la taille. Grille : 6 à 12 colonnes, filets fins.
+Mouvement : aucun ou fondu 200 ms. Habillage : filets, chapeaux, signatures, légendes. Son : muet par défaut.
+
+## 01-1 — Quotidien national
+
+| ID       | Thème                        | Calibrage        | Signature                                                          |
+| -------- | ---------------------------- | ---------------- | ------------------------------------------------------------------ |
+| T-01-1-1 | Une nationale du matin       | Le Monde         | Manchette 6 colonnes, filet fin, une seule photo dominante         |
+| T-01-1-2 | Une de rupture               | Libération       | Photo pleine page, titre unique en capitales, tout le reste chassé |
+| T-01-1-3 | Quotidien de référence sobre | Le Figaro        | Serif classique, filets doubles, colonnes étroites, zéro couleur   |
+| T-01-1-4 | Quotidien économique saumon  | Financial Times  | Fond crème, chiffres tabulaires, graphiques en encre unique        |
+| T-01-1-5 | Tabloïd d'accroche           | The Sun          | Bandeau rouge, capitales condensées, contraste maximal             |
+| T-01-1-6 | Quotidien régional           | Ouest-France     | Densité forte, brèves en colonnes, photo légendée systématique     |
+| T-01-1-7 | Édition du soir              | Evening Standard | Encre plus sombre, titraille resserrée, rythme rapide              |
+| T-01-1-8 | Une d'archive                | presse 1960      | Papier jauni, plomb, filets épais, photo en trame                  |
+
+## 01-2 — Magazine d'actualité hebdomadaire
+
+| ID       | Thème                 | Calibrage          | Signature                                                    |
+| -------- | --------------------- | ------------------ | ------------------------------------------------------------ |
+| T-01-2-1 | Couverture à portrait | Time               | Cadre rouge, portrait cadré serré, un seul mot en titre      |
+| T-01-2-2 | Dossier de fond       | Le Point           | Chapeau long, intertitres marqués, encadrés de contexte      |
+| T-01-2-3 | Hebdo satirique       | Le Canard enchaîné | Composition dense, dessins, typographie de plomb             |
+| T-01-2-4 | Hebdo culturel        | Les Inrockuptibles | Grille cassée, images plein bord, légendes décalées          |
+| T-01-2-5 | Hebdo international   | The Economist      | Colonne stricte, encre rouge unique, graphiques sobres       |
+| T-01-2-6 | Enquête longue        | Mediapart          | Fond sombre, appels de note, sources listées en pied         |
+| T-01-2-7 | Numéro spécial        | hors-série         | Format élargi, sommaire monumental, papier mat               |
+| T-01-2-8 | Hebdo grand public    | Paris Match        | Photo pleine page, titre en surimpression, légende narrative |
+
+## 01-3 — Longform web & récit
+
+| ID       | Thème                   | Calibrage           | Signature                                                      |
+| -------- | ----------------------- | ------------------- | -------------------------------------------------------------- |
+| T-01-3-1 | Récit immersif défilant | NYT Snow Fall       | Images plein écran entre les chapitres, texte centré étroit    |
+| T-01-3-2 | Lecture pure            | Medium              | Mesure 62 signes, aucune décoration, respiration maximale      |
+| T-01-3-3 | Enquête à preuves       | ProPublica          | Encadrés de documents, citations en bloc, chronologie latérale |
+| T-01-3-4 | Carnet d'auteur         | Substack essai      | Serif chaleureux, notes en marge, signature manuscrite         |
+| T-01-3-5 | Récit à chapitres       | The Atlantic        | Numéros de chapitre monumentaux, lettrines                     |
+| T-01-3-6 | Reportage photo         | National Geographic | Photo pleine largeur, légende longue, texte en réserve         |
+| T-01-3-7 | Récit sombre            | longform nocturne   | Fond encre, texte crème, images désaturées                     |
+| T-01-3-8 | Récit court             | brève longue        | 800 mots maximum, une image, une citation                      |
+
+## 01-4 — Newsletter & infolettre
+
+| ID       | Thème                         | Calibrage          | Signature                                           |
+| -------- | ----------------------------- | ------------------ | --------------------------------------------------- |
+| T-01-4-1 | Infolettre de curation        | Brief.me           | Sections numérotées, temps de lecture, liens listés |
+| T-01-4-2 | Infolettre d'auteur           | Dense Discovery    | Colonne unique, blocs alternés, palette pastel      |
+| T-01-4-3 | Veille technique              | Hacker Newsletter  | Mono pour les liens, densité forte, zéro image      |
+| T-01-4-4 | Infolettre d'entreprise       | rapport interne    | En-tête institutionnel, chiffres clés en tuiles     |
+| T-01-4-5 | Infolettre courte quotidienne | Morning Brew       | Ton direct, emoji-free, une accroche par section    |
+| T-01-4-6 | Infolettre visuelle           | Sidebar design     | Grande image par entrée, légende courte             |
+| T-01-4-7 | Infolettre à chapitres        | essai hebdomadaire | Sommaire cliquable, texte long, note de fin         |
+| T-01-4-8 | Infolettre d'annonce          | lancement produit  | Une seule information, un seul bouton               |
+
+## 01-5 — Presse spécialisée & technique
+
+| ID       | Thème                           | Calibrage         | Signature                                                  |
+| -------- | ------------------------------- | ----------------- | ---------------------------------------------------------- |
+| T-01-5-1 | Revue d'ingénierie              | IEEE Spectrum     | Schémas légendés, colonnes serrées, encadrés techniques    |
+| T-01-5-2 | Revue médicale                  | The Lancet        | Structure imposée, résumé structuré, références numérotées |
+| T-01-5-3 | Revue juridique                 | Dalloz            | Numérotation d'articles, renvois, marge de notes           |
+| T-01-5-4 | Presse informatique             | Ars Technica      | Captures d'écran annotées, tableaux comparatifs            |
+| T-01-5-5 | Revue d'architecture            | Detail            | Plans, coupes, échelle, légende en pied                    |
+| T-01-5-6 | Presse industrielle             | revue métier      | Fiches produit, spécifications tabulaires                  |
+| T-01-5-7 | Revue scientifique grand public | Pour la Science   | Infographie centrale, encadré « comment ça marche »        |
+| T-01-5-8 | Note technique interne          | mémo d'ingénierie | Mono intégral, aucune image, numérotation stricte          |
+
+## 01-6 — Presse people & divertissement
+
+| ID       | Thème                       | Calibrage      | Signature                                                      |
+| -------- | --------------------------- | -------------- | -------------------------------------------------------------- |
+| T-01-6-1 | Couverture people           | Voici          | Titraille multiple, encarts ronds, contraste saturé            |
+| T-01-6-2 | Magazine télé               | Télé 7 Jours   | Grille de programmes, vignettes, encadrés horaires             |
+| T-01-6-3 | Presse musicale             | Rolling Stone  | Portrait pleine page, titre en surimpression, texte en réserve |
+| T-01-6-4 | Presse cinéma               | Première       | Affiche dominante, note en étoiles, colonne critique           |
+| T-01-6-5 | Presse jeux vidéo           | Edge           | Fond sombre, captures pleine largeur, note isolée              |
+| T-01-6-6 | Presse sportive quotidienne | L'Équipe       | Une à un mot, photo d'action, fond jaune signal                |
+| T-01-6-7 | Presse jeunesse             | magazine ado   | Couleurs vives, bulles, typographie ronde                      |
+| T-01-6-8 | Presse potin en ligne       | site de brèves | Vignettes empilées, titres à accroche, défilement infini       |
+
+## 01-7 — Presse gratuite & locale
+
+| ID       | Thème                      | Calibrage          | Signature                                           |
+| -------- | -------------------------- | ------------------ | --------------------------------------------------- |
+| T-01-7-1 | Quotidien gratuit du matin | 20 Minutes         | Brèves courtes, colonnes larges, photo unique       |
+| T-01-7-2 | Journal municipal          | bulletin de ville  | En-tête institutionnel, agenda, encadré pratique    |
+| T-01-7-3 | Gazette de quartier        | feuille locale     | Composition simple, annonces, calendrier            |
+| T-01-7-4 | Petites annonces           | journal d'annonces | Grille dense, catégories, prix en évidence          |
+| T-01-7-5 | Journal d'association      | lettre associative | Ton chaleureux, photos de groupe, remerciements     |
+| T-01-7-6 | Journal scolaire           | gazette d'école    | Typographie ronde, illustrations, couleurs franches |
+| T-01-7-7 | Journal d'entreprise       | interne            | Chiffres du mois, portraits de collaborateurs       |
+| T-01-7-8 | Affichette d'information   | avis public        | Une seule information, très grande, très lisible    |
+
+## 01-8 — Presse d'opinion & tribune
+
+| ID       | Thème                  | Calibrage        | Signature                                                 |
+| -------- | ---------------------- | ---------------- | --------------------------------------------------------- |
+| T-01-8-1 | Tribune signée         | page « Idées »   | Portrait de l'auteur, chapeau de qualité, texte long      |
+| T-01-8-2 | Éditorial du directeur | éditorial        | Colonne unique, signature manuscrite, filet d'encadrement |
+| T-01-8-3 | Débat contradictoire   | face-à-face      | Deux colonnes opposées, deux couleurs d'encre             |
+| T-01-8-4 | Manifeste              | texte collectif  | Capitales, liste de signataires, aucune image             |
+| T-01-8-5 | Lettre ouverte         | courrier public  | Mise en page de lettre, en-tête, formule d'adresse        |
+| T-01-8-6 | Critique culturelle    | chronique        | Note, extrait cité, colonne étroite                       |
+| T-01-8-7 | Billet d'humeur        | chronique courte | 300 mots, une chute, une signature                        |
+| T-01-8-8 | Dossier polémique      | contre-enquête   | Encadrés de réfutation, sources en vis-à-vis              |
+
+---
+
+# Famille 02 — Télévision & broadcast
+
+**Système.** Surface : opaque, sécurisée, jamais transparente au bord. Palette : un rouge signal, un bleu de
+chaîne, blanc pur. Typographie : sans condensé, capitales fréquentes, chiffres tabulaires. Grille : bandeau
+bas, tiers inférieur, zone titre haute. Mouvement : entrées glissées 300 ms, cascade 60 ms, jamais de fondu
+mou. Habillage : logo permanent, horloge, ticker. Son : nappe basse continue, virgules sonores.
+
+## 02-1 — Info continue
+
+| ID       | Thème                        | Calibrage          | Signature                                                |
+| -------- | ---------------------------- | ------------------ | -------------------------------------------------------- |
+| T-02-1-1 | Bandeau d'alerte permanente  | BFM TV             | Bandeau rouge plein, ticker continu, horloge haut-droite |
+| T-02-1-2 | Direct sobre                 | France Info        | Bleu institutionnel, bandeau simple, aucune surcharge    |
+| T-02-1-3 | Info continue internationale | Al Jazeera English | Habillage doré, double bandeau, mention de fuseau        |
+| T-02-1-4 | Info économique              | Bloomberg TV       | Rubans de cotations, quadrillage, chiffres partout       |
+| T-02-1-5 | Édition spéciale             | événement majeur   | Fond noir, mention « ÉDITION SPÉCIALE », logo réduit     |
+| T-02-1-6 | Alerte rouge                 | breaking news      | Bandeau clignotant, capitales, virgule sonore d'impact   |
+| T-02-1-7 | Résultats en direct          | soirée électorale  | Tableau de résultats, barres animées, carte              |
+| T-02-1-8 | Info continue nocturne       | rediffusion        | Palette assombrie, ticker ralenti, horloge dominante     |
+
+## 02-2 — Journal télévisé
+
+| ID       | Thème                    | Calibrage          | Signature                                               |
+| -------- | ------------------------ | ------------------ | ------------------------------------------------------- |
+| T-02-2-1 | JT de 20 heures          | TF1                | Tiers inférieur à deux niveaux, générique orchestral    |
+| T-02-2-2 | JT de service public     | France 2           | Bleu-blanc sobre, mention de correspondant              |
+| T-02-2-3 | JT régional              | France 3 régions   | Carte régionale, couleur locale, ton proche             |
+| T-02-2-4 | JT étranger de référence | BBC News at Ten    | Rouge et blanc, compte à rebours d'ouverture            |
+| T-02-2-5 | Flash d'information      | brève de 2 minutes | Titraille seule, aucun sujet développé                  |
+| T-02-2-6 | JT du matin              | matinale           | Palette claire, agenda du jour, météo intégrée          |
+| T-02-2-7 | JT en langue des signes  | accessibilité      | Cadre de traduction permanent, sous-titres obligatoires |
+| T-02-2-8 | JT d'archive             | années 1980        | Habillage vectoriel d'époque, mire, grain vidéo         |
+
+## 02-3 — Plateau & talk
+
+| ID       | Thème                      | Calibrage             | Signature                                            |
+| -------- | -------------------------- | --------------------- | ---------------------------------------------------- |
+| T-02-3-1 | Talk-show du soir          | Quotidien             | Cartons d'invités, ton rapide, couleurs saturées     |
+| T-02-3-2 | Débat politique            | émission de débat     | Chronomètre de temps de parole, pupitres, plan large |
+| T-02-3-3 | Talk américain             | The Tonight Show      | Rideau, orchestre, cartons dorés                     |
+| T-02-3-4 | Émission culturelle        | La Grande Librairie   | Bibliothèque, serif chaleureux, rythme lent          |
+| T-02-3-5 | Interview longue           | entretien             | Un seul carton de nom, aucun habillage superflu      |
+| T-02-3-6 | Émission de divertissement | prime time            | Habillage brillant, transitions spectaculaires       |
+| T-02-3-7 | Émission matinale          | talk du matin         | Palette pastel, horloge, rubrique service            |
+| T-02-3-8 | Plateau d'esport           | studio de compétition | Néons, statistiques latérales, tension bleue         |
+
+## 02-4 — Magazine documentaire TV
+
+| ID       | Thème                      | Calibrage            | Signature                                            |
+| -------- | -------------------------- | -------------------- | ---------------------------------------------------- |
+| T-02-4-1 | Magazine d'investigation   | Envoyé spécial       | Cartons de contexte, sources affichées, rythme grave |
+| T-02-4-2 | Documentaire animalier     | BBC Earth            | Typographie fine, cartes de localisation, silence    |
+| T-02-4-3 | Documentaire historique    | Arte                 | Archives, cartons de date, palette sépia             |
+| T-02-4-4 | Reportage de terrain       | grand reportage      | Caméra portée, cartons manuscrits, sous-titrage      |
+| T-02-4-5 | Magazine scientifique      | E=M6                 | Schémas animés, ton pédagogique, couleurs claires    |
+| T-02-4-6 | Documentaire de société    | Complément d'enquête | Interviews en contre-jour, cartons anonymisés        |
+| T-02-4-7 | Série documentaire premium | Netflix documentaire | Générique cinématographique, chapitrage, score       |
+| T-02-4-8 | Documentaire de voyage     | carnet de route      | Cartes tracées, cartons de lieu, musique locale      |
+
+## 02-5 — Météo & service
+
+| ID       | Thème                    | Calibrage              | Signature                                           |
+| -------- | ------------------------ | ---------------------- | --------------------------------------------------- |
+| T-02-5-1 | Bulletin météo national  | météo TF1              | Carte animée, pictogrammes, températures tabulaires |
+| T-02-5-2 | Météo marine             | bulletin côtier        | Vents, houle, symboles nautiques                    |
+| T-02-5-3 | Météo montagne           | bulletin neige         | Altitudes, risque d'avalanche, palette froide       |
+| T-02-5-4 | Vigilance                | alerte météo           | Code couleur officiel, départements, ton grave      |
+| T-02-5-5 | Info trafic              | bulletin routier       | Carte de routes, temps de parcours, icônes          |
+| T-02-5-6 | Qualité de l'air         | indice environnemental | Échelle colorée, conseils, chiffre unique           |
+| T-02-5-7 | Programme du jour        | grille de chaîne       | Bandeau horaire, vignettes de programmes            |
+| T-02-5-8 | Service public d'urgence | message officiel       | Fond uni, texte seul, aucune décoration             |
+
+## 02-6 — Télé-achat & promotion
+
+| ID       | Thème                   | Calibrage                 | Signature                                             |
+| -------- | ----------------------- | ------------------------- | ----------------------------------------------------- |
+| T-02-6-1 | Démonstration produit   | télé-achat classique      | Prix barré, incrustation permanente, compte à rebours |
+| T-02-6-2 | Offre limitée           | promotion flash           | Chronomètre géant, capitales, jaune et rouge          |
+| T-02-6-3 | Publireportage          | infomercial               | Faux plateau, témoignages, mention légale en bas      |
+| T-02-6-4 | Bandeau de sponsoring   | parrainage d'émission     | Logo animé 5 s, mention « en partenariat »            |
+| T-02-6-5 | Autopromotion de chaîne | bande-annonce interne     | Voix off, date de diffusion, logo final               |
+| T-02-6-6 | Appel aux dons          | téléthon                  | Compteur en direct, numéro géant, ton chaleureux      |
+| T-02-6-7 | Jeu et concours         | jeu télévisé              | Numéro surtaxé, mention légale, habillage doré        |
+| T-02-6-8 | Publicité de service    | message d'intérêt général | Ton sobre, mention officielle, aucune promesse        |
+
+## 02-7 — Habillage de chaîne
+
+| ID       | Thème                      | Calibrage         | Signature                                                 |
+| -------- | -------------------------- | ----------------- | --------------------------------------------------------- |
+| T-02-7-1 | Interprogramme             | jingle de chaîne  | Logo animé 3 s, couleur signature, virgule sonore         |
+| T-02-7-2 | Générique de saison        | habillage annuel  | Motif décliné, palette unique, rythme reconnaissable      |
+| T-02-7-3 | Bande-annonce de programme | promo             | Extraits montés, date en fin, voix off                    |
+| T-02-7-4 | Carton de sponsor          | avant-programme   | Logo partenaire, fond neutre, 5 secondes                  |
+| T-02-7-5 | Mire et fin de diffusion   | clôture d'antenne | Mire, horloge, silence                                    |
+| T-02-7-6 | Habillage jeunesse         | chaîne enfants    | Couleurs primaires, formes rondes, mouvement rebondissant |
+| T-02-7-7 | Habillage musique          | chaîne musicale   | Typographie graffée, transitions rapides, saturation      |
+| T-02-7-8 | Habillage sport            | chaîne sportive   | Diagonales, métal brossé, impacts sonores                 |
+
+## 02-8 — Direct événementiel
+
+| ID       | Thème                | Calibrage                | Signature                                             |
+| -------- | -------------------- | ------------------------ | ----------------------------------------------------- |
+| T-02-8-1 | Cérémonie officielle | discours d'État          | Habillage protocolaire, aucun ticker, plan fixe       |
+| T-02-8-2 | Remise de prix       | cérémonie de récompenses | Doré, nominés listés, enveloppe                       |
+| T-02-8-3 | Concert en direct    | captation live           | Nom d'artiste en tiers inférieur, minuteur de set     |
+| T-02-8-4 | Conférence de presse | point presse             | Bandeau de fonction, chrono de question               |
+| T-02-8-5 | Défilé national      | événement civique        | Cartons de régiment, plans aériens                    |
+| T-02-8-6 | Compte à rebours     | nouvel an                | Chiffres monumentaux, décompte synchronisé            |
+| T-02-8-7 | Lancement spatial    | direct technique         | Télémétrie, compte à rebours, vocabulaire de contrôle |
+| T-02-8-8 | Direct de crise      | événement grave          | Bandeau sobre, aucune musique, mention d'heure        |
+
+---
+
+# Famille 03 — Cinéma & trailer
+
+**Système.** Surface : noir profond, aucune interface. Palette : deux couleurs maximum. Typographie : sans
+espacée, capitales, interlettrage large, apparition par fondu. Grille : centre optique, marges généreuses.
+Mouvement : coupes sur impact, respirations longues, accélération finale. Habillage : cartons, logos de
+studio, bloc de crédits final. Son : le son commande le montage, pas l'inverse.
+
+## 03-1 — Teaser d'annonce
+
+| ID       | Thème               | Calibrage           | Signature                                      |
+| -------- | ------------------- | ------------------- | ---------------------------------------------- |
+| T-03-1-1 | Teaser énigmatique  | teaser A24          | Un seul plan, un seul mot, noir dominant       |
+| T-03-1-2 | Teaser à date       | annonce de sortie   | Date monumentale en fin, aucun dialogue        |
+| T-03-1-3 | Teaser de logo      | révélation de titre | Le titre se construit à l'écran, 20 secondes   |
+| T-03-1-4 | Teaser sonore       | annonce par le son  | Écran noir, son seul, une image finale         |
+| T-03-1-5 | Teaser de franchise | suite attendue      | Motif reconnaissable, thème musical connu      |
+| T-03-1-6 | Teaser de festival  | avant-première      | Lauriers, mention de sélection, sobriété       |
+| T-03-1-7 | Teaser vertical     | réseau social       | 9:16, sous-titres incrustés, accroche en 1,5 s |
+| T-03-1-8 | Teaser d'archive    | ressortie           | Grain argentique, carton « restauré »          |
+
+## 03-2 — Bande-annonce principale
+
+| ID       | Thème                        | Calibrage           | Signature                                        |
+| -------- | ---------------------------- | ------------------- | ------------------------------------------------ |
+| T-03-2-1 | Structure en trois actes     | trailer classique   | Mise en place, montée, salve finale              |
+| T-03-2-2 | Bande-annonce à cartons      | cartons narratifs   | Phrases en capitales entre les plans             |
+| T-03-2-3 | Bande-annonce silencieuse    | tension             | Aucune voix off, respiration entre chaque plan   |
+| T-03-2-4 | Bande-annonce d'action       | blockbuster         | Coupes sur temps fort, montée de tempo           |
+| T-03-2-5 | Bande-annonce d'auteur       | film de festival    | Plans longs, citations de presse, musique unique |
+| T-03-2-6 | Bande-annonce à voix off     | narration           | Voix grave, phrases scandées, structure imposée  |
+| T-03-2-7 | Bande-annonce comique        | comédie             | Rythme de vanne, coupes sèches, silence de chute |
+| T-03-2-8 | Bande-annonce internationale | version sous-titrée | Sous-titres intégrés, titre localisé             |
+
+## 03-3 — Générique de début
+
+| ID       | Thème                      | Calibrage           | Signature                                   |
+| -------- | -------------------------- | ------------------- | ------------------------------------------- |
+| T-03-3-1 | Générique typographique    | Saul Bass           | Formes découpées, mouvement graphique, jazz |
+| T-03-3-2 | Générique noir sur fond    | générique sobre     | Texte blanc sur noir, cadence régulière     |
+| T-03-3-3 | Générique intégré au décor | titres dans l'image | Le titre s'inscrit dans le plan réel        |
+| T-03-3-4 | Générique de série premium | HBO                 | Motif métaphorique, thème musical fort      |
+| T-03-3-5 | Générique documentaire     | ouverture factuelle | Cartes, archives, date d'ouverture          |
+| T-03-3-6 | Générique d'animation      | ouverture animée    | Personnages en défilé, couleurs saturées    |
+| T-03-3-7 | Générique rétro            | années 1970         | Grain, halations, typographie de l'époque   |
+| T-03-3-8 | Générique minimal          | ouverture d'auteur  | Un seul carton, une seule police, silence   |
+
+## 03-4 — Générique de fin
+
+| ID       | Thème                      | Calibrage            | Signature                                   |
+| -------- | -------------------------- | -------------------- | ------------------------------------------- |
+| T-03-4-1 | Défilement classique       | générique déroulant  | Colonne centrée, vitesse constante          |
+| T-03-4-2 | Générique à deux colonnes  | fonction / nom       | Alignement au centre, filet de séparation   |
+| T-03-4-3 | Générique illustré         | animation de fin     | Illustrations entre les blocs               |
+| T-03-4-4 | Générique avec scène post  | scène supplémentaire | Interruption du défilement, reprise ensuite |
+| T-03-4-5 | Générique de court métrage | fin brève            | 30 secondes, blocs groupés                  |
+| T-03-4-6 | Générique de jeu vidéo     | crédits interactifs  | Défilement contrôlable, musique en boucle   |
+| T-03-4-7 | Générique de documentaire  | mentions et sources  | Sources, remerciements, financements        |
+| T-03-4-8 | Générique de marque        | film corporate       | Logo final, mentions légales, silence       |
+
+## 03-5 — Film d'auteur & festival
+
+| ID       | Thème                     | Calibrage           | Signature                                 |
+| -------- | ------------------------- | ------------------- | ----------------------------------------- |
+| T-03-5-1 | Sélection officielle      | Cannes              | Lauriers dorés, plans longs, aucun effet  |
+| T-03-5-2 | Cinéma indépendant        | Sundance            | Typographie manuscrite, palette délavée   |
+| T-03-5-3 | Cinéma nordique           | festival scandinave | Froid, vide, cadre large                  |
+| T-03-5-4 | Cinéma asiatique d'auteur | festival asiatique  | Composition frontale, vertical, silence   |
+| T-03-5-5 | Rétrospective             | hommage             | Noir et blanc, cartons de date, archives  |
+| T-03-5-6 | Film expérimental         | avant-garde         | Typographie déconstruite, montage heurté  |
+| T-03-5-7 | Documentaire de création  | making-of d'auteur  | Caméra portée, texte manuscrit            |
+| T-03-5-8 | Film de fin d'études      | école de cinéma     | Sobre, générique complet, mention d'école |
+
+## 03-6 — Blockbuster & franchise
+
+| ID       | Thème              | Calibrage           | Signature                                       |
+| -------- | ------------------ | ------------------- | ----------------------------------------------- |
+| T-03-6-1 | Révélation de logo | franchise majeure   | Métal, éclat, impact sonore, 3 secondes         |
+| T-03-6-2 | Montage d'action   | film d'action       | Coupes sur percussion, plans de 12 images       |
+| T-03-6-3 | Science-fiction    | espace              | Bleu-noir, typographie fine espacée, grondement |
+| T-03-6-4 | Super-héros        | film de super-héros | Couleurs primaires, plans héroïques ascendants  |
+| T-03-6-5 | Fantastique        | monde secondaire    | Doré, cartes, voix de conteur                   |
+| T-03-6-6 | Catastrophe        | film catastrophe    | Échelle, compte à rebours, sirènes              |
+| T-03-6-7 | Suite annoncée     | teaser de suite     | Reprise du motif précédent, variation           |
+| T-03-6-8 | Univers partagé    | annonce croisée     | Logos multiples, chronologie affichée           |
+
+## 03-7 — Horreur & thriller
+
+| ID       | Thème                  | Calibrage          | Signature                                  |
+| -------- | ---------------------- | ------------------ | ------------------------------------------ |
+| T-03-7-1 | Horreur atmosphérique  | épouvante lente    | Silence, hors-champ, un seul sursaut       |
+| T-03-7-2 | Horreur brutale        | slasher            | Coupes violentes, rouge, grain             |
+| T-03-7-3 | Found footage          | caméra trouvée     | Timecode, batterie faible, image dégradée  |
+| T-03-7-4 | Thriller psychologique | tension mentale    | Cadres serrés, dérive sonore, respiration  |
+| T-03-7-5 | Polar                  | enquête            | Nuit, néons, pluie, typographie de dossier |
+| T-03-7-6 | Horreur folklorique    | rituel             | Symboles, chants, palette terreuse         |
+| T-03-7-7 | Horreur numérique      | écran d'ordinateur | Interface, curseur, notifications          |
+| T-03-7-8 | Anthologie             | segments multiples | Cartons de chapitre, ruptures de ton       |
+
+## 03-8 — Animation & famille
+
+| ID       | Thème                     | Calibrage              | Signature                                         |
+| -------- | ------------------------- | ---------------------- | ------------------------------------------------- |
+| T-03-8-1 | Animation grand studio    | Pixar                  | Lumière chaude, humour de rythme, thème mélodique |
+| T-03-8-2 | Animation japonaise       | Ghibli                 | Aquarelle, ciel, silence, plans de respiration    |
+| T-03-8-3 | Animation stop-motion     | Laika                  | Texture de matière, éclairage contrasté           |
+| T-03-8-4 | Animation 2D              | dessin animé classique | Aplats, contours nets, mouvement franc            |
+| T-03-8-5 | Animation adulte          | animation pour adultes | Palette sombre, humour noir, typographie brute    |
+| T-03-8-6 | Comédie familiale         | film tout public       | Couleurs vives, musique pop, promesse de rire     |
+| T-03-8-7 | Aventure jeunesse         | film d'aventure        | Cartes, boussole, ton d'expédition                |
+| T-03-8-8 | Court métrage d'animation | format court           | Une seule idée, 3 minutes, silence final          |
+
+---
+
+# Famille 04 — Jeu vidéo
+
+**Système.** Surface : sombre, interface assumée. Palette : deux accents lumineux sur fond noir. Typographie :
+sans technique et mono, chiffres tabulaires, capitales. Grille : coins d'écran, HUD, alignement sur les
+bords. Mouvement : accroche instantanée, tremblement d'impact, accélération. Habillage : logos de plateforme,
+classification d'âge, date de sortie. Son : basse, impact, silence avant révélation.
+
+## 04-1 — Trailer d'annonce
+
+| ID       | Thème                        | Calibrage            | Signature                                 |
+| -------- | ---------------------------- | -------------------- | ----------------------------------------- |
+| T-04-1-1 | Révélation cinématique       | reveal de conférence | Aucune image de jeu, montée jusqu'au logo |
+| T-04-1-2 | Révélation par le monde      | plan d'univers       | Travelling long, échelle, silence         |
+| T-04-1-3 | Révélation par le personnage | héros dévoilé        | Dos puis visage, thème musical            |
+| T-04-1-4 | Annonce à date               | date de sortie       | Chiffres monumentaux, plateformes en fin  |
+| T-04-1-5 | Annonce de suite             | numéro de série      | Le chiffre est le sujet du trailer        |
+| T-04-1-6 | Annonce de remake            | jeu restauré         | Comparaison avant / après, nostalgie      |
+| T-04-1-7 | Annonce surprise             | shadow drop          | Mention « disponible maintenant » en fin  |
+| T-04-1-8 | Annonce indépendante         | révélation indé      | Ton personnel, voix du créateur           |
+
+## 04-2 — Trailer de gameplay
+
+| ID       | Thème                     | Calibrage            | Signature                                   |
+| -------- | ------------------------- | -------------------- | ------------------------------------------- |
+| T-04-2-1 | Démonstration commentée   | gameplay walkthrough | Voix de développeur, HUD visible            |
+| T-04-2-2 | Montage d'action          | gameplay monté       | Coupes sur temps fort, aucune voix          |
+| T-04-2-3 | Vitrine de mécanique      | focus système        | Un mécanisme, expliqué par l'image          |
+| T-04-2-4 | Comparatif de performance | mode technique       | Compteur d'images, résolution affichée      |
+| T-04-2-5 | Trailer de monde ouvert   | exploration          | Carte, biomes, plans aériens                |
+| T-04-2-6 | Trailer de combat         | système de combat    | Ralenti sur impact, compteur de coups       |
+| T-04-2-7 | Trailer coopératif        | multijoueur          | Écran partagé, voix de joueurs              |
+| T-04-2-8 | Trailer d'accessibilité   | options              | Démonstration des réglages, ton pédagogique |
+
+## 04-3 — Trailer de lancement
+
+| ID       | Thème                              | Calibrage           | Signature                                 |
+| -------- | ---------------------------------- | ------------------- | ----------------------------------------- |
+| T-04-3-1 | Lancement épique                   | launch trailer      | Musique licenciée, montage de tout le jeu |
+| T-04-3-2 | Lancement à citations              | critiques           | Notes de presse incrustées                |
+| T-04-3-3 | Lancement en prise de vues réelles | live action         | Acteurs, décor réel, clin d'œil au jeu    |
+| T-04-3-4 | Lancement narratif                 | histoire            | Voix de personnage, arc résumé            |
+| T-04-3-5 | Lancement de portage               | nouvelle plateforme | Mention de plateforme dominante           |
+| T-04-3-6 | Lancement d'édition                | édition spéciale    | Contenu listé, objets physiques           |
+| T-04-3-7 | Lancement vertical                 | réseau social       | 9:16, accroche immédiate, sous-titres     |
+| T-04-3-8 | Lancement d'accès anticipé         | early access        | Feuille de route affichée, ton honnête    |
+
+## 04-4 — Habillage HUD & interface
+
+| ID       | Thème               | Calibrage               | Signature                                   |
+| -------- | ------------------- | ----------------------- | ------------------------------------------- |
+| T-04-4-1 | HUD militaire       | tactique                | Réticules, données, vert phosphore          |
+| T-04-4-2 | HUD science-fiction | interface holographique | Bleu translucide, glitch, profondeur        |
+| T-04-4-3 | HUD minimal         | immersion               | Presque rien, apparition contextuelle       |
+| T-04-4-4 | HUD rétro           | pixel                   | Cadres pixelisés, police bitmap             |
+| T-04-4-5 | HUD de course       | simulation              | Compteurs, tours, chronométrage             |
+| T-04-4-6 | HUD de jeu de rôle  | statistiques            | Jauges, inventaire, icônes de sort          |
+| T-04-4-7 | HUD de stratégie    | vue tactique            | Mini-carte, ressources, files de production |
+| T-04-4-8 | HUD de survie       | jauges vitales          | Faim, froid, endurance, dégradation         |
+
+## 04-5 — Esport & compétition
+
+| ID       | Thème                        | Calibrage             | Signature                                  |
+| -------- | ---------------------------- | --------------------- | ------------------------------------------ |
+| T-04-5-1 | Habillage de tournoi         | finale internationale | Tableau, équipes, score permanent          |
+| T-04-5-2 | Présentation d'équipe        | roster                | Portraits, pseudonymes, statistiques       |
+| T-04-5-3 | Récapitulatif de manche      | résumé                | Temps forts, chiffres, ralentis            |
+| T-04-5-4 | Tableau de classement        | ligue                 | Grille, points, évolution                  |
+| T-04-5-5 | Compte à rebours d'ouverture | avant-match           | Chronomètre, montée sonore                 |
+| T-04-5-6 | Analyse d'après-match        | plateau               | Schémas tactiques, télestration            |
+| T-04-5-7 | Cérémonie de titre           | remise de trophée     | Doré, confettis, ralenti                   |
+| T-04-5-8 | Habillage de créateur        | tournoi communautaire | Ton décontracté, couleurs de la communauté |
+
+## 04-6 — Indépendant & pixel
+
+| ID       | Thème                   | Calibrage             | Signature                                |
+| -------- | ----------------------- | --------------------- | ---------------------------------------- |
+| T-04-6-1 | Pixel art rétro         | 8 bits                | Palette limitée, police bitmap, chiptune |
+| T-04-6-2 | Pixel art moderne       | 16 bits enrichi       | Éclairage dynamique, palette étendue     |
+| T-04-6-3 | Dessiné à la main       | illustration          | Traits visibles, texture papier          |
+| T-04-6-4 | Minimalisme géométrique | formes pures          | Aplats, mouvement épuré, silence         |
+| T-04-6-5 | Jeu narratif            | roman visuel          | Texte central, choix, portraits          |
+| T-04-6-6 | Jeu de plateforme       | précision             | Rythme rapide, compteur de morts         |
+| T-04-6-7 | Jeu contemplatif        | ambiance              | Lent, ambiant, sans interface            |
+| T-04-6-8 | Jeu d'auteur            | signature personnelle | Ton intime, présence du créateur         |
+
+## 04-7 — Mise à jour & saison
+
+| ID       | Thème                       | Calibrage            | Signature                                     |
+| -------- | --------------------------- | -------------------- | --------------------------------------------- |
+| T-04-7-1 | Bande-annonce de saison     | nouvelle saison      | Thème saisonnier, passe de combat             |
+| T-04-7-2 | Notes de version illustrées | patch notes          | Listes, avant / après, chiffres d'équilibrage |
+| T-04-7-3 | Nouveau contenu             | extension            | Nouvelle zone, nouveaux personnages           |
+| T-04-7-4 | Événement limité            | événement temporaire | Compte à rebours, récompenses listées         |
+| T-04-7-5 | Collaboration croisée       | crossover            | Deux identités visuelles fusionnées           |
+| T-04-7-6 | Retour de contenu           | rediffusion          | Mention « de retour », nostalgie              |
+| T-04-7-7 | Feuille de route            | roadmap              | Chronologie, jalons, transparence             |
+| T-04-7-8 | Message de fin de service   | arrêt de service     | Ton respectueux, remerciements, date          |
+
+## 04-8 — Édition collector & précommande
+
+| ID       | Thème                    | Calibrage           | Signature                                   |
+| -------- | ------------------------ | ------------------- | ------------------------------------------- |
+| T-04-8-1 | Déballage de collector   | unboxing            | Objets présentés un par un, lumière rasante |
+| T-04-8-2 | Comparatif d'éditions    | tableau d'offres    | Colonnes, contenus cochés, prix             |
+| T-04-8-3 | Bonus de précommande     | incitation          | Objets exclusifs, date limite               |
+| T-04-8-4 | Édition d'art            | artbook             | Planches, croquis, papier                   |
+| T-04-8-5 | Figurine et objet        | produit dérivé      | Rotation à 360°, échelle, matière           |
+| T-04-8-6 | Bande originale physique | vinyle              | Pochette, sillon, ton audiophile            |
+| T-04-8-7 | Édition de studio        | boutique officielle | Habillage de marque, sobriété               |
+| T-04-8-8 | Édition anniversaire     | rééditions          | Chiffre d'anniversaire, archives            |

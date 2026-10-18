@@ -1,0 +1,457 @@
+# Catalogue des thèmes — Volume B : familles 05 à 08 (256 thèmes)
+
+> Mêmes conventions que le volume A. La colonne **Calibrage** est privée (`calibration.ref`), jamais rendue,
+> jamais publiée. Le nom public est l'archétype de genre.
+
+---
+
+# Famille 05 — Publicité & retail
+
+**Système.** Surface : pleine, saturée, aucun vide. Palette : couleur d'enseigne dominante + jaune ou rouge
+de prix. Typographie : sans très gras, capitales, prix en corps monumental. Grille : produit à gauche, prix à
+droite, mention légale en pied. Mouvement : apparition franche, aucun raffinement. Habillage : logo, prix
+barré, mention obligatoire, date de validité. Son : jingle court, voix enthousiaste.
+
+## 05-1 — Grande distribution & prospectus
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-1-1 | Prospectus hebdomadaire | Carrefour | Grille de produits, prix en pastille, fond blanc |
+| T-05-1-2 | Prix bas permanent | Lidl | Bleu-jaune, prix géant, promesse unique |
+| T-05-1-3 | Enseigne de proximité | Franprix | Palette chaude, sélection courte, ton local |
+| T-05-1-4 | Enseigne premium | Grand Frais | Photographie de matière, fond noir, moins de prix |
+| T-05-1-5 | Catalogue saisonnier | La Redoute catalogue | Thème saisonnier, sommaire, pagination |
+| T-05-1-6 | Drive et livraison | Carrefour Drive | Interface d'application, créneaux, panier |
+| T-05-1-7 | Carte de fidélité | Carte U | Cagnotte, points, offre personnalisée |
+| T-05-1-8 | Affichage en magasin | PLV | Très gros caractères, lisible à 5 mètres |
+
+## 05-2 — Promotion & prix choc
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-2-1 | Vente flash | Amazon Prime Day | Chronomètre, rouge, capitales |
+| T-05-2-2 | Soldes | Soldes Galeries Lafayette | Pourcentage géant, prix barré |
+| T-05-2-3 | Deuxième à moitié prix | Sephora 2eme a -50% | Schéma de l'offre, pictogrammes |
+| T-05-2-4 | Déstockage | Liquidation Toys R Us | Typographie brute, urgence maximale |
+| T-05-2-5 | Vendredi noir | Black Friday Fnac | Noir et fluo, compte à rebours |
+| T-05-2-6 | Code de réduction | Uber Eats code promo | Code encadré, copie en un geste |
+| T-05-2-7 | Offre de parrainage | Boursorama parrainage | Deux personnages, double gain |
+| T-05-2-8 | Dernière chance | Ryanair derniere chance | Une seule information, très grande |
+
+## 05-3 — Alimentaire & food
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-3-1 | Gros plan appétissant | McDonald's food styling | Macro, vapeur, lumière rasante, ralenti |
+| T-05-3-2 | Restauration rapide | Burger King | Couleurs primaires, rythme rapide, jingle |
+| T-05-3-3 | Produit du terroir | AOP | Papier kraft, typographie manuscrite, terre |
+| T-05-3-4 | Boisson rafraîchissante | Coca-Cola | Gouttes, glace, contraste, éclaboussure |
+| T-05-3-5 | Recette pas à pas | Marmiton | Vue plongeante, ingrédients listés, minuteur |
+| T-05-3-6 | Alimentation santé | Yuka | Blanc, vert, tableau nutritionnel |
+| T-05-3-7 | Pâtisserie & chocolat | Pierre Herme | Doré, matière, ralenti extrême |
+| T-05-3-8 | Livraison de repas | Deliveroo | Interface, temps estimé, carte |
+
+## 05-4 — Automobile
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-4-1 | Berline premium | Mercedes-Benz Classe S | Route de nuit, reflets, voix grave |
+| T-05-4-2 | Citadine populaire | segment B | Ton léger, ville, couleurs vives |
+| T-05-4-3 | Véhicule électrique | Tesla Model 3 | Silence, bleu, chiffres d'autonomie |
+| T-05-4-4 | Utilitaire professionnel | Renault Trafic | Charge utile, chiffres, ton pratique |
+| T-05-4-5 | Sportive | Porsche 911 | Circuit, chronomètre, son moteur |
+| T-05-4-6 | Tout-terrain | Land Rover Defender | Poussière, pente, plans aériens |
+| T-05-4-7 | Offre de financement | Peugeot LOA | Mensualité en évidence, mentions légales |
+| T-05-4-8 | Salon automobile | Mondial de l'Auto Paris | Plateau tournant, fiche technique |
+
+## 05-5 — Santé & pharmacie
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-5-1 | Médicament sans ordonnance | Doliprane | Blanc-bleu, mention obligatoire, ton rassurant |
+| T-05-5-2 | Complément alimentaire | Arkopharma | Nature, capsules, allégations encadrées |
+| T-05-5-3 | Dispositif médical | Dexcom | Schéma anatomique, ton clinique |
+| T-05-5-4 | Prévention publique | Sante publique France | Institutionnel, sobre, message unique |
+| T-05-5-5 | Cabinet et praticien | Doctolib | Portrait, horaires, prise de rendez-vous |
+| T-05-5-6 | Optique & audition | Krys | Avant / après, essai gratuit |
+| T-05-5-7 | Assurance santé | Harmonie Mutuelle | Tableau de garanties, chiffres |
+| T-05-5-8 | Bien-être & sommeil | Calm | Palette apaisée, rythme lent |
+
+## 05-6 — Télécom & énergie
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-6-1 | Forfait mobile | Free Mobile | Prix mensuel géant, débit, engagement |
+| T-05-6-2 | Fibre et box | Freebox Ultra | Vitesse, schéma de foyer, installation |
+| T-05-6-3 | Offre groupée | Orange Open | Icônes multiples, économie affichée |
+| T-05-6-4 | Fournisseur d'énergie | EDF | Comparatif de prix, ton institutionnel |
+| T-05-6-5 | Énergie renouvelable | Enercoop | Vert, éolienne, engagement chiffré |
+| T-05-6-6 | Sobriété énergétique | Ecowatt | Conseils, gestes, pictogrammes |
+| T-05-6-7 | Assistance et service client | Sosh assistance | Ton humain, canaux listés |
+| T-05-6-8 | Couverture réseau | Arcep carte de couverture | Carte colorée, mention de mesure |
+
+## 05-7 — Banque & assurance grand public
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-7-1 | Banque en ligne | Revolut | Interface mobile, gratuité, ton direct |
+| T-05-7-2 | Banque traditionnelle | Credit Agricole | Conseiller, confiance, bleu institutionnel |
+| T-05-7-3 | Crédit immobilier | Pretto | Taux, simulation, mentions légales longues |
+| T-05-7-4 | Épargne et placement | Yomoni | Courbe, rendement, avertissement de risque |
+| T-05-7-5 | Assurance habitation | MAIF habitation | Sinistre illustré, garanties cochées |
+| T-05-7-6 | Assurance automobile | AXA auto | Bonus, franchise, comparatif |
+| T-05-7-7 | Paiement et carte | Apple Pay | Carte en rotation, sans contact |
+| T-05-7-8 | Investissement responsable | Green-Got | Vert sobre, critères, transparence |
+
+## 05-8 — Immobilier & habitat
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-05-8-1 | Annonce de vente | SeLoger | Photo principale, surface, prix, DPE |
+| T-05-8-2 | Programme neuf | Bouygues Immobilier | Perspective 3D, plan de masse, livraison |
+| T-05-8-3 | Location saisonnière | Airbnb | Galerie, note, disponibilités |
+| T-05-8-4 | Visite virtuelle | Matterport | Parcours fléché, plan interactif |
+| T-05-8-5 | Rénovation | Leroy Merlin | Avant / après, devis, aides |
+| T-05-8-6 | Ameublement | IKEA | Pièce mise en scène, prix par article |
+| T-05-8-7 | Jardin et extérieur | Truffaut | Lumière naturelle, saison |
+| T-05-8-8 | Bien d'exception | Sotheby's International Realty | Noir et or, plans lents, discrétion |
+
+---
+
+# Famille 06 — Luxe & mode
+
+**Système.** Surface : vide dominant, matière plutôt que couleur. Palette : noir, blanc, un métal. Typographie :
+didone à fort contraste ou grotesque très espacé, capitales, interlettrage large. Grille : marges énormes,
+composition asymétrique. Mouvement : très lent, fondus longs, aucun rebond. Habillage : logo discret,
+signature en fin. Son : silence, ou nappe unique.
+
+## 06-1 — Défilé & collection
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-1-1 | Défilé haute couture | Chanel Haute Couture | Plan fixe de podium, silence, nom en fin |
+| T-06-1-2 | Prêt-à-porter | Celine | Rythme régulier, sortie par sortie |
+| T-06-1-3 | Défilé expérimental | Comme des Garcons | Décor comme sujet, typographie déconstruite |
+| T-06-1-4 | Coulisses | Dior backstage | Grain, noir et blanc, gestes de préparation |
+| T-06-1-5 | Lookbook | COS lookbook | Fond neutre, pose frontale, numérotation |
+| T-06-1-6 | Collection capsule | Uniqlo U capsule | Une seule pièce, un seul plan, une date |
+| T-06-1-7 | Défilé masculin | Dior Homme | Cadre plus serré, palette réduite |
+| T-06-1-8 | Archive de maison | Yves Saint Laurent archives | Photographies d'archive, dates, filiation |
+
+## 06-2 — Campagne de marque
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-2-1 | Campagne à égérie | Dior J'adore | Un visage, un logo, rien d'autre |
+| T-06-2-2 | Campagne narrative | Chanel Le Film | Récit de 60 secondes, marque en fin |
+| T-06-2-3 | Campagne en noir et blanc | Calvin Klein noir et blanc | Grain, contraste, silence |
+| T-06-2-4 | Campagne en extérieur | Moncler | Nature monumentale, silhouette |
+| T-06-2-5 | Campagne d'archive | Levi's archive | Visuel historique, mention d'année |
+| T-06-2-6 | Campagne de rue | Supreme | Mouvement, foule, spontanéité |
+| T-06-2-7 | Campagne de fêtes | Burberry Christmas | Or, lumière, générosité |
+| T-06-2-8 | Campagne engagée | Patagonia | Texte seul, typographie monumentale |
+
+## 06-3 — Joaillerie & horlogerie
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-3-1 | Pièce unique | Cartier Haute Joaillerie | Macro sur fond noir, rotation lente |
+| T-06-3-2 | Mécanisme horloger | Patek Philippe | Rouages, tolérances, vocabulaire technique |
+| T-06-3-3 | Montre de plongée | Rolex Submariner | Eau, profondeur, lisibilité |
+| T-06-3-4 | Montre habillée | Jaeger-LeCoultre Reverso | Poignet, manchette, lumière douce |
+| T-06-3-5 | Geste d'atelier | Van Cleef & Arpels atelier | Mains, outils, silence de travail |
+| T-06-3-6 | Pierre et matière | Gemological Institute of America | Lumière traversante, éclat, échelle |
+| T-06-3-7 | Vente aux enchères | Christie's | Numéro de lot, estimation, provenance |
+| T-06-3-8 | Alliance et mariage | Tiffany & Co. | Ton intime, texture de tissu |
+
+## 06-4 — Parfum & beauté
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-4-1 | Film de parfum | Chanel N5 | Métaphore, ralenti, voix murmurée |
+| T-06-4-2 | Flacon en majesté | Guerlain packshot | Fond dégradé, reflets, rotation |
+| T-06-4-3 | Notes olfactives | Le Labo | Ingrédients en cascade, typographie fine |
+| T-06-4-4 | Soin de la peau | La Mer | Texture, blanc clinique, résultat chiffré |
+| T-06-4-5 | Maquillage | MAC Cosmetics | Nuancier, application, contraste |
+| T-06-4-6 | Rituel | Shiseido rituel | Étapes numérotées, rythme lent |
+| T-06-4-7 | Beauté inclusive | Fenty Beauty | Nuancier étendu, portraits multiples |
+| T-06-4-8 | Beauté naturelle | Aesop | Kraft, plante, liste d'ingrédients |
+
+## 06-5 — Éditorial de mode
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-5-1 | Série mode de magazine | Vogue | Double page, titre en didone, crédits en pied |
+| T-06-5-2 | Éditorial expérimental | Dazed | Grille cassée, superpositions |
+| T-06-5-3 | Couverture de magazine | Vogue Paris couverture | Titre géant derrière le sujet, bandeaux |
+| T-06-5-4 | Sommaire | Harper's Bazaar sommaire | Numérotation, vignettes, titres |
+| T-06-5-5 | Portrait de créateur | System Magazine | Portrait en pied, citations détachées |
+| T-06-5-6 | Tendances de saison | WGSN | Planches thématiques, mots-clés |
+| T-06-5-7 | Mode de rue | The Sartorialist | Photos volées, légendes de lieu |
+| T-06-5-8 | Mode d'archive | Vogue Archive | Sépia, dates, filiation stylistique |
+
+## 06-6 — Maroquinerie & artisanat
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-6-1 | Sac emblématique | Hermes Birkin | Un seul objet, lumière tournante |
+| T-06-6-2 | Cuir et matière | Tannerie d'Annonay | Macro de grain, mains, odeur suggérée |
+| T-06-6-3 | Atelier | Hermes atelier | Gestes, outils, durée réelle |
+| T-06-6-4 | Chaussure | Berluti | Profil, semelle, construction |
+| T-06-6-5 | Malle et voyage | Louis Vuitton malle | Étiquettes, destinations, patine |
+| T-06-6-6 | Personnalisation | Goyard personnalisation | Initiales, choix de couleur |
+| T-06-6-7 | Restauration | Hermes restauration | Avant / après, geste de soin |
+| T-06-6-8 | Petite maroquinerie | Smythson | Objets alignés, échelle, ordre |
+
+## 06-7 — Hôtellerie & art de vivre
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-7-1 | Palace | Le Bristol Paris | Enfilade, lumière naturelle, silence |
+| T-06-7-2 | Hôtel de charme | Aman Kyoto | Ton chaleureux, détail domestique |
+| T-06-7-3 | Table gastronomique | Noma | Assiette centrée, fond sombre, dressage |
+| T-06-7-4 | Spa et bien-être | Six Senses | Eau, vapeur, rythme très lent |
+| T-06-7-5 | Croisière et yacht | Ponant | Horizon, teck, mouvement de houle |
+| T-06-7-6 | Domaine viticole | Chateau Margaux | Vigne, cave, millésime |
+| T-06-7-7 | Villa et location | Le Collectionist | Plan, vues, saison |
+| T-06-7-8 | Expérience sur mesure | Quintessentially | Ton discret, itinéraire, exclusivité |
+
+## 06-8 — Vente aux enchères & patrimoine
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-06-8-1 | Catalogue de vente | Christie's catalogue | Numéro de lot, estimation, provenance |
+| T-06-8-2 | Pièce maîtresse | Sotheby's lot phare | Une œuvre, fond neutre, fiche complète |
+| T-06-8-3 | Vacation en direct | Drouot | Enchères en temps réel, marteau |
+| T-06-8-4 | Expertise | Artcurial expertise | Détail, signature, rapport |
+| T-06-8-5 | Collection privée | Collection Yves Saint Laurent Pierre Berge | Récit de collectionneur, photographies d'archive |
+| T-06-8-6 | Art ancien | Old Masters Sotheby's | Cadre doré, éclairage muséal |
+| T-06-8-7 | Design de collection | Phillips Design | Fiche d'édition, designer, année |
+| T-06-8-8 | Objet historique | Bonhams | Contexte, date, conservation |
+
+---
+
+# Famille 07 — Social vertical
+
+**Système.** Surface : plein cadre 9:16, aucune marge perdue. Palette : contraste fort, lisible sur petit
+écran. Typographie : sans très lisible, sous-titres permanents, texte dans les zones sûres. Grille : zone
+haute libre (interface), zone basse libre (interface), action au centre. Mouvement : accroche dans les
+1,5 première seconde, coupes toutes les 2 à 3 secondes. Habillage : sous-titres, minuteur, appel à l'action.
+Son : première seconde sonore, musique tendance.
+
+## 07-1 — Accroche courte
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-1-1 | Question directe | Hormozi hook | Question à l'écran dès l'image 1 |
+| T-07-1-2 | Affirmation contre-intuitive | Naval Ravikant clip | Phrase choc, fond uni, zéro décor |
+| T-07-1-3 | Compte à rebours | MrBeast countdown | Chiffre décroissant, tension sonore |
+| T-07-1-4 | Promesse chiffrée | Ali Abdaal 3 things | Numérotation visible, progression |
+| T-07-1-5 | Interruption visuelle | Zach King | Mouvement inattendu à la seconde 1 |
+| T-07-1-6 | Aveu personnel | Casey Neistat | Visage caméra, sous-titres, aucune musique |
+| T-07-1-7 | Cliffhanger | Airrack cliffhanger | Le sujet n'est révélé qu'à la fin |
+| T-07-1-8 | Démonstration immédiate | Mark Rober | Le résultat en premier, l'explication après |
+
+## 07-2 — Tutoriel pas à pas
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-2-1 | Étapes numérotées | Tasty steps | Numéro géant par étape, minuteur |
+| T-07-2-2 | Vue plongeante | Bon Appetit overhead | Table, gestes, aucun visage |
+| T-07-2-3 | Capture d'écran | Figma tutoriel | Curseur agrandi, zooms, annotations |
+| T-07-2-4 | Recette express | Chef Club | Ingrédients listés, minuteur, coupe sèche |
+| T-07-2-5 | Astuce unique | Thomas Frank tip | Une seule astuce, 15 secondes |
+| T-07-2-6 | Erreur fréquente | Adam Ragusea | Le faux d'abord, le vrai ensuite |
+| T-07-2-7 | Tutoriel commenté | Peter McKinnon | Rythme de parole, sous-titres synchronisés |
+| T-07-2-8 | Fiche récapitulative | Notion template recap | Écran de synthèse à conserver |
+
+## 07-3 — Avant / après
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-3-1 | Volet coulissant | Nike Air Max avant apres | Ligne de séparation déplaçable |
+| T-07-3-2 | Fondu de transformation | Glow Recipe transformation | Transition douce, même cadrage |
+| T-07-3-3 | Écran partagé | Adobe Firefly split | Deux moitiés, même échelle |
+| T-07-3-4 | Chronologie | Kurzgesagt timeline | Dates incrustées, accélération |
+| T-07-3-5 | Rénovation | Leroy Merlin renovation | Panoramique identique, avant puis après |
+| T-07-3-6 | Transformation personnelle | Chloe Ting | Ton sincère, chiffres de progression |
+| T-07-3-7 | Restauration d'objet | My Mechanics | Macro, matière, geste |
+| T-07-3-8 | Avant / après créatif | Procreate sketch to render | Croquis puis rendu final |
+
+## 07-4 — Carrousel informatif
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-4-1 | Carrousel pédagogique | Kurzgesagt carrousel | Titre, une idée par planche, planche de synthèse |
+| T-07-4-2 | Carrousel de données | Our World in Data | Un graphique par planche, source en fin |
+| T-07-4-3 | Carrousel de citations | The Almanack Of Naval Ravikant | Grande typographie, attribution |
+| T-07-4-4 | Carrousel de portfolio | Behance portfolio | Une image par planche, légende courte |
+| T-07-4-5 | Carrousel de liste | Wired top list | Numérotation décroissante, révélation finale |
+| T-07-4-6 | Carrousel de comparaison | Wirecutter comparatif | Colonnes, avantages, verdict |
+| T-07-4-7 | Carrousel narratif | Humans of New York | Enchaînement de scènes, chute |
+| T-07-4-8 | Carrousel d'annonce | Apple carrousel de lancement | Teasing, révélation, appel à l'action |
+
+## 07-5 — Story éphémère
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-5-1 | Coulisses du jour | A24 behind the scenes | Ton brut, texte manuscrit, spontané |
+| T-07-5-2 | Sondage | Instagram sondage | Question, deux réponses, résultat |
+| T-07-5-3 | Compte à rebours d'événement | Nintendo Direct countdown | Minuteur natif, rappel |
+| T-07-5-4 | Relais de publication | Repost Hypebeast | Cadre, mention, flèche |
+| T-07-5-5 | Question ouverte | AMA Reddit | Question affichée, réponse en vidéo |
+| T-07-5-6 | Journée en accéléré | Day in the life Nas Daily | Horodatage, enchaînement rapide |
+| T-07-5-7 | Annonce brève | Notion changelog story | Un seul écran, une seule phrase |
+| T-07-5-8 | Remerciement | Patagonia remerciement | Ton direct, visage, aucune production |
+
+## 07-6 — Réaction & commentaire
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-6-1 | Réaction en incrustation | TikTok Duet | Fenêtre de réaction en coin, source visible |
+| T-07-6-2 | Commentaire d'actualité | HugoDecrypte | Capture d'article, surlignage, verdict |
+| T-07-6-3 | Réponse à un commentaire | Marques Brownlee reponse | Commentaire épinglé à l'écran |
+| T-07-6-4 | Fact-checking | AFP Factuel | Vrai / faux, sources listées |
+| T-07-6-5 | Analyse d'image | Every Frame a Painting | Zooms, flèches, annotations |
+| T-07-6-6 | Débat à deux voix | Arte Le Dessous des cartes | Deux positions, deux couleurs |
+| T-07-6-7 | Réaction humoristique | Khaby Lame | Coupes sèches, effet sonore |
+| T-07-6-8 | Mise au point | Mise au point Squeezie | Ton posé, texte à l'écran, aucune musique |
+
+## 07-7 — Compte à rebours & annonce
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-7-1 | Révélation progressive | Apple teaser progressif | Un indice par jour, même gabarit |
+| T-07-7-2 | Jour J | PlayStation State of Play | Date monumentale, appel à l'action |
+| T-07-7-3 | Lancement de produit | Framework Laptop | Produit, prix, lien |
+| T-07-7-4 | Ouverture d'inscriptions | Y Combinator applications | Compteur de places, urgence |
+| T-07-7-5 | Sortie de contenu | Netflix nouvelle saison | Extrait, heure de publication |
+| T-07-7-6 | Événement en direct | Twitch rappel de live | Minuteur, plateforme, invités |
+| T-07-7-7 | Collaboration | Nike x Off-White | Deux identités, révélation simultanée |
+| T-07-7-8 | Palier atteint | Million subscribers YouTube | Chiffre géant, remerciement |
+
+## 07-8 — Témoignage & preuve sociale
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-07-8-1 | Témoignage client | Trustpilot temoignage | Visage, nom, résultat chiffré |
+| T-07-8-2 | Capture d'avis | App Store reviews | Captures empilées, notes visibles |
+| T-07-8-3 | Étude de cas courte | Stripe case study court | Situation, action, résultat en 30 secondes |
+| T-07-8-4 | Chiffres de communauté | Ghost open metrics | Graphique montant, jalons |
+| T-07-8-5 | Réception de commande | Unboxing Apple | Ton authentique, aucune retouche |
+| T-07-8-6 | Recommandation de pair | Product Hunt recommandation | Deux personnes, conversation |
+| T-07-8-7 | Preuve en direct | Live demo Tesla | Une seule prise, aucune coupe |
+| T-07-8-8 | Récapitulatif de résultats | Buffer transparent report | Tableau final, source de chaque chiffre |
+
+---
+
+# Famille 08 — Créateur & YouTube
+
+**Système.** Surface : 16:9, marge de sécurité pour la vignette. Palette : identité personnelle constante.
+Typographie : sans lisible en 1080p, une seule famille. Grille : tiers inférieur, coin supérieur pour le
+chapitre. Mouvement : zooms doux, coupes de respiration, aucune transition gratuite. Habillage : chapitrage,
+cartes, écran de fin. Son : lit musical bas, respiration conservée.
+
+## 08-1 — Vidéo essai & analyse
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-1-1 | Essai vidéo long | Every Frame a Painting | Chapitres numérotés, citations sourcées, ton posé |
+| T-08-1-2 | Analyse d'œuvre | Nerdwriter1 | Extraits annotés, arrêts sur image |
+| T-08-1-3 | Enquête documentaire | Coffeezilla | Documents à l'écran, chronologie |
+| T-08-1-4 | Vulgarisation | Kurzgesagt | Schémas animés, analogies, rythme régulier |
+| T-08-1-5 | Rétrospective | Noclip documentaire | Frise, archives, dates |
+| T-08-1-6 | Essai visuel | Andrei Tarkovsky video essay | Peu de mots, beaucoup d'images |
+| T-08-1-7 | Débat argumenté | ContraPoints | Positions numérotées, contre-arguments |
+| T-08-1-8 | Conclusion ouverte | Exurb1a | Écran noir, question finale |
+
+## 08-2 — Vlog & carnet de voyage
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-2-1 | Carnet de voyage | Kraig Adams | Cartes tracées, cartons de lieu, musique locale |
+| T-08-2-2 | Journée type | Matt D'Avella | Horodatage, enchaînement, ton intime |
+| T-08-2-3 | Installation et déménagement | Never Too Small | Avant / après, plan de l'espace |
+| T-08-2-4 | Vlog d'expatriation | Abroad in Japan | Sous-titres bilingues, différences culturelles |
+| T-08-2-5 | Vlog cinématique | Peter McKinnon | Plans travaillés, étalonnage marqué, peu de parole |
+| T-08-2-6 | Vlog brut | Casey Neistat | Une seule prise, ton direct |
+| T-08-2-7 | Carnet de bord de projet | Adam Savage Tested | Étapes datées, difficultés assumées |
+| T-08-2-8 | Vlog de retour | Paolo fromTOKYO | Chiffres du voyage, ce qui a changé |
+
+## 08-3 — Test produit & tech
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-3-1 | Déballage | Unbox Therapy | Plan fixe plongeant, objets alignés |
+| T-08-3-2 | Test complet | Marques Brownlee | Sommaire, notes par critère, verdict |
+| T-08-3-3 | Comparatif | Rtings | Tableau, gagnant par catégorie |
+| T-08-3-4 | Test de performance | Gamers Nexus | Graphiques, conditions de test affichées |
+| T-08-3-5 | Test longue durée | Hardware Unboxed long terme | Usure, ce qui a tenu, ce qui a lâché |
+| T-08-3-6 | Guide d'achat | Wirecutter | Budgets, cas d'usage, sélection |
+| T-08-3-7 | Réparabilité | iFixit | Vue éclatée, note de réparabilité |
+| T-08-3-8 | Premier avis | The Verge hands-on | Impressions à chaud, réserves annoncées |
+
+## 08-4 — Documentaire de créateur
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-4-1 | Documentaire d'auteur | Noclip | Chapitrage, score original, générique |
+| T-08-4-2 | Immersion | Vice Immersion | Caméra portée, son direct |
+| T-08-4-3 | Portrait | Konbini Video Club | Interview unique, plans d'illustration |
+| T-08-4-4 | Enquête de terrain | Bellingcat | Cartes, sources, mise en garde |
+| T-08-4-5 | Documentaire historique | Nota Bene | Archives, cartons de date, voix off |
+| T-08-4-6 | Documentaire scientifique | Veritasium | Protocole, mesures, résultats |
+| T-08-4-7 | Documentaire de série | Netflix docuserie | Générique récurrent, résumé d'épisode |
+| T-08-4-8 | Documentaire personnel | Jonna Jinton | Voix propre, archives familiales |
+
+## 08-5 — Podcast vidéo
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-5-1 | Deux caméras | Lex Fridman Podcast | Champ / contrechamp, cartons de nom |
+| T-08-5-2 | Plan large de studio | The Joe Rogan Experience | Décor identifiable, plan fixe |
+| T-08-5-3 | Podcast à extraits | Diary of a CEO clips | Découpage automatique, sous-titres |
+| T-08-5-4 | Podcast audio illustré | Huberman Lab | Onde sonore, portrait, chapitres |
+| T-08-5-5 | Podcast à distance | Zoom podcast a distance | Deux fenêtres, qualité assumée |
+| T-08-5-6 | Podcast à panel | All-In Podcast | Grille de participants, indicateur de parole |
+| T-08-5-7 | Podcast d'analyse | Acquired | Points clés incrustés, sources |
+| T-08-5-8 | Podcast court | TED Talks Daily | Une question, une réponse, une conclusion |
+
+## 08-6 — Format court humoristique
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-6-1 | Sketch | Golden Moustache | Personnages, chute, coupe finale sèche |
+| T-08-6-2 | Parodie | Studio Bagel parodie | Reprise d'un habillage connu, décalage |
+| T-08-6-3 | Voix off comique | Ryan George Pitch Meeting | Ton pince-sans-rire, images sérieuses |
+| T-08-6-4 | Montage absurde | Vinesauce | Coupes rapides, sons détournés |
+| T-08-6-5 | Personnage récurrent | Norman fait des videos | Même costume, même décor, même formule |
+| T-08-6-6 | Caméra cachée | Just for Laughs Gags | Flou de visage, réactions brutes |
+| T-08-6-7 | Fausse publicité | SNL fausse pub | Codes publicitaires poussés à l'absurde |
+| T-08-6-8 | Chute muette | Mr Bean | Aucun dialogue, une seule chute |
+
+## 08-7 — Défi & expérience
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-7-1 | Défi chronométré | MrBeast 24 heures | Minuteur permanent, jalons |
+| T-08-7-2 | Expérience sociale | Veritasium experience sociale | Protocole annoncé, résultats comptés |
+| T-08-7-3 | Défi d'apprentissage | Ali Abdaal 30 jours | Progression quotidienne, mesure finale |
+| T-08-7-4 | Défi de construction | Colin Furze | Plan, étapes, échec assumé |
+| T-08-7-5 | Défi d'endurance | Nick Bare | Chiffres vitaux, fatigue visible |
+| T-08-7-6 | Défi à budget | Josh Pieters budget | Compteur de dépenses |
+| T-08-7-7 | Défi collectif | Squid Game The Challenge | Tableau de scores, éliminations |
+| T-08-7-8 | Expérience ratée | Adam Savage echec assume | Ton honnête, analyse de la cause |
+
+## 08-8 — Live & rediffusion
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-08-8-1 | Écran d'attente | Twitch starting soon | Compte à rebours, musique d'attente |
+| T-08-8-2 | Habillage de direct | StreamElements overlay | Alertes d'abonnement, chat incrusté |
+| T-08-8-3 | Direct de jeu | Ludwig | Webcam en coin, HUD, alertes |
+| T-08-8-4 | Direct de création | Bob Ross The Joy of Painting | Écran partagé, étapes commentées |
+| T-08-8-5 | Session de questions | Twitch AMA | Question affichée, minuteur de réponse |
+| T-08-8-6 | Écran de pause | BRB screen | Visuel fixe, musique, mention de retour |
+| T-08-8-7 | Écran de fin | Twitch ending screen | Remerciements, prochaine date |
+| T-08-8-8 | Rediffusion montée | Best of ZeratoR | Temps forts, chapitrage, durée réduite |

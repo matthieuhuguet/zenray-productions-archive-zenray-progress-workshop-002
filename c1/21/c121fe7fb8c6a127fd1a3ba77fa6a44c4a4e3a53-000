@@ -1,0 +1,36 @@
+# V9 finitions sidebar gauche + crumbs (2026-07-19)
+
+Commit `782d890`, poussé sur `main`.
+
+## Changements
+
+**Sidebar gauche** (`src/components/Sidebar.jsx`, `src/fonts.css`) :
+- Largeur `260px` → `232px`.
+- `.zr-ws-item` : `17px/400` → `13.5px/300` (min-height 36→32px, padding horizontal 12→10px).
+- `.zr-ws-heading` : `11px/400 mono` → `10px/400 mono`.
+- `.zr-sbs-search--sidebar input` : `15px/300` → `13.5px/300`.
+- Correction du liseré dark : `.zr-dark .zr-liquid` (défini dans `index.html`, spécificité CSS `0,2,0`) battait `aside.zr-ws-sidebar` (`0,1,1`) et imposait son ancien fond plat `rgba(31,31,30,.5)` + insets `1.5px`, ce qui cassait les liserés haut/bas en dark. Ajout d'un override `.zr-dark aside.zr-ws-sidebar` (spécificité `0,2,1`, gagnante) qui redéclare `background` (dégradé 135°) et `box-shadow` (rim + élévation) explicitement, en plus des variables `--ws-side-a/b` déjà présentes.
+
+**Crumbs** (`src/App.jsx`, fonction `Btn`/`Sep` dans le composant `Pages`) :
+- Typo `13px/400` AnthropicSans pour tous les segments (au lieu de `13.5px`, poids variable selon `last`).
+- Premier segment : `var(--g9-fg)` à opacité `.78` (au lieu de `t.textSecondary`).
+- Segments intermédiaires : `var(--g9-muted)`.
+- Dernier segment : chip bleue `#0a84ff` sur fond `rgba(10,132,255,.13)`.
+- Séparateur : chevron SVG fin (`<path d="m8 5 5 5-5 5">`) remplace le caractère texte `›`.
+- Conteneur crumbs : suppression de la pilule interne (bordure + `t.cardBg`) — la pilule V9 est désormais portée par le conteneur parent (`.zr-ws-path` ou header verre), le composant Crumbs redevient un contenu transparent.
+- Bouton chevron (déclencheur du menu As Columns) : `Icon` passé de `size=11 weight=2` à `size=12 weight=1.7`, couleur au repos passée à `var(--g9-soft)`.
+
+## Diagnostic et méthode de commit sélectif
+
+`src/App.jsx` portait en parallèle, non commité, le travail d'une autre session : une feature Eagle ("jonction de dossier virtuelle pour bundles Eagle" — `folderEagleSource`, `folderEagleSourceCache`, garde-fous dans `newFolder`/`createFolderAt`/`startDragEntry`/menu contextuel, imports `injectSearchIndexPaths`/`rollbackSearchIndexPaths`). Un troisième chantier (Ref board : `RefApp.jsx`, `RefBoard.jsx`, `Icon.jsx`, `CreateDock.jsx`, fichiers `.eagle.test.js` non trackés) était également présent dans le working tree, sans lien avec ni Eagle ni les finitions sidebar/crumbs.
+
+Étapes suivies :
+1. `git diff src/App.jsx | grep -n '^@@'` → 20 hunks au total.
+2. Inspection ligne par ligne du diff complet pour classer chaque hunk : 4 hunks (plage `-1993,7` à `-2057,9`, correspondant à la fonction `Btn`/`Sep` et au rendu des crumbs) appartenaient aux finitions demandées ; les 16 autres appartenaient à la feature Eagle.
+3. `git add -p src/App.jsx` avec réponses ciblées (`y` uniquement sur les 4 hunks Crumbs, `n` sur les 16 autres) — aucune découpe (`s`) nécessaire, chaque hunk étant homogène.
+4. `git diff --cached src/App.jsx` pour vérifier que seuls les 4 hunks Crumbs étaient indexés, avant tout commit.
+5. `src/components/Sidebar.jsx` et `src/fonts.css` : diff complet vérifié ligne par ligne, 100% attribuable aux finitions — `git add` en entier sur ces deux fichiers.
+6. `npx vite build` (2453 modules) : vert, avec les hunks Eagle et Ref board toujours présents non stagés dans le working tree (normal — Vite compile le working tree entier, pas l'index).
+7. Entrée append-only dans `PROGRESS.md`, commit contenant uniquement les 4 fichiers stagés, push direct sur `main` sans conflit (`25e2a40..782d890`).
+
+Aucune ligne des chantiers Eagle ou Ref board n'a été touchée, modifiée, stagée ou commitée.

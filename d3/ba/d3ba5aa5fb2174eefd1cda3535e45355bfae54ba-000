@@ -1,0 +1,59 @@
+# ZenRayMedia — Volume A corrigé
+
+## Périmètre
+
+Ce package contient **uniquement le Volume A** :
+
+- Famille 01 — Presse & éditorial
+- Famille 02 — Télévision & broadcast
+- Famille 03 — Cinéma & trailer
+- Famille 04 — Jeu vidéo
+
+Total : **256 méta-prompts Markdown individuels**.
+
+## Correction structurante
+
+La colonne `Calibrage` du catalogue source n’est plus ignorée.
+
+Chaque prompt contient maintenant :
+
+- la valeur exacte `PRIVATE_CALIBRATION_REF`;
+- une recherche obligatoire centrée sur cette référence exacte;
+- 20 observations sourcées minimum;
+- 12 décisions de design directement traçables à la calibration;
+- un test d’irremplaçabilité : le thème échoue si une autre référence produit le même résultat;
+- un fichier privé `calibration.private.json`;
+- l’interdiction de publier le nom du calibrage dans le thème public;
+- une procédure spéciale lorsque le calibrage est un archétype générique : trois exemples professionnels concrets doivent être résolus.
+
+## Nature des livrables attendus par chaque prompt
+
+Chaque prompt demande un **studio de microcomposants**, pas une page HTML générique :
+
+- 32 à 40 packages de composants minimum selon la famille;
+- 96 à 144 assets ciblés selon la famille;
+- HTML, CSS, SVG, Motion UI et audio court lorsque pertinent;
+- composants drag-and-dropables et sérialisables;
+- previews isolées;
+- compositions de démonstration;
+- tests de namespace, DOM, clavier, responsive, droits et rendu déterministe.
+
+## Confidentialité du calibrage
+
+Le catalogue source définit le calibrage comme un champ privé. Les prompts conservent cette règle :
+
+- le nom public reste l’archétype du thème;
+- `calibration.private.json` est ignoré par Git;
+- la référence ne doit pas apparaître dans les manifests ou outputs publics.
+
+## Arborescence
+
+```text
+01_presse-editorial/
+02_television-broadcast/
+03_cinema-trailer/
+04_jeu-video/
+00_CHECKLIST_256.md
+00_INDEX_256.md
+manifest.json
+```

@@ -1,0 +1,22 @@
+{
+  "theme": "T-01-1-1--une-nationale-du-matin",
+  "calibrationMedia": "LM",
+  "probes": [
+    {
+      "role": "titre-article",
+      "image": "raw/LM__ARTICLE__TOP__DESKTOP__11.jpg",
+      "rect": [
+        484,
+        518,
+        220,
+        40
+      ],
+      "text": "d’agression",
+      "known": {
+        "family": "Libre Baskerville",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,579 @@
+# Plan Feature - Bouton "Telecharger via script"
+
+Date: 2026-05-31
+Statut: plan d'implementation uniquement, sans code dans ce thread.
+Scope strict: cette spec couvre seulement la feature de telechargement/remux local depuis une video HLS deja existante.
+
+## 1. Objectif exact
+
+Ajouter dans ZenRayProgress un bouton:
+
+```text
+Telecharger via script
+```
+
+But utilisateur:
+
+1. Il ouvre une video HLS dans Create.
+2. Il clique sur `Telecharger via script`.
+3. Le site lui donne un petit bundle ou script.
+4. Il lance le script localement.
+5. Le script utilise `ffmpeg`.
+6. ffmpeg telecharge le HLS, recupere la cle si AES, dechiffre, remuxe.
+7. La video finale arrive sur son disque dur, lisible dans VLC.
+
+Le serveur ne reconstruit jamais la video. Le navigateur ne reconstruit pas la video en Blob. Le remux se fait sur la machine de l'utilisateur.
+
+## 2. Non-scope
+
+Ce plan ne couvre pas:
+
+- le transcodage HLS;
+- le choix CMAF vs MPEG-TS;
+- le lecteur HLS;
+- la correction multi-audio;
+- la correction sous-titres;
+- la creation du repo public jsDelivr;
+- la migration du pipeline video complet;
+- la feature Ref;
+- la feature Articles;
+- la refonte Create/Table/recherche.
+
+Ces sujets peuvent exister ailleurs, mais ce `plan.md` ne doit guider Claude que sur le bouton de download/remux.
+
+## 3. Principe produit
+
+Un HLS n'est pas un fichier unique. Il est compose de:
+
+- un manifest master `.m3u8`;
+- des media playlists `.m3u8`;
+- des segments `.ts` ou `.m4s`;
+- eventuellement une cle AES;
+- eventuellement des sous-titres.
+
+Pour retrouver un fichier local unique, il faut une reconstruction/remux.
+
+La solution la plus simple et propre:
+
+- fournir un script a l'utilisateur;
+- laisser `ffmpeg` faire le download, le dechiffrement et le remux;
+- ecrire le resultat localement.
+
+## 4. UX cible
+
+Dans `MediaViewer`, pour une video HLS seulement:
+
+```text
+[Telecharger via script]
+[Copier commande ffmpeg]
+[Copier URL VLC]
+```
+
+Comportement:
+
+- `Telecharger via script` telecharge un bundle leger.
+- `Copier commande ffmpeg` copie une commande directe dans le presse-papiers.
+- `Copier URL VLC` copie l'URL du manifest HLS lisible si le token est valide.
+
+Message court dans l'UI:
+
+```text
+Le site ne reconstruit pas la video. Le script lance ffmpeg sur ton ordinateur et cree un fichier local dans Downloads.
+```
+
+Ne pas mettre ce bouton dans le composant lecteur pur. Le bouton appartient a `MediaViewer`, parce que c'est une action fichier, pas une action de lecture.
+
+## 5. Bundle utilisateur
+
+Le bundle recommandé est un ZIP leger.
+
+Contenu:
+
+```text
+ZenRay-Video-Download/
+  README.txt
+  download.command
+  download.sh
+  download.ps1
+  video.url.txt
+```
+
+Le ZIP ne contient pas les segments video.
+
+Pourquoi:
+
+- les segments peuvent etre nombreux;
+- les segments sont deja accessibles via HLS/CDN;
+- ffmpeg sait les telecharger dans le bon ordre;
+- le ZIP reste petit;
+- le serveur ne fait pas de packaging lourd.
+
+## 6. Script macOS `.command`
+
+Priorite V1: macOS.
+
+Le fichier `download.command` doit:
+
+1. s'ouvrir dans Terminal au double-clic;
+2. verifier que `ffmpeg` existe;
+3. si ffmpeg est absent, afficher:
+
+```text
+ffmpeg est requis.
+Installe-le avec:
+brew install ffmpeg
+```
+
+4. creer un dossier temporaire;
+5. lancer ffmpeg avec progression;
+6. ecrire la video dans `~/Downloads`;
+7. nettoyer les temporaires;
+8. afficher le chemin final;
+9. garder la fenetre ouverte a la fin pour que l'utilisateur voie le resultat.
+
+Commande conceptuelle:
+
+```bash
+ffmpeg -hide_banner -stats -i "<HLS_DOWNLOAD_URL>" -map 0 -c copy "$HOME/Downloads/<video>.mkv"
+```
+
+Format de sortie par defaut:
+
+```text
+.mkv
+```
+
+Pourquoi MKV par defaut:
+
+- conserve mieux plusieurs pistes audio;
+- conserve mieux les sous-titres;
+- VLC le lit tres bien;
+- MP4 peut etre plus fragile avec WebVTT/multi-pistes.
+
+## 7. Script Linux `.sh`
+
+Le fichier `download.sh` doit etre l'equivalent portable:
+
+- `#!/usr/bin/env bash`
+- `set -euo pipefail`
+- verification `ffmpeg`;
+- sortie dans `~/Downloads`;
+- nettoyage via `trap`.
+
+Il peut etre lance avec:
+
+```bash
+bash download.sh
+```
+
+## 8. Script Windows `.ps1`
+
+Le fichier `download.ps1` doit:
+
+- verifier `ffmpeg.exe`;
+- afficher instruction si absent;
+- ecrire dans le dossier Downloads Windows;
+- lancer ffmpeg;
+- afficher le chemin final.
+
+V1 peut livrer macOS + shell d'abord. Windows peut etre PR suivante si on veut aller vite.
+
+## 9. Endpoint "download info"
+
+Ajouter un endpoint conceptuel:
+
+```text
+GET /api/hls-download-info?path=<video.media.json>
+```
+
+Responsabilites:
+
+- lire le manifest `.media.json`;
+- verifier que `type === "hls"`;
+- refuser les paths non `pages/...media.json`;
+- generer un nom safe;
+- generer une URL de download HLS absolue;
+- generer une commande ffmpeg;
+- generer les metadonnees pour l'UI.
+
+Retour attendu:
+
+```json
+{
+  "ok": true,
+  "name": "Initial-D-Episode-01",
+  "outputName": "Initial-D-Episode-01.mkv",
+  "format": "mkv",
+  "expiresAt": "2026-05-31T20:00:00.000Z",
+  "hlsUrl": "https://site/api/hls-cli?token=...",
+  "vlcUrl": "https://site/api/hls-cli?token=...",
+  "ffmpegCommand": "ffmpeg -hide_banner -stats -i \"...\" -map 0 -c copy \"Initial-D-Episode-01.mkv\"",
+  "scriptUrl": "https://site/api/hls-download-script?path=...&format=zip"
+}
+```
+
+Cet endpoint ne doit jamais renvoyer la cle AES brute.
+
+## 10. Endpoint "download script"
+
+Ajouter un endpoint conceptuel:
+
+```text
+GET /api/hls-download-script?path=<video.media.json>&format=zip
+```
+
+Formats possibles:
+
+- `format=zip`
+- `format=command`
+- `format=sh`
+- `format=ps1`
+
+Responsabilites:
+
+- valider le manifest HLS;
+- generer un token download;
+- generer les scripts;
+- retourner le fichier avec `Content-Disposition: attachment`;
+- ne jamais reconstruire la video;
+- ne jamais telecharger les segments cote serveur.
+
+Pour `format=zip`, retourner le bundle:
+
+```text
+README.txt
+download.command
+download.sh
+download.ps1
+video.url.txt
+```
+
+## 11. Endpoint manifest CLI
+
+Le script ffmpeg a besoin d'une URL stable et absolue.
+
+Ajouter un endpoint conceptuel:
+
+```text
+GET /api/hls-cli?token=<signed-token>
+```
+
+Responsabilites:
+
+- valider le token;
+- retrouver le manifest HLS;
+- servir un master `.m3u8` compatible CLI;
+- convertir les URLs internes relatives en URLs absolues;
+- faire pointer la cle AES vers une URL compatible script.
+
+Pourquoi ne pas donner directement `/api/hls?path=...`:
+
+- les playlists internes peuvent contenir des chemins relatifs;
+- ffmpeg n'a pas le meme contexte qu'un navigateur;
+- la cle AES peut etre bloquee si elle depend seulement d'Origin/Referer;
+- un endpoint CLI permet de controler l'expiration.
+
+## 12. Cle AES et token download
+
+Probleme:
+
+Le navigateur peut envoyer `Origin/Referer`. ffmpeg local ne le fait pas forcement.
+
+Solution:
+
+- generer un `downloadToken` signe cote serveur;
+- ce token autorise temporairement:
+  - le master CLI;
+  - les sous-playlists CLI;
+  - la recuperation de la cle AES;
+- `/api/hls-key` accepte le token en plus du gate navigateur.
+
+TTL recommande:
+
+- 60 minutes par defaut;
+- 3 heures si videos longues;
+- token reutilisable pendant sa duree.
+
+Ne pas:
+
+- mettre la cle brute dans le script;
+- mettre la cle brute dans le ZIP;
+- rendre la cle publique;
+- stocker le token sans expiration.
+
+## 13. Flux complet
+
+### Cote navigateur
+
+1. `MediaViewer` detecte `m.type === "hls"`.
+2. Il affiche `Telecharger via script`.
+3. L'utilisateur clique.
+4. Le front appelle `/api/hls-download-info`.
+5. Le front affiche ou telecharge le bundle via `/api/hls-download-script`.
+
+### Cote serveur
+
+1. Lit le `.media.json`.
+2. Verifie que c'est une video HLS.
+3. Cree un token signe.
+4. Genere scripts + commande.
+5. Sert le bundle.
+
+### Cote utilisateur
+
+1. L'utilisateur double-clique `download.command`.
+2. Le script lance ffmpeg.
+3. ffmpeg lit `/api/hls-cli?token=...`.
+4. ffmpeg recupere les playlists, segments et cle.
+5. ffmpeg remuxe en `.mkv`.
+6. Le fichier final arrive dans `~/Downloads`.
+
+## 14. Plan de PR
+
+### PR 1 - UI minimale du bouton
+
+Fichiers probables:
+
+- `src/components/MediaViewer.jsx`
+- eventuellement `src/components/HlsDownloadPanel.jsx`
+
+Taches:
+
+- afficher le bouton uniquement pour `m.type === "hls"`;
+- ajouter loading/error;
+- appeler `/api/hls-download-info`;
+- ajouter copier commande;
+- ajouter telechargement script.
+
+Acceptance:
+
+- le bouton apparait sur HLS;
+- le bouton n'apparait pas sur non-HLS;
+- la commande peut etre copiee;
+- aucun comportement lecteur n'est modifie.
+
+### PR 2 - Endpoint download info
+
+Fichiers probables:
+
+- `server/hls-download-info.js`
+- `api/[...route].js`
+
+Taches:
+
+- lire manifest;
+- valider HLS;
+- generer URL CLI;
+- generer commande ffmpeg;
+- retourner JSON.
+
+Acceptance:
+
+- HLS valide retourne info;
+- non-HLS retourne erreur claire;
+- path invalide refuse;
+- aucune cle brute dans la reponse.
+
+### PR 3 - Token + hls-cli
+
+Fichiers probables:
+
+- `server/hls-cli.js`
+- `server/hls-key.js`
+- `api/[...route].js`
+
+Taches:
+
+- signer token;
+- verifier token;
+- servir master CLI;
+- reecrire URLs absolues;
+- autoriser la cle via token.
+
+Acceptance:
+
+- ffmpeg peut ouvrir l'URL CLI;
+- token expire refuse;
+- token invalide refuse;
+- lecture navigateur continue de marcher.
+
+### PR 4 - Bundle scripts
+
+Fichiers probables:
+
+- `server/hls-download-script.js`
+- `api/[...route].js`
+
+Taches:
+
+- generer `.command`;
+- generer `.sh`;
+- generer `.ps1`;
+- generer README;
+- generer ZIP;
+- set headers attachment.
+
+Acceptance:
+
+- ZIP telechargeable;
+- `.command` lance ffmpeg;
+- sortie dans `~/Downloads`;
+- cleanup temporaire;
+- messages utilisateur clairs.
+
+### PR 5 - Validation terrain
+
+Tests:
+
+- bouton visible sur une video HLS;
+- ZIP telecharge;
+- `.command` lance Terminal;
+- si ffmpeg absent, message clair;
+- si ffmpeg present, remux OK;
+- fichier final lisible dans VLC;
+- deux pistes audio conservees;
+- sous-titres conserves;
+- token expire bloque;
+- serveur ne reconstruit jamais le fichier.
+
+## 15. Revue adversariale
+
+### P0 - "Un clic" navigateur impossible a 100%
+
+Risque:
+
+Un site web ne peut pas executer silencieusement un script local. macOS peut bloquer ou demander confirmation.
+
+Mitigation:
+
+- UX honnete: telecharger `.command`, double-clic, Terminal;
+- bouton secondaire copier commande;
+- README tres court.
+
+### P0 - ffmpeg bloque sur la cle AES
+
+Risque:
+
+Si la cle ne marche qu'avec `Origin/Referer`, ffmpeg echoue.
+
+Mitigation:
+
+- token download signe;
+- `/api/hls-key` accepte ce token.
+
+### P0 - Serveur reconstruit par erreur
+
+Risque:
+
+Un dev tente de faire un endpoint qui assemble tous les segments en MP4 cote Vercel.
+
+Mitigation:
+
+- interdire dans cette spec;
+- endpoint = scripts/manifest/token seulement;
+- tests qui verifient absence de download serveur massif.
+
+### P1 - MP4 casse sous-titres/multi-audio
+
+Risque:
+
+MP4 peut ne pas conserver proprement WebVTT ou toutes les pistes selon ffmpeg/VLC.
+
+Mitigation:
+
+- MKV par defaut;
+- MP4 seulement option avancee;
+- valider avec `ffprobe`.
+
+### P1 - Token expire pendant le remux
+
+Risque:
+
+La video echoue au milieu.
+
+Mitigation:
+
+- TTL assez long;
+- token reutilisable;
+- message d'erreur clair dans README.
+
+### P1 - URL CLI leak
+
+Risque:
+
+Quelqu'un partage l'URL tokenisee.
+
+Mitigation:
+
+- TTL;
+- signer path + expiration;
+- pas de token permanent;
+- pas de cle brute dans le script.
+
+### P2 - ffmpeg absent
+
+Risque:
+
+L'utilisateur double-clique et rien ne marche.
+
+Mitigation:
+
+- check `command -v ffmpeg`;
+- instruction `brew install ffmpeg`;
+- ne pas echouer silencieusement.
+
+### P2 - Nom fichier sale
+
+Risque:
+
+Caracteres interdits, espaces mal quotes, injection shell.
+
+Mitigation:
+
+- nom de sortie sanitize;
+- quotes strictes;
+- jamais injecter un titre brut dans shell sans escaping.
+
+## 16. Definition of Done
+
+La feature est terminee quand:
+
+- un bouton `Telecharger via script` existe pour les videos HLS;
+- le bouton n'apparait pas pour les autres medias;
+- le bouton telecharge un ZIP leger;
+- le ZIP contient au minimum `README.txt` et `download.command`;
+- le script ne contient pas la cle brute;
+- le script verifie ffmpeg;
+- le script remuxe avec `ffmpeg -map 0 -c copy`;
+- le fichier final sort dans `~/Downloads`;
+- le fichier final est lisible dans VLC;
+- les pistes audio sont conservees;
+- les sous-titres sont conserves en sortie MKV;
+- le serveur ne reconstruit jamais la video;
+- un token expire est refuse;
+- un token valide permet le download;
+- l'utilisateur a aussi une commande copiable.
+
+## 17. Phrase produit
+
+Texte UI recommande:
+
+```text
+Telecharger via script
+```
+
+Texte d'aide:
+
+```text
+Le fichier video est stocke en HLS. Le script lance ffmpeg sur ton ordinateur pour telecharger les morceaux, dechiffrer si besoin et creer un fichier MKV local dans Downloads.
+```
+
+Texte README:
+
+```text
+Double-clique download.command.
+Si ffmpeg n'est pas installe:
+brew install ffmpeg
+
+La video finale sera creee dans ton dossier Downloads.
+```

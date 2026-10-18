@@ -1,0 +1,519 @@
+# MÉTA-PROMPT ZENRAYMEDIA — T-02-8-2 — Remise de prix
+
+> **Nature du livrable :** prompt privé de production d’un studio de microcomposants ZenRayMedia.  
+> **Calibrage privé obligatoire :** **cérémonie de récompenses**. Ce nom sert à la recherche et au contrôle qualité, mais ne doit jamais apparaître dans le nom public du thème, dans l’interface livrée ni dans un dépôt public.
+
+---
+
+## 0. Variables entièrement remplies
+
+```yaml
+THEME_ID: "T-02-8-2"
+PUBLIC_THEME_NAME: "Remise de prix"
+FAMILY_ID: "02"
+FAMILY_NAME: "Télévision & broadcast"
+SUBFAMILY_ID: "02-8"
+SUBFAMILY_NAME: "Direct événementiel"
+PRIVATE_CALIBRATION_REF: "cérémonie de récompenses"
+PRIVATE_CALIBRATION_TYPE: "chaîne, émission, diffuseur ou archétype broadcast"
+CALIBRATION_VISIBILITY: "private-only"
+CALIBRATION_PUBLICATION_RULE: "never render, never publish, never commit to a public repository"
+THEME_SIGNATURE: "Doré, nominés listés, enveloppe"
+FAMILY_SYSTEM: "Surface : opaque, sécurisée, jamais transparente au bord. Palette : un rouge signal, un bleu de chaîne, blanc pur. Typographie : sans condensé, capitales fréquentes, chiffres tabulaires. Grille : bandeau bas, tiers inférieur, zone titre haute. Mouvement : entrées glissées 300 ms, cascade 60 ms, jamais de fondu mou. Habillage : logo permanent, horloge, ticker. Son : nappe basse continue, virgules sonores."
+LANGUAGE: "fr-FR"
+PRIMARY_OUTPUT: "package broadcast HTML/SVG/Motion prêt au rendu frame-by-frame et à l’overlay vidéo"
+ASSET_MINIMUM: 64
+ASSET_TARGET: 128
+ASSET_MAXIMUM: 256
+MIN_COMPONENT_PACKAGES: 40
+APP_SOURCE_OF_TRUTH: "ui-components-zenray-v14 / ZenRayMedia Core"
+HTML_NAMESPACE: ".zrm-theme-t-02-8-2"
+OUTPUT_ROOT: "themes/volume-a/t-02-8-2/"
+COPYRIGHT_MODE: "reference structurelle privée; reconstruction originale; provenance et droits obligatoires"
+```
+
+## 1. Mission exacte
+
+Tu es simultanément **directeur artistique spécialisé en Télévision & broadcast**, product designer senior, motion designer, front-end architect, asset librarian, chercheur média et QA engineer.
+
+Construis **un studio de composants consacré exclusivement au thème « Remise de prix »**, calibré avec précision sur **cérémonie de récompenses** et contraint par la signature :
+
+> **Doré, nominés listés, enveloppe**
+
+Le résultat n’est **jamais** une page HTML générique et n’est **jamais** un template monolithique. Il s’agit d’une collection de microcomposants indépendants, stylisés, sérialisables et drag-and-dropables que ZenRayMedia peut combiner pour fabriquer des articles, vidéos, trailers, flyers, overlays ou compositions selon la famille.
+
+Le thème est hors sujet si remplacer **cérémonie de récompenses** par une autre référence ne change presque rien au résultat. La calibration doit modifier concrètement la grille, la densité, la typographie, le rythme, les composants, les ratios, les états, les assets et les règles de composition.
+
+## 2. Verrou de calibration — cérémonie de récompenses
+
+### 2.1 Recherche obligatoire
+
+Effectue une recherche web dédiée à **cérémonie de récompenses**, sans te contenter du nom ou d’une impression générale. Inspecte au minimum les surfaces suivantes :
+
+- direct live
+- générique ou ouverture
+- lower-thirds
+- ticker/horloge
+- cartes et data
+- transitions
+- habillage mobile/social
+- séquence de clôture
+
+Requêtes de départ déjà remplies :
+
+- `"cérémonie de récompenses" site officiel Remise de prix`
+- `"cérémonie de récompenses" Direct événementiel design typography grid motion`
+- `"cérémonie de récompenses" exemples représentatifs Télévision & broadcast`
+- `"cérémonie de récompenses" mobile social video official`
+- `"cérémonie de récompenses" archive branding visual identity`
+- `"cérémonie de récompenses" accessibility responsive safe zones`
+
+Tu dois identifier les URL officielles ou institutionnelles réellement pertinentes. Ne fabrique aucune URL. Si une surface est inaccessible, marque-la `[NON VÉRIFIÉ]`.
+
+Si **cérémonie de récompenses** est un archétype générique plutôt qu’une entité nommée, identifie **trois réalisations professionnelles concrètes** correspondant exactement à cet archétype, puis choisis un benchmark principal et deux benchmarks de contrôle. Enregistre ce choix dans `calibration.private.json`; ne remplace jamais silencieusement la valeur source `cérémonie de récompenses`.
+
+### 2.2 Rapport de preuves
+
+Crée `research/calibration-evidence.private.md` avec **au moins 20 observations sourcées**, dont au moins 12 produisent directement un composant ou une règle.
+
+Colonnes obligatoires :
+
+| source_url | date_verified | capture_or_timestamp | observed_fact | measured_value | interpretation | abstracted_rule | resulting_component_id | confidence |
+|---|---|---|---|---|---|---|---|---|
+
+Distingue strictement :
+
+1. **fait observé** ;
+2. **interprétation** ;
+3. **décision originale ZenRayMedia**.
+
+### 2.3 Test d’irremplaçabilité
+
+Avant validation, réponds par écrit :
+
+- Quelles 12 décisions seraient différentes avec une autre référence que **cérémonie de récompenses** ?
+- Quels 8 composants portent le plus clairement l’ADN abstrait de **cérémonie de récompenses** ?
+- Quelles caractéristiques ont été volontairement rejetées pour éviter la copie ?
+- Pourquoi le thème reste publiquement nommé **« Remise de prix »** et non **« style cérémonie de récompenses »** ?
+
+Si les réponses sont vagues, verdict automatique : `NO-GO`.
+
+## 3. Système hérité de la famille
+
+Applique intégralement ce système, puis spécialise-le avec la sous-famille, la signature et la calibration :
+
+> Surface : opaque, sécurisée, jamais transparente au bord. Palette : un rouge signal, un bleu de chaîne, blanc pur. Typographie : sans condensé, capitales fréquentes, chiffres tabulaires. Grille : bandeau bas, tiers inférieur, zone titre haute. Mouvement : entrées glissées 300 ms, cascade 60 ms, jamais de fondu mou. Habillage : logo permanent, horloge, ticker. Son : nappe basse continue, virgules sonores.
+
+Règle éditoriale et média de la famille :
+
+> Le texte doit être extrêmement lisible, court, hiérarchisé et compatible avec le direct. Le mouvement doit être mesuré en frames, avec safe zones et timings vérifiables.
+
+Le système familial est une contrainte de base. **cérémonie de récompenses** sert à viser le niveau professionnel et à choisir les détails spécifiques ; il ne remplace pas les règles de la famille.
+
+## 4. Studio de microcomposants — jamais une page unique
+
+### 4.1 Contrat de chaque composant
+
+Chaque composant doit vivre dans son propre dossier :
+
+```text
+components/<component-id>/
+  component.html
+  component.css
+  component.js
+  component.schema.json
+  component.manifest.json
+  preview.html
+  preview-data.json
+  component.svg              # si pertinent
+  motion.css                 # si pertinent
+  motion.timeline.json       # si pertinent
+  README.md
+```
+
+Chaque composant doit :
+
+- posséder une seule racine avec `data-zrm-component`;
+- être chargeable et supprimable sans effet de bord ;
+- fonctionner isolément dans `preview.html`;
+- exposer ses propriétés éditables dans `component.schema.json`;
+- définir ses slots, contraintes de taille, ratios et dépendances ;
+- supporter drag, drop, duplication, réordonnancement, verrouillage et suppression ;
+- sérialiser son état en JSON ;
+- fournir `init()`, `update(props)`, `serialize()` et `destroy()` si JavaScript est nécessaire ;
+- ne jamais dépendre d’un chatbot pour conserver son état ;
+- ne jamais écrire dans un état global implicite.
+
+### 4.2 Contrat drag-and-drop ZenRayMedia
+
+Utilise le type de transfert :
+
+```text
+application/x-zenray-component
+```
+
+Payload minimal :
+
+```json
+{
+  "componentId": "t-02-8-2:<component-id>",
+  "themeId": "T-02-8-2",
+  "version": "1.0.0",
+  "instanceId": "<uuid>",
+  "props": {},
+  "slots": [],
+  "assetRefs": [],
+  "timeline": null
+}
+```
+
+Le compositor doit accepter les composants dans plusieurs surfaces : document, canvas libre, frame vidéo, overlay transparent et timeline.
+
+### 4.3 Liste minimale de composants spécifiques à produire
+
+Les composants ci-dessous ne sont pas des suggestions : ils constituent le **seed obligatoire** de ce thème. Étends la liste jusqu’à **40 packages minimum**.
+
+1. `safe-frame-16-9` — safe-frame 16:9.
+2. `logo-bug` — logo bug.
+3. `lower-third-simple` — lower-third simple.
+4. `lower-third-double-niveau` — lower-third double niveau.
+5. `ticker` — ticker.
+6. `clock-timezone` — clock/timezone.
+7. `breaking-banner` — breaking banner.
+8. `location-strap` — location strap.
+9. `name-function-strap` — name/function strap.
+10. `split-screen-frame` — split-screen frame.
+11. `map-data-panel` — map/data panel.
+12. `stat-card` — stat card.
+13. `subtitle-caption-area` — subtitle/caption area.
+14. `live-badge` — live badge.
+15. `sponsor-slate` — sponsor slate.
+16. `endboard` — endboard.
+17. `transition-wipe` — transition wipe.
+18. `intro-sting` — intro sting.
+19. `audio-cue-marker` — audio cue marker.
+20. `emergency-fallback-card` — emergency fallback card.
+21. `protocol-lower-third` — protocol lower-third.
+22. `award-nominee-card` — award nominee card.
+23. `live-set-timer` — live set timer.
+24. `press-conference-question-timer` — press conference question timer.
+25. `unit-identification-card` — unit identification card.
+26. `new-year-countdown` — new-year countdown.
+27. `telemetry-panel` — telemetry panel.
+28. `crisis-timestamp` — crisis timestamp.
+29. `module-signature-dore` — module signature — Doré.
+30. `module-signature-nomines-listes` — module signature — nominés listés.
+31. `module-signature-enveloppe` — module signature — enveloppe.
+32. `hero-specifique-remise-de-prix` — hero spécifique — Remise de prix.
+33. `version-compacte-remise-de-prix` — version compacte — Remise de prix.
+34. `version-mobile-remise-de-prix` — version mobile — Remise de prix.
+35. `preview-de-calibration-interne-remise-de-prix` — preview de calibration interne — Remise de prix.
+
+Les modules issus de la signature doivent être des composants réels, pas de simples commentaires CSS. Par exemple, « Doré, nominés listés, enveloppe » doit produire des géométries, contraintes, states et previews identifiables.
+
+## 5. Contrat HTML/CSS/SVG/Motion précis
+
+### 5.1 Isolation
+
+- Namespace racine obligatoire : `.zrm-theme-t-02-8-2`.
+- Interdiction des sélecteurs globaux `body`, `html`, `*`, `h1`, `button`, `img`, `svg`.
+- Tous les tokens doivent être préfixés `--zrm-t-02-8-2-`.
+- Utilise `contain`, des couches CSS et des imports explicites pour empêcher les fuites.
+- Aucun `!important` sauf justification documentée dans `research/technical-decisions.md`.
+- Le shell de l’application réutilise les primitives ZenRayMedia V14 : `.glass`, `.active`, `.active-tint`, focus visible, Dark/Light et progressive disclosure.
+- Le média rendu reste isolé du shell et peut avoir sa propre surface.
+
+### 5.2 Tokens obligatoires
+
+Crée :
+
+```text
+tokens/color.css
+tokens/type.css
+tokens/space.css
+tokens/grid.css
+tokens/radius.css
+tokens/shadow.css
+tokens/motion.css
+tokens/media.css
+tokens/z-index.css
+```
+
+Chaque token doit avoir une valeur, un usage, un fallback et une justification liée soit au système familial, soit à la preuve de calibration **cérémonie de récompenses**.
+
+### 5.3 SVG
+
+- SVG lisibles, viewBox stable, aucune dimension codée sans raison.
+- Variantes `currentColor` lorsque l’asset est fonctionnel.
+- Aucun logo, pictogramme propriétaire ou dessin protégé reproduit.
+- Les formes inspirées d’une observation doivent être abstraites et documentées.
+- Chaque SVG dispose d’un aperçu sur fond clair, sombre et transparent.
+
+### 5.4 Animation HTML
+
+- Les animations doivent être pilotables par temps déterministe.
+- Expose `window.__ZRM_FRAME__`, `window.__ZRM_FPS__` et `window.__ZRM_DURATION__`.
+- Aucun hasard non seedé.
+- Tous les timings sont exprimés en millisecondes et en frames.
+- Fournis `prefers-reduced-motion`.
+- Les composants vidéo doivent rendre correctement à 24, 25, 30 et 60 fps lorsque pertinent.
+- Prévois fond opaque et alpha lorsque le composant peut être utilisé en overlay.
+
+### 5.5 États obligatoires
+
+Chaque composant fournit au minimum :
+
+`default`, `hover`, `focus-visible`, `selected`, `editing`, `dragging`, `drop-target`, `loading`, `empty`, `error`, `disabled`, `mobile`, `dark-shell`, `light-shell`, `reduced-motion`.
+
+## 6. AssetPlan — 128 assets ciblés
+
+Crée `asset-plan.csv` et `asset-plan.json` avec **128 entrées ciblées**, jamais moins de 64 et jamais plus de 256.
+
+Répartition obligatoire :
+
+- **40** — packages de microcomposants HTML/CSS/SVG
+- **20** — lower-thirds, tickers, bugs et straps
+- **16** — cartes, graphiques, pictogrammes et data panels
+- **16** — transitions, stings et boucles Motion UI
+- **12** — variantes safe-zone et ratios broadcast/social
+- **8** — cues audio, jingles courts et markers
+- **8** — assets de test, états live/loading/error
+- **8** — previews et renditions finales
+
+Ajoute des assets spécifiques à la signature :
+
+- un cluster d’assets consacré à **Doré**
+- un cluster d’assets consacré à **nominés listés**
+- un cluster d’assets consacré à **enveloppe**
+
+Chaque asset possède :
+
+```text
+asset_id
+theme_id
+component_ids
+role
+media_type
+source_url
+source_domain
+creator
+license
+usage_status
+local_path
+sha256
+width
+height
+duration_ms
+fps
+ratio
+alpha_mode
+dominant_colors
+alt_text
+caption
+focal_point
+safe_crop
+locale
+date_verified
+derivatives
+required_or_optional
+```
+
+Aucun asset ne passe en `ready` sans source et statut de droits explicites. Les captures de recherche restent privées et ne sont jamais réutilisées comme assets finaux sans autorisation.
+
+## 7. Style éditorial, images, vidéo et son
+
+### 7.1 Écriture et information
+
+Déduis de **cérémonie de récompenses** des règles mesurées concernant :
+
+- longueur des titres ;
+- niveau de langage ;
+- densité ;
+- structure des introductions ;
+- place des citations ;
+- organisation des informations ;
+- CTA et métadonnées ;
+- légendes et crédits.
+
+Ne copie aucune voix identifiable. Produit un style original correspondant au thème public **« Remise de prix »**.
+
+### 7.2 Images
+
+Définis :
+
+- rôles d’images ;
+- ratios ;
+- focal points ;
+- safe crops ;
+- densité d’images ;
+- relation image/texte ;
+- traitement couleur ;
+- légendes ;
+- fallback ;
+- alt text.
+
+Les choix doivent traduire la signature **Doré, nominés listés, enveloppe**, pas seulement la palette de **cérémonie de récompenses**.
+
+### 7.3 Vidéo et Motion UI
+
+Même si la sortie principale est statique, crée les microcomposants animables pertinents : transitions, cartes, intertitres, lower-thirds, titres, séparateurs, CTA ou overlays.
+
+Chaque animation doit être exportable :
+
+```text
+HTML/CSS/JS déterministe
+→ capture Chromium frame par frame
+→ FFmpeg
+→ H.264/H.265/WebM
+→ ProRes 4444 .mov si alpha requis
+```
+
+### 7.4 Son
+
+Le son est conforme au système familial. Produis uniquement jingles courts, cues, impacts, ambiances, room tone ou markers nécessaires. Pas de composition musicale complète.
+
+## 8. Architecture exacte du thème
+
+```text
+themes/volume-a/t-02-8-2/
+  theme.manifest.json
+  calibration.private.json
+  .gitignore
+  README.md
+  tokens/
+  components/
+  compositions/
+    component-lab.html
+    studio-shell.html
+    sample-composition.html
+  assets/
+  motion/
+  audio/
+  sample-content/
+  previews/
+  research/
+    calibration-evidence.private.md
+    calibration-summary.private.md
+    copyright-report.md
+    technical-decisions.md
+  tests/
+    dom.spec.js
+    isolation.spec.js
+    keyboard.spec.js
+    responsive.spec.js
+    visual.spec.js
+    deterministic-render.spec.js
+    assets.spec.js
+```
+
+`calibration.private.json` et tous les fichiers `*.private.*` doivent être inclus dans `.gitignore`.
+
+## 9. Manifestes obligatoires
+
+### 9.1 `theme.manifest.json`
+
+Inclure :
+
+- identité publique du thème ;
+- famille et sous-famille ;
+- version ;
+- namespace ;
+- liste des composants ;
+- tokens ;
+- formats de sortie ;
+- ratios ;
+- capacités de rendu ;
+- dépendances ;
+- asset IDs ;
+- tests ;
+- compatibilité ZenRayMedia ;
+- migrations.
+
+Ne jamais inclure **cérémonie de récompenses** dans le manifeste public.
+
+### 9.2 `calibration.private.json`
+
+Inclure :
+
+```json
+{
+  "ref": "cérémonie de récompenses",
+  "type": "chaîne, émission, diffuseur ou archétype broadcast",
+  "visibility": "private",
+  "researchStatus": "pending",
+  "evidenceFile": "research/calibration-evidence.private.md",
+  "minimumEvidenceRows": 20,
+  "minimumReferenceSpecificDecisions": 12
+}
+```
+
+## 10. Previews obligatoires
+
+Produis au minimum :
+
+1. `component-lab-desktop.png` ;
+2. `component-lab-mobile.png` ;
+3. `sample-composition-primary.png` ;
+4. `sample-composition-secondary.png` ;
+5. `transparent-overlay-preview.mov` lorsque pertinent ;
+6. `motion-loop-preview.mp4` lorsque pertinent ;
+7. `social-4x5.png` ;
+8. `story-9x16.png`.
+
+Les previews doivent démontrer les composants séparément puis assemblés. Une unique capture de page ne suffit pas.
+
+## 11. Tests
+
+Teste obligatoirement :
+
+- absence de fuite CSS hors `.zrm-theme-t-02-8-2` ;
+- montage/démontage répété de chaque composant ;
+- sérialisation et restauration identiques ;
+- drag-and-drop clavier et souris ;
+- responsive 1440, 1280, 1024, 768 et 390 px ;
+- contrastes AA ;
+- focus visible ;
+- reduced-motion ;
+- assets manquants ;
+- liens cassés ;
+- licences ;
+- rendu déterministe image par image ;
+- alpha et couleurs ;
+- absence du terme privé **cérémonie de récompenses** dans les outputs publics.
+
+## 12. Critères de refus
+
+Déclare `NO-GO` si une seule condition est vraie :
+
+- le résultat est principalement une page HTML monolithique ;
+- moins de 40 packages de composants sont produits ;
+- moins de 64 assets sont planifiés ;
+- le plan n’atteint pas la cible de 128 sans justification ;
+- **cérémonie de récompenses** n’a pas produit au moins 12 décisions spécifiques et sourcées ;
+- le résultat pourrait être obtenu en remplaçant **cérémonie de récompenses** par une autre référence ;
+- la signature **Doré, nominés listés, enveloppe** n’est pas visible dans les composants ;
+- le CSS fuit hors namespace ;
+- les composants ne sont pas sérialisables ou drag-and-dropables ;
+- les états loading, empty, error, mobile ou reduced-motion sont absents ;
+- un asset `ready` n’a pas de source/licence ;
+- la calibration privée apparaît dans un output public ;
+- l’identité finale copie littéralement la référence.
+
+## 13. Format de réponse attendu
+
+Retourne, dans cet ordre :
+
+1. résumé du calibrage **cérémonie de récompenses** avec preuves ;
+2. décisions originales ZenRayMedia ;
+3. registre des composants ;
+4. arborescence ;
+5. manifests ;
+6. AssetPlan ;
+7. HTML/CSS/JS/SVG individuels ;
+8. compositions de démonstration ;
+9. previews ;
+10. tests ;
+11. rapport droits/licences ;
+12. verdict `GO`, `GO AVEC CORRECTIONS` ou `NO-GO`.
+
+Le livrable n’est terminé que lorsque le thème **« Remise de prix »** est un véritable studio d’assets et de microcomposants, clairement calibré sur **cérémonie de récompenses**, mais publiquement original et indépendant.

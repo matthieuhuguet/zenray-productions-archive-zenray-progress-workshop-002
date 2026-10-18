@@ -1,0 +1,284 @@
+# ZenRayMedia — Découpage atomique des composants
+
+> Règle du document : **chaque ligne est une tâche entière**, avec un identifiant stable, une définition de
+> « fini » vérifiable, ses dépendances et le palier où elle entre. Aucune tâche fourre-tout, aucune ligne
+> qui dépend du contexte pour être comprise.
+> Convention d'identifiant : `ZM-<couche>-<n°>`. Palier : V0 (article publié) · V1 (image et affiche) ·
+> V2 (vidéo) · V3 (catalogue).
+> **162 tâches** (comptage vérifié : 162 identifiants uniques, aucun doublon).
+> Une tâche n'est finie que si sa colonne « Fini quand » est vraie et démontrable.
+
+---
+
+## L0 — Socle : les contrats (12 tâches)
+
+Rien ne se construit avant que ces douze-là soient figés. Un contrat qui bouge après coup fait tout bouger.
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L0-01 | Schéma `Brief` | Un fichier de schéma valide 3 briefs d'exemple et rejette un brief à deux `message` | — | V0 |
+| ZM-L0-02 | Schéma `Cut` | Valide un cut de 3 beats et rejette un beat sans `role` | ZM-L0-01 | V0 |
+| ZM-L0-03 | Schéma `Theme` (7 groupes) | Valide un thème complet et rejette un thème sans `typography.scale` | — | V0 |
+| ZM-L0-04 | Schéma `Format` | Valide `web`, `still`, `print`, `video`, `overlay` | — | V0 |
+| ZM-L0-05 | Schéma `Job` | Rejette un job sans `seed` | ZM-L0-02..04 | V0 |
+| ZM-L0-06 | Schéma `Deliverable` | Rejette un livrable sans `probe` ni `checksum` | ZM-L0-05 | V0 |
+| ZM-L0-07 | Validateur unique | Un seul point d'entrée valide les 6 schémas ; aucune validation dupliquée ailleurs | ZM-L0-01..06 | V0 |
+| ZM-L0-08 | Résolveur de références (`Ref`) | Résout un chemin Create, un fichier local et un chemin ZenRayShards vers une source lisible | — | V0 |
+| ZM-L0-09 | Registre de constantes | Toute dimension, durée, plafond vit dans un seul fichier ; aucun littéral ailleurs | — | V0 |
+| ZM-L0-10 | Graine déterministe | Deux appels avec la même graine produisent la même suite ; `Math.random` global interdit par test | ZM-L0-05 | V0 |
+| ZM-L0-11 | Journal de fabrication | Chaque job écrit sa ligne (entrées, versions, durée, sortie) ; rejouable depuis le journal | ZM-L0-05 | V0 |
+| ZM-L0-12 | Politique d'erreur | Un échec partiel laisse un état nettoyé et un message qui nomme la couche fautive | ZM-L0-11 | V0 |
+
+---
+
+## L1 — Vault : les sources (9 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L1-01 | Lecteur de pages Create | Lit une page `.md` de ZenRayProgress via `action=read&raw=1` (hors quota) | ZM-L0-08 | V0 |
+| ZM-L1-02 | Lecteur de fichiers Markdown locaux | Lit un `.md` de Memory avec son frontmatter | ZM-L0-08 | V0 |
+| ZM-L1-03 | Résolveur de médias ZenRayShards | Rend une image ou une vidéo déjà stockée utilisable dans une page, **sans copie** | ZM-L0-08 | V0 |
+| ZM-L1-04 | Import de média local | Un fichier déposé est référencé par chemin absolu, jamais dupliqué dans le projet | ZM-L1-03 | V1 |
+| ZM-L1-05 | Import de séquence alpha (PNG/EXR) | Une séquence rendue en 3D devient un `Slot` de type `3d` utilisable | ZM-L1-04 | V2 |
+| ZM-L1-06 | Bibliothèque de lits musicaux | Liste les pistes disponibles avec durée, humeur, licence | — | V2 |
+| ZM-L1-07 | Bibliothèque d'éléments sonores | 8 éléments nommés (`whoosh`, `impact`, `tick`, `riser`, `sub-drop`, `page-turn`, `shutter`, `keystroke`) présents et lisibles | ZM-L1-06 | V2 |
+| ZM-L1-08 | Bibliothèque de références visuelles | Une référence de calibrage est stockée en champ **privé** et jamais rendue | ZM-L0-03 | V3 |
+| ZM-L1-09 | Cache de sources | Une source lue deux fois dans la même session n'est pas relue ; durée de cache ≥ 5 min | ZM-L1-01 | V0 |
+
+---
+
+## L2 — Brief : l'intention (11 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L2-01 | Éditeur de brief | Écrire un brief complet sans quitter la surface | ZM-L0-01 | V0 |
+| ZM-L2-02 | Contrainte du message unique | Deux phrases dans `message` déclenchent un refus explicite, pas un avertissement | ZM-L0-01 | V0 |
+| ZM-L2-03 | Sélecteur de registre | 8 registres, sélection en 1 action | ZM-L0-01 | V0 |
+| ZM-L2-04 | Sélecteur d'intention | 7 intentions, sélection en 1 action | ZM-L0-01 | V0 |
+| ZM-L2-05 | Attachement de preuves | Une preuve s'ajoute par glisser-déposer et devient un `Ref` | ZM-L1-03 | V0 |
+| ZM-L2-06 | Extraction depuis une note | Une note brute produit un brief pré-rempli (poste **Le Rédacteur**) | ZM-L1-01 | V0 |
+| ZM-L2-07 | Contraintes de langue | Une, deux ou trois langues cibles déclarées ; les livrables suivent | ZM-L0-01 | V1 |
+| ZM-L2-08 | Mentions obligatoires | Une mention déclarée apparaît dans **tous** les livrables du brief | ZM-L0-01 | V1 |
+| ZM-L2-09 | Historique de brief | Toute modification est réversible ; aucune modale de confirmation | ZM-L0-11 | V0 |
+| ZM-L2-10 | Duplication de brief | Un brief se duplique en 1 action pour tester un autre angle | ZM-L2-01 | V1 |
+| ZM-L2-11 | Suggestion de thèmes | Le registre et l'intention proposent 12 thèmes pertinents, pas 1024 | ZM-L2-03, ZM-L4-12 | V1 |
+
+---
+
+## L3 — Cut : la partition (13 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L3-01 | Générateur de cut | Un brief produit un cut valide (poste **Le Monteur**) | ZM-L0-02, ZM-L2-01 | V0 |
+| ZM-L3-02 | Les 7 rôles de beat | `hook`, `context`, `proof`, `demo`, `turn`, `payoff`, `cta` implémentés et distincts au rendu | ZM-L0-02 | V0 |
+| ZM-L3-03 | Nombre de beats piloté par le thème | Changer de thème change le nombre de beats, pas le contenu | ZM-L0-03 | V1 |
+| ZM-L3-04 | Poids d'accent | `weight` pilote la taille en mise en page et la durée en vidéo | ZM-L0-02 | V1 |
+| ZM-L3-05 | Tempo de beat | 4 tempos (`still`, `calm`, `drive`, `snap`) produisent 4 rythmes mesurables | ZM-L3-04 | V2 |
+| ZM-L3-06 | Emplacements média | Un beat accepte 0 à 4 slots avec règle de cadrage | ZM-L1-03 | V0 |
+| ZM-L3-07 | Réordonnancement | Un beat se déplace par glisser ; le rendu suit sans reconstruction | ZM-L3-01 | V0 |
+| ZM-L3-08 | Fusion de beats | Deux beats contigus fusionnent (reprise du comportement `.fused` de `v11`) | ZM-L3-07 | V1 |
+| ZM-L3-09 | Édition en place | Le texte d'un beat s'édite dans la carte, sans panneau | ZM-L3-01 | V0 |
+| ZM-L3-10 | Plan sonore | Les frontières de beats produisent des repères sonores placés automatiquement | ZM-L1-07 | V2 |
+| ZM-L3-11 | Chapitrage | Les beats produisent les chapitres YouTube et les ancres d'article | ZM-L3-02 | V1 |
+| ZM-L3-12 | Sous-titres | Les textes de beats produisent un `.srt` conforme, sans balises de style | ZM-L3-02 | V2 |
+| ZM-L3-13 | Verrouillage de cut | Un cut verrouillé ne change plus quand on essaie 20 thèmes | ZM-L3-01 | V1 |
+
+---
+
+## L4 — Theme : la direction artistique (16 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L4-01 | Groupe 1 — Surface | Fond, grain, vignettage, texture produisent des rendus visiblement distincts | ZM-L0-03 | V0 |
+| ZM-L4-02 | Groupe 2 — Palette | Encre, accent, alerte, contraste minimum appliqués | ZM-L0-03 | V0 |
+| ZM-L4-03 | Groupe 3 — Typographie | Familles, échelle, graisses, interlettrage, mesure, casse appliqués | ZM-L0-03 | V0 |
+| ZM-L4-04 | Groupe 4 — Grille | Colonnes, gouttières, marges, rythme vertical appliqués | ZM-L0-03 | V0 |
+| ZM-L4-05 | Groupe 5 — Mouvement | Courbes, durées, cascades, entrées/sorties appliqués | ZM-L0-03 | V2 |
+| ZM-L4-06 | Groupe 6 — Habillage | Bandeaux, cartouches, filets, crédits appliqués | ZM-L0-03 | V1 |
+| ZM-L4-07 | Groupe 7 — Son | Rôle du lit, niveau LUFS, éléments autorisés appliqués | ZM-L1-06 | V2 |
+| ZM-L4-08 | Héritage famille → sous-famille → variante | Une variante ne redéfinit que 5 à 12 valeurs ; le reste est hérité | ZM-L0-03 | V1 |
+| ZM-L4-09 | Compilation thème → CSS | Un thème produit une feuille de style autonome, sans CSS écrit à la main | ZM-L4-01..06 | V0 |
+| ZM-L4-10 | Bascule de thème à chaud | Changer de thème ne recharge pas la page et ne perd pas la position | ZM-L4-09 | V0 |
+| ZM-L4-11 | Registre des familles typographiques | 64 familles déclarées avec `{license, embeddable, redistributable, source}` | ZM-L4-03 | V3 |
+| ZM-L4-12 | Catalogue interrogeable | On cherche un thème par famille, registre, mot-clé — **sans charger les 1024** | ZM-L0-03 | V1 |
+| ZM-L4-13 | Aperçu de thème | Chaque thème a une vignette générée depuis un cut de référence | ZM-L4-09 | V1 |
+| ZM-L4-14 | Atelier de thèmes (skill unique) | Crée, valide et prévisualise un thème ; **un seul skill pour les 1024** | ZM-L4-09 | V3 |
+| ZM-L4-15 | Calibrage privé | `calibration.ref` existe, n'est jamais rendu, n'est jamais poussé en public | ZM-L1-08 | V3 |
+| ZM-L4-16 | Test anti-marque | Une recherche des marques connues dans les champs publics ne retourne rien | ZM-L4-15 | V3 |
+
+---
+
+## L5 — Format : le contrat de sortie (9 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L5-01 | Format `web` | Article publiable, largeur de lecture correcte, sombre et clair | ZM-L0-04 | V0 |
+| ZM-L5-02 | Format `still` | 1:1, 4:5, 9:16, 16:9 produits depuis le même cut | ZM-L0-04 | V1 |
+| ZM-L5-03 | Format `print` | A3 et A4 à 300 dpi, fond perdu 3 mm, repères de coupe | ZM-L5-02 | V1 |
+| ZM-L5-04 | Format `video` | 16:9, 9:16, 1:1 avec durée cible, minimum et maximum | ZM-L0-04 | V2 |
+| ZM-L5-05 | Format `overlay` | Fond transparent garanti, aucune surface opaque involontaire | ZM-L5-04 | V2 |
+| ZM-L5-06 | Zones de sécurité | Les zones d'interface des plateformes sont visibles au Stage et respectées au rendu | ZM-L5-04 | V2 |
+| ZM-L5-07 | Règles de débordement | Un texte trop long est traité par une règle nommée, jamais coupé au hasard | ZM-L5-01 | V0 |
+| ZM-L5-08 | Espaces colorimétriques | sRGB, Display-P3, CMYK déclarés et respectés à l'export | ZM-L5-03 | V1 |
+| ZM-L5-09 | Plafonds de livraison | Poids maximum par plateforme déclaré ; dépassement = échec explicite | ZM-L0-04 | V2 |
+
+---
+
+## L6 — Stage : le rendu déterministe (17 tâches)
+
+**Aucune tâche de cette couche ne démarre avant que ZM-L6-05 soit vert.**
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L6-01 | Compilateur de page | Cut + Theme + Format produisent une page HTML autonome | ZM-L4-09 | V0 |
+| ZM-L6-02 | Incorporation des polices | Polices en base64 dans la page ; aucun chargement réseau au rendu | ZM-L6-01 | V0 |
+| ZM-L6-03 | Préchauffage | Le rendu attend polices prêtes **et** images décodées avant la première image | ZM-L6-01 | V1 |
+| ZM-L6-04 | Horloge virtuelle | `Date.now`, `performance.now`, `requestAnimationFrame` neutralisés et pilotés | ZM-L6-01 | V2 |
+| ZM-L6-05 | **Test de reproductibilité** | Deux rendus du même plan de 5 s ont le **même `sha256`** ; `ffprobe -count_frames` = 150 | ZM-L6-04 | V2 |
+| ZM-L6-06 | Positionnement des animations | Toute animation se place à un `t` arbitraire via `currentTime` | ZM-L6-04 | V2 |
+| ZM-L6-07 | Interdiction des boucles temps réel | Un test échoue si la page contient `setInterval` ou un `rAF` à delta d'horloge | ZM-L6-06 | V2 |
+| ZM-L6-08 | Capture `still` | Une image PNG/AVIF conforme au format | ZM-L6-03 | V1 |
+| ZM-L6-09 | Capture `plate` | Séquence opaque transmise à l'encodeur | ZM-L6-06 | V2 |
+| ZM-L6-10 | Capture `overlay` RGBA | Fond omis, couche alpha réelle vérifiée sur l'image capturée | ZM-L6-09 | V2 |
+| ZM-L6-11 | Flux sans disque | Aucune image intermédiaire écrite ; dossier temporaire < 100 Mo pendant un rendu de 30 s | ZM-L6-09 | V2 |
+| ZM-L6-12 | Parallélisme par plan | 16 plans rendus simultanément, chacun dans un contexte isolé | ZM-L6-09 | V2 |
+| ZM-L6-13 | Nettoyage garanti | Le dossier de travail disparaît en `finally`, même après échec | ZM-L6-11 | V2 |
+| ZM-L6-14 | Aperçu live du Stage | L'aperçu est **la même page** que celle qui sera capturée | ZM-L6-01 | V0 |
+| ZM-L6-15 | Défilement temporel | Se placer à n'importe quel instant affiche exactement l'image qui sera rendue | ZM-L6-06 | V2 |
+| ZM-L6-16 | Rendu d'un extrait | Rendre 2 secondes pour vérifier avant de lancer 3 minutes | ZM-L6-09 | V2 |
+| ZM-L6-17 | Reprise après échec | Un rendu interrompu reprend au plan suivant, pas au début | ZM-L6-12 | V2 |
+
+---
+
+## L7 — Forge : la fabrication (15 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L7-01 | Encodeur ProRes 4444 alpha | `.mov` en `prores_ks`, `yuva444p10le`, alpha confirmée par `ffprobe` | ZM-L6-10 | V2 |
+| ZM-L7-02 | Encodeur plat | MP4 H.264 et HEVC ; **HEVC porte toujours `-tag:v hvc1`** | ZM-L6-09 | V2 |
+| ZM-L7-03 | Contrôle de conformité | Chaque livrable est sondé (durée, images, codec, pixels, alpha) avant d'être déclaré fini | ZM-L7-01 | V2 |
+| ZM-L7-04 | Compilateur de timeline | Une timeline JSON produit **un seul** graphe de filtres ; aucune commande écrite à la main | ZM-L0-09 | V2 |
+| ZM-L7-05 | Concaténation de plans | N plans deviennent une vidéo sans réencodage inutile | ZM-L7-04 | V2 |
+| ZM-L7-06 | Incrustation alpha | Un habillage se pose sur des rushes sans liseré ni décalage | ZM-L7-01 | V2 |
+| ZM-L7-07 | Transitions | Les transitions déclarées par le thème sont appliquées, pas improvisées | ZM-L7-05 | V2 |
+| ZM-L7-08 | Mixage audio | Lit musical + repères + voix, aux niveaux LUFS du thème | ZM-L4-07 | V2 |
+| ZM-L7-09 | Normalisation en deux passes | Le niveau final mesuré est celui demandé, à 0,5 LU près | ZM-L7-08 | V2 |
+| ZM-L7-10 | Incrustation de sous-titres | Sous-titres intégrés ou en piste, au choix du format | ZM-L3-12 | V2 |
+| ZM-L7-11 | Export PDF print | PDF 300 dpi avec fond perdu et repères, ouvert sans avertissement | ZM-L5-03 | V1 |
+| ZM-L7-12 | Export image | AVIF à CRF 25 et PNG, l'original conservé si l'AVIF est plus lourd | ZM-L6-08 | V1 |
+| ZM-L7-13 | Vignette de livrable | Vignette 1080 px q90 générée par la source unique existante | ZM-L7-12 | V1 |
+| ZM-L7-14 | Accélération matérielle | VideoToolbox utilisé pour les livrables **plats** seulement | ZM-L7-02 | V2 |
+| ZM-L7-15 | Budget disque | Un rendu qui dépasserait l'espace libre est refusé **avant** de commencer | ZM-L6-11 | V2 |
+
+---
+
+## L8 — Wire : la publication (9 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L8-01 | Publication d'article dans Create | Une page apparaît dans ZenRayProgress et s'ouvre | ZM-L5-01 | V0 |
+| ZM-L8-02 | Indexation | Le livrable est trouvable par la recherche du site | ZM-L8-01 | V0 |
+| ZM-L8-03 | Export dossier local | Tous les livrables d'un job dans un dossier daté, nommés lisiblement | ZM-L0-06 | V0 |
+| ZM-L8-04 | Copie de texte prêt à coller | Titre, accroche, description, hashtags copiés en 1 action | ZM-L3-11 | V0 |
+| ZM-L8-05 | Publication d'image | `.img.json` conforme aux chunks 19 MiB, servi par le CDN | ZM-L7-12 | V1 |
+| ZM-L8-06 | Publication de vidéo | `.media.json` conforme à la politique de découpage 19/95 Mo | ZM-L7-02 | V2 |
+| ZM-L8-07 | Anonymat des chemins publics | Aucun nom d'œuvre, de client ou de projet dans un chemin ou un message public | ZM-L8-05 | V1 |
+| ZM-L8-08 | Registre des publications | Chaque publication écrit date, format, thème, URL | ZM-L0-11 | V0 |
+| ZM-L8-09 | Preuve de publication | Le job affiche l'URL publique finale ; sans URL, il n'est pas « publié » | ZM-L8-01 | V0 |
+
+---
+
+## L9 — Interface (24 tâches)
+
+Chaque composant est une tâche entière, avec son état clair **et** son état sombre.
+
+| ID | Composant | Fini quand | Hérite de | Palier |
+|---|---|---|---|---|
+| ZM-L9-01 | Coquille à trois zones | Brief, Stage, Deck en place, redimensionnables, sans barre de défilement parasite | `.workspace-*` | V0 |
+| ZM-L9-02 | Barre de commande `⌘K` | Ouvre, cherche, exécute ; **seul** point d'entrée des actions rares | `.v11-plan-popover` | V0 |
+| ZM-L9-03 | Panneau Brief | Édition en place, aucune modale | `.v11-plan-field` | V0 |
+| ZM-L9-04 | Sélecteur de registre | 8 valeurs, 1 action | `.v14-plan-picker` | V0 |
+| ZM-L9-05 | Sélecteur d'intention | 7 valeurs, 1 action | `.v14-plan-picker` | V0 |
+| ZM-L9-06 | Liste de preuves | Glisser-déposer, vignettes, retrait | `.sbs-row`, `.sbs-thumb` | V0 |
+| ZM-L9-07 | Cadre du Stage | Ratio réel, en-tête format / durée / thème | `.museum-stage` | V0 |
+| ZM-L9-08 | Aperçu du Stage | Affiche la page compilée, pas une approximation | `.museum-stage-canvas` | V0 |
+| ZM-L9-09 | Transport du Stage | Lecture, image ±1, aller au beat | `.mini-h-transport` | V2 |
+| ZM-L9-10 | Défilement temporel | Capsule 48 px, rail 6 px, temps écoulé et restant | `.progress-pill` | V2 |
+| ZM-L9-11 | Zones de sécurité | Superposition activable, jamais active par défaut | `.glass.is-on` | V2 |
+| ZM-L9-12 | Deck — groupes de familles | 16 groupes repliables, chevron, pagination | `.sbs-group` | V1 |
+| ZM-L9-13 | Deck — vignette de thème | Aperçu vivant, nom d'archétype, jamais de marque | `.v13-plan-mini-cell` | V1 |
+| ZM-L9-14 | Deck — recherche | Filtre par famille, registre, mot-clé | `.sbs-search`, `.sbs-input` | V1 |
+| ZM-L9-15 | Fiche de thème | Les 7 groupes de décisions, lisibles et modifiables | `.v13-plan-spec-card` | V1 |
+| ZM-L9-16 | Éditeur de Cut | Colonnes de beats, cartes, glisser, fusionner | `.v11-plan-day`, `.fused` | V0 |
+| ZM-L9-17 | Carte de beat | Rôle, texte, slots, poids, tempo — en place | `.v11-plan-goal` | V0 |
+| ZM-L9-18 | Barre de rendu | Pastilles de formats + **un seul** bouton | `.glass.active-tint` | V0 |
+| ZM-L9-19 | Progression de rendu | Dans le bouton lui-même, jamais dans une fenêtre séparée | `.progress-rail` | V0 |
+| ZM-L9-20 | Panneau du Critique | Liste de défauts + bouton corriger par défaut | `.v11-plan-overdue-row`, `.v11-plan-rescue` | V1 |
+| ZM-L9-21 | Bascule clair / sombre | Les deux thèmes complets, aucun contraste cassé | `.theme-light/.theme-dark` | V0 |
+| ZM-L9-22 | Comparateur de courbes | Choix d'un timing d'animation parmi 9 durées | `.timing-toggle` | V2 |
+| ZM-L9-23 | Compteur d'actions | Affiche le nombre d'actions réellement nécessaires ; alerte au-delà de 3 | — | V0 |
+| ZM-L9-24 | Sobriété du mouvement | `prefers-reduced-motion` respecté partout | `--ease` | V0 |
+
+---
+
+## L10 — Catalogue de thèmes (9 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L10-01 | Les 16 systèmes de famille | 16 fichiers de famille complets et distincts au rendu | ZM-L4-08 | V3 |
+| ZM-L10-02 | Les 128 sous-familles | Chacune hérite d'une famille et redéfinit son propre registre | ZM-L10-01 | V3 |
+| ZM-L10-03 | Les 1024 variantes | Chacune ne redéfinit que 5 à 12 valeurs | ZM-L10-02 | V3 |
+| ZM-L10-04 | Cut de référence | Un cut unique sert à générer les 1024 aperçus, pour comparer à contenu égal | ZM-L3-01 | V3 |
+| ZM-L10-05 | Génération des aperçus | 1024 vignettes produites en lot, parallélisées par famille | ZM-L10-04, ZM-L6-08 | V3 |
+| ZM-L10-06 | Contrôle de distinction | Deux thèmes d'une même sous-famille sont visuellement distinguables ; sinon l'un des deux est refusé | ZM-L10-05 | V3 |
+| ZM-L10-07 | Contrôle de licence typographique | Aucun thème `local-only` dans un export destiné à un tiers | ZM-L4-11 | V3 |
+| ZM-L10-08 | Index de recherche du catalogue | Recherche instantanée sur 1024 entrées sans tout charger | ZM-L4-12 | V3 |
+| ZM-L10-09 | Import / export de thème | Un thème s'exporte en un fichier et se réimporte à l'identique | ZM-L0-03 | V3 |
+
+---
+
+## L11 — Le Critique et la qualité (10 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L11-01 | Contrôle des zones de sécurité | Détecte un texte hors zone et le signale avec sa position | ZM-L5-06 | V1 |
+| ZM-L11-02 | Contrôle de contraste | Mesure le contraste réel et refuse sous le seuil du thème | ZM-L4-02 | V1 |
+| ZM-L11-03 | Contrôle de débordement | Détecte tout texte tronqué ou en dépassement | ZM-L5-07 | V0 |
+| ZM-L11-04 | Contrôle de durée | Signale un livrable hors bornes du format | ZM-L5-04 | V2 |
+| ZM-L11-05 | Contrôle de lisibilité | Signale une taille sous le plancher du format | ZM-L4-03 | V1 |
+| ZM-L11-06 | Contrôle d'orphelines et veuves | Signale une ligne isolée en fin de bloc | ZM-L4-04 | V1 |
+| ZM-L11-07 | Contrôle de cohérence multilingue | Toutes les langues déclarées sont présentes et complètes | ZM-L2-07 | V1 |
+| ZM-L11-08 | Contrôle de l'alpha | Vérifie qu'un `overlay` a bien une couche alpha non constante | ZM-L7-01 | V2 |
+| ZM-L11-09 | Blocage de publication | Un livrable avec un défaut bloquant ne peut pas être publié | ZM-L11-01..08 | V1 |
+| ZM-L11-10 | Correction proposée | Chaque défaut porte une correction applicable en 1 action | ZM-L11-09 | V1 |
+
+---
+
+## L12 — Exploitation (8 tâches)
+
+| ID | Tâche | Fini quand | Dépend de | Palier |
+|---|---|---|---|---|
+| ZM-L12-01 | Ligne de commande | Un job se lance sans interface, avec les mêmes contrats | ZM-L0-05 | V1 |
+| ZM-L12-02 | Rendu par lot | N jobs enchaînés, un échec n'arrête pas le lot | ZM-L12-01 | V2 |
+| ZM-L12-03 | Reprise d'un lot | Un lot interrompu reprend au job suivant | ZM-L12-02 | V2 |
+| ZM-L12-04 | Journal lisible | Une ligne par job : entrées, durée, sortie, résultat | ZM-L0-11 | V0 |
+| ZM-L12-05 | Mesure de performance | Temps par image, par plan, par job, consignés | ZM-L12-04 | V2 |
+| ZM-L12-06 | Garde-fou disque | Refus avant démarrage si l'espace libre est insuffisant | ZM-L7-15 | V2 |
+| ZM-L12-07 | Purge des travaux | Les dossiers de travail anciens se suppriment sur demande, jamais automatiquement pendant un rendu | ZM-L6-13 | V2 |
+| ZM-L12-08 | Journal de progression | Chaque palier terminé écrit son entrée dans `PROGRESS.md` | — | V0 |
+
+---
+
+## Récapitulatif par palier
+
+| Palier | Tâches | Ce qui est prouvé à la fin |
+|---|---|---|
+| **V0** | 63 | Une note devient un **article publié**, avec une URL. |
+| **V1** | 37 | Le même brief devient une **image et une affiche**, avec 16 thèmes. |
+| **V2** | 48 | Le même brief devient une **vidéo** et un **habillage alpha** importable en montage. |
+| **V3** | 14 | Le **catalogue de 1024** est utilisable et cherchable. |
+| **Total** | **162** | — |
+
+**Chemin critique du V0** (l'ordre réel d'exécution) :
+`ZM-L0-01 → L0-02 → L0-07 → L1-01 → L2-01 → L3-01 → L4-09 → L6-01 → L6-14 → L5-01 → L8-01 → L8-09`.
+Douze tâches. C'est tout ce qui sépare une note d'un article publié.

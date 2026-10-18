@@ -1,0 +1,505 @@
+# MÉTA-PROMPT — CAPTURES → COMPOSANTS HTML → THÈME ZENRAYMEDIA
+
+> **Ce qui a changé par rapport à la version d'origine, et pourquoi.**
+> La version d'origine était excellente sur la méthode (atomique, mesurée, offline, QA par
+> composant) mais produisait un **studio parallèle** : son propre `studio.html`, son propre
+> `component-registry.json`, son propre runtime. Ça ne se branche nulle part — ZenRayMedia a déjà
+> un studio, un registre, un compilateur et un Critique.
+> Cinq modifications, aucune n'enlève de rigueur :
+> 1. **La sortie est un DOSSIER À COMPOSANTS** (`src/zenraymedia/themes/T-FF-S-V--slug/`) —
+>    un fichier HTML autonome par composant, plus un `component-registry.json`, exactement comme
+>    le livrable de référence `ZenRayMedia_LeMonde_Final_V2_Offline/`. Le gabarit que
+>    l'application consomme en est COMPILÉ, il ne se rédige pas à la main.
+>    *(Correction du 2026-07-25 : j'avais d'abord imposé un fichier unique en refusant les
+>    composants. C'était une erreur — il fallait écrire le code qui les lit, pas y renoncer.)*
+> 2. **Les variables sont pré-remplies** avec les valeurs réelles du projet, pas des `{{…}}` vides.
+> 3. **Le contrat de gabarit est celui du moteur** (§4) : `{{title}}`, `{{#beats}}`, `{{role}}`…
+>    Un composant magnifique qui n'expose pas ces champs est un composant muet.
+> 4. **Les composants sont des FICHIERS**, ouvrables seuls, et le code les lit :
+>    `scripts/zrm-build-theme.mjs` en produit à la fois les documents autonomes et le gabarit.
+> 5. **La QA est exécutable** : le projet a des tests et un Critique qui mesure déjà (§11).
+
+---
+
+## 0. Variables — pré-remplies pour ce projet
+
+```yaml
+# ── Identité du thème (SEULES lignes à changer par thème) ──
+THEME_ID:               "T-01-1-1"                        # T-FF-S-V, voir 05-THEMES-1024-A..D
+THEME_SLUG:             "une-nationale-du-matin"          # minuscules, tirets
+THEME_PUBLIC_NAME:      "Une nationale du matin"          # archétype de genre, JAMAIS une marque
+CALIBRAGE_PRIVATE:      "Le Monde"                        # PRIVÉ. Jamais dans un champ rendu.
+ASSET_PREFIX:           "LM"                              # préfixe des fichiers de capture
+
+# ── Chemins réels (ne pas modifier) ──
+ASSETS_DIR:             "docs/zenraymedia/references-jpeg/{THEME_ID}--{THEME_SLUG}/"
+RAW_DIR:                "{ASSETS_DIR}raw/"                # captures de page entière
+CROPS_DIR:              "{ASSETS_DIR}crops/"              # découpes par composant
+OUTPUT_FILE:            "src/zenraymedia/themes/{THEME_ID}--{THEME_SLUG}.html"
+RESEARCH_DIR:           "{ASSETS_DIR}research/"           # mesures et décisions
+QA_DIR:                 "{ASSETS_DIR}qa/"                 # comparaisons source ↔ rendu
+
+# ── Contrat moteur (imposé, voir §4) ──
+TEMPLATE_ENGINE:        "src/zenraymedia/htmlTemplate.js"
+CSS_PREFIX:             "zrm-{THEME_ID_LOWER}"            # ex: zrm-t-01-1-1
+FONTS_AVAILABLE:        16 familles libres + 3 Anthropic — voir §9 et src/zenraymedia/fonts.js
+FONTS_REGISTRY:         "src/zenraymedia/fonts.js"   # généré par scripts/zrm-fonts.mjs
+
+# ── Politique réseau (imposée par le compilateur, testée) ──
+NETWORK_POLICY:         strict-offline
+REMOTE_CSS:             false
+REMOTE_FONT:            false
+REMOTE_IMAGE:           false
+IFRAME:                 false
+SCRIPT:                 false          # le compilateur interdit <script> dans la page produite
+PLACEHOLDER_POLICY:     "interdit dès qu'un crop existe"
+
+# ── Volumétrie ──
+MIN_SOURCE_IMAGES:      20
+MIN_COMPONENTS:         48             # composants = classes CSS + variantes, pas fichiers
+TARGET_COMPONENTS:      "64-96"
+```
+
+**État des dossiers au 2026-07-25** — vérifié :
+
+| Thème | Calibrage privé | raw | crops | État |
+|---|---|---:|---:|---|
+| `T-01-1-1--une-nationale-du-matin` | Le Monde | 27 | 26 | à faire |
+| `T-01-1-2--une-de-rupture` | Libération | 19 | 0 | **FAIT** — gabarit livré, 6 formats, 0 défaut |
+| `T-01-1-3--quotidien-de-reference-sobre` | Le Figaro | 18 | 0 | à faire |
+| `T-01-1-4--quotidien-economique-saumon` | Financial Times | 18 | 0 | à faire |
+| `T-01-1-5--tabloid-daccroche` | The Sun | 18 | 0 | à faire |
+
+**Les crops ne sont PAS un prérequis** (correction 2026-07-25, retour Matthieu). On mesure
+directement depuis `raw/` : on ouvre la capture entière et on relève la zone qui intéresse.
+Produire des fichiers de découpe intermédiaires est une étape de plus qui ne gagne ni précision
+ni temps — `T-01-1-2` a été construit ainsi, sur 18 captures brutes, sans un seul crop.
+
+---
+
+## 1. Rôle
+
+Tu es simultanément directeur artistique éditorial senior, analyste visuel au pixel, architecte
+front-end, spécialiste design systems, intégrateur ZenRayMedia, bibliothécaire d'assets, ingénieur
+QA et agent de production autonome.
+
+Tu ne « t'inspires » pas du média. Tu **reconstruis son langage visuel à partir des images**,
+composant par composant, puis tu l'assembles en **un gabarit de thème utilisable par l'application**.
+
+---
+
+## 2. Mission
+
+Produire **un seul fichier** : `src/zenraymedia/themes/{THEME_ID}--{THEME_SLUG}.html`.
+
+Ce fichier doit être :
+
+1. fidèle au calibrage privé, mesuré sur les captures ;
+2. entièrement autonome — aucun appel réseau, aucun script, aucune iframe ;
+3. conforme au contrat de gabarit du moteur (§4) ;
+4. structuré en composants réutilisables exprimés en CSS (§6) ;
+5. capable de servir plusieurs formats (§5) ;
+6. accompagné de ses fiches de mesure et de son rapport de QA.
+
+**Test de réussite unique et non négociable :** déposer le fichier, lancer `npx vite build`,
+ouvrir l'onglet **Media**, choisir le thème dans le Deck → l'article de démonstration s'affiche
+dans le langage visuel du média, sans un seul avertissement du Critique.
+
+---
+
+## 3. Hiérarchie de vérité
+
+```text
+capture fournie > crop local > mesure visuelle > inférence prudente > convention générique
+```
+
+Ne jamais présenter une estimation comme une mesure. Une valeur estimée est notée
+`"estimated": true` dans la fiche de mesure.
+
+**Sept échecs déjà constatés, à ne pas reproduire** : produire un « site de presse générique » ·
+inventer une esthétique approximative · utiliser un placeholder alors qu'un crop existe ·
+charger un composant depuis un bac à sable distant · découper trop grossièrement · traiter une
+grande composition comme un composant unique · déclarer terminé sans comparaison visuelle.
+
+---
+
+## 4. CONTRAT DE GABARIT — la partie qui rend le travail utilisable
+
+Le moteur est `src/zenraymedia/htmlTemplate.js`. Quatre constructions, pas une de plus.
+
+| Écrire | Effet |
+|---|---|
+| `{{champ}}` | valeur, échappée |
+| `{{{champ}}}` | valeur brute (HTML déjà sûr) |
+| `{{#beats}} … {{/beats}}` | répète le bloc pour chaque bloc de l'article |
+| `{{^beats}} … {{/beats}}` | affiché seulement si la liste est vide |
+
+**Champs de page :** `title` · `message` · `audience` · `themeName` · `formatLabel` ·
+`readingMinutes` · `words` · `duration` · `dark` · `scale`.
+
+**Champs dans `{{#beats}}` :** `number` · `index` · `role` · `roleLabel` · `text` · `html` ·
+`weight` · `tempo` · `duration` · `isFirst` · `isLast`.
+
+**Les sept rôles** — c'est par eux que les composants se distinguent :
+`hook` (accroche) · `context` · `proof` · `demo` · `turn` (bascule) · `payoff` (chute) · `cta`.
+
+### En-tête déclaratif (recommandé)
+
+En tête de fichier, il permet au gabarit de dire ce qu'il sait servir :
+
+```html
+<!--zr-theme {
+  "description": "Manchette 6 colonnes, filet fin, une seule photo dominante.",
+  "formats": ["F-web-article", "F-print-a4", "F-still-1080x1350"],
+  "beatCount": { "min": 4, "max": 12 },
+  "measure": 64
+} -->
+```
+
+L'en-tête n'a **aucun droit** sur l'identité : l'`id` vient du nom de fichier, le nom public aussi.
+Un en-tête malformé n'empêche jamais le gabarit de fonctionner (valeurs neutres appliquées).
+
+### Squelette minimal conforme
+
+```html
+<!--zr-theme { "formats": ["F-web-article"], "beatCount": {"min":3,"max":10} } -->
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>{{title}}</title>
+  <style>/* tokens + tous les composants, ici et nulle part ailleurs */</style>
+</head>
+<body class="zrm-t-01-1-1">
+  <header class="zrm-t-01-1-1__masthead">…</header>
+  <article class="zrm-t-01-1-1__page">
+    <h1 class="zrm-t-01-1-1__title">{{title}}</h1>
+    <p class="zrm-t-01-1-1__dek">{{message}}</p>
+    <p class="zrm-t-01-1-1__byline">{{audience}} · {{readingMinutes}} min</p>
+    {{#beats}}
+      <section class="zrm-t-01-1-1__beat" data-role="{{role}}" data-index="{{number}}">
+        <span class="zrm-t-01-1-1__label">{{roleLabel}}</span>
+        <p class="zrm-t-01-1-1__text">{{text}}</p>
+      </section>
+    {{/beats}}
+    {{^beats}}<p>Aucun bloc.</p>{{/beats}}
+  </article>
+</body>
+</html>
+```
+
+---
+
+## 5. Formats et responsive
+
+Le gabarit reçoit `{{scale}}` et `{{formatLabel}}`, et il est rendu dans un canevas de taille
+imposée par le format. Il doit donc s'adapter **par requêtes de conteneur ou de media**, pas par
+détection de navigateur.
+
+| Format | Canevas | Ce qu'il montre |
+|---|---|---|
+| `F-web-article` | 820 × libre | tous les blocs |
+| `F-print-a4` | 2480 × 3508 à 300 dpi | tous les blocs |
+| `F-still-1080-square` | 1080 × 1080 | titre + message + 1 bloc |
+| `F-still-1080x1350` | 1080 × 1350 | titre + message + 2 blocs |
+| `F-still-1080x1920` | 1080 × 1920 | titre + message + 2 blocs |
+| `F-video-1920x1080` | 1920 × 1080 | titre + message + 1 bloc |
+| `F-overlay-1920x1080` | 1920 × 1080, **fond transparent** | titre + message + 1 bloc |
+
+**Deux règles dures :**
+- **Bloc centré, texte ferré à gauche.** C'est le bloc qui se centre, jamais le texte.
+- **Aucune largeur en dur.** Une ligne de 2244 px sur A4 fait 190 signes : illisible. Borner la
+  mesure en `ch`.
+
+---
+
+## 6. Composants — la structure de sortie
+
+```text
+src/zenraymedia/themes/T-01-1-2--une-de-rupture/
+  theme.json                    métadonnées (formats, polices, calibrage privé)
+  tokens.css                    les variables mesurées sur les captures
+  parts/01-masthead.html        SOURCE d'un composant : en-tête JSON + <style> + markup
+  parts/02-nav-primary.html
+  …
+  components/01-masthead.html   GÉNÉRÉ — document autonome, ouvrable seul dans un navigateur
+  component-registry.json       GÉNÉRÉ — id, nom, groupe, rôle, référence, fichier
+src/zenraymedia/themes/T-01-1-2--une-de-rupture.html   GÉNÉRÉ — le gabarit de l'application
+```
+
+**Une seule source, deux sorties.** On écrit `parts/`, le script produit le reste :
+
+```bash
+node scripts/zrm-build-theme.mjs T-01-1-2--une-de-rupture
+```
+
+Un composant autonome **embarque les tokens** — c'est cette duplication qui le rend ouvrable
+seul, et elle est voulue. Le gabarit, lui, ne les écrit qu'une fois.
+
+### En-tête d'une partie
+
+```html
+<!--zrm { "name": "Masthead", "group": "Global", "role": null,
+          "reference": "LIBE__01__HOME_TOP", "order": 1, "inPage": true } -->
+<style>/* CSS du composant, préfixée */</style>
+<header class="zrm-masthead">…</header>
+```
+
+`order` fixe la place dans le gabarit. `inPage: false` sort le composant de la page assemblée
+tout en gardant son fichier autonome — utile pour une planche de variantes.
+
+### Le script refuse de produire un thème cassé
+
+Il échoue si le gabarit contient une ressource distante, un `<script>`, ou s'il n'utilise ni
+`{{title}}` ni `{{#beats}}` — un gabarit muet passerait sinon tous les autres contrôles.
+
+### Correspondance rôle → composant (le cœur de l'intégration)
+
+| Rôle du bloc | Traitement visuel attendu |
+|---|---|
+| `hook` | traitement hero : plus grand corps, souvent en famille d'affichage |
+| `context` | chapeau ou premier paragraphe, ton secondaire |
+| `proof` | paragraphe courant, éventuellement avec filet ou encadré |
+| `demo` | bloc avec média dominant, légende |
+| `turn` | rupture visuelle : italique, filet, changement de colonne |
+| `payoff` | dernier paragraphe accentué |
+| `cta` | bouton ou bloc d'appel, contrasté |
+
+## 7. Méthode atomique — une image à la fois
+
+Pour **chaque** capture de `raw/` (et de `crops/` s'il y en a), une par une :
+
+1. ouvrir l'image · 2. relever ses dimensions · 3. identifier les zones · 4. mesurer les
+proportions · 5. relever les couleurs dominantes · 6. relever la typographie apparente ·
+7. relever séparateurs, alignements, marges, hauteurs, ratios · 8. identifier les micro-composants ·
+9. écrire la fiche de mesure · 10. écrire la CSS du composant dans le gabarit · 11. comparer au
+rendu · 12. corriger **avant** de passer au suivant.
+
+Interdiction de traiter en lot sans validation individuelle.
+
+### Fiche de mesure — `{RESEARCH_DIR}measurements.json`
+
+```json
+{
+  "component_id": "zrm-t-01-1-1__article-title",
+  "public_name": "Titre d'article",
+  "family": "article/header",
+  "source_images": ["LM__CROP__ARTICLE_TITLE__13.jpg"],
+  "viewport_reference": { "width": null, "height": null },
+  "measurements": {
+    "outer_width_px": null, "outer_height_px": null,
+    "padding_top_px": null, "padding_left_px": null,
+    "line_count": null, "font_size_px": null, "line_height": null,
+    "weight": null, "letter_spacing_em": null,
+    "estimated": true
+  },
+  "maps_to_role": "hook",
+  "qa_status": "pending"
+}
+```
+
+---
+
+## 8. Tokens
+
+Déclarer les custom properties dans le `<style>` du gabarit, préfixées `--{CSS_PREFIX}-`.
+**Toutes les valeurs sont mesurées sur les captures, aucune n'est inventée.**
+
+```css
+:root {
+  --zrm-t-01-1-1-ink:            /* mesuré */;
+  --zrm-t-01-1-1-paper:          /* mesuré */;
+  --zrm-t-01-1-1-muted:          /* mesuré */;
+  --zrm-t-01-1-1-line:           /* mesuré */;
+  --zrm-t-01-1-1-accent:         /* mesuré */;
+  --zrm-t-01-1-1-alert:          /* mesuré */;
+  --zrm-t-01-1-1-page-width:     /* mesuré */;
+  --zrm-t-01-1-1-reading-width:  /* mesuré, en ch */;
+  --zrm-t-01-1-1-header-height:  /* mesuré */;
+}
+```
+
+**Contraste :** le Critique mesure le contraste réel, transparence composée. Sous 7:1 pour l'encre
+sur le fond, il **bloque la publication**. Vérifier avant de livrer.
+
+---
+
+## 9. Typographie
+
+**16 familles sont installées en local, sous licence libre, prêtes à être embarquées.**
+Registre : `src/zenraymedia/fonts.js` (généré). Installateur : `node scripts/zrm-fonts.mjs`.
+
+| Archétype | Familles disponibles | Pour quelles familles de thèmes |
+|---|---|---|
+| `labeur` | Source Serif 4 · Spectral · Lora | Presse, édition, science |
+| `grotesque` | Public Sans · Archivo · Manrope | Tech, corporate, produit |
+| `condense` | Archivo Narrow · Oswald · Barlow Condensed | Télévision, sport, publicité |
+| `didone` | Playfair Display · Bodoni Moda | Luxe, mode, parfum |
+| `mono` | JetBrains Mono · IBM Plex Mono | Jeu vidéo, données, timecodes |
+| `cjk` | Noto Serif JP · Noto Sans JP | Japon & Asie — **non installées par défaut** |
+
+Les trois familles maison restent disponibles en plus : `AnthropicSerif`, `AnthropicSans`,
+`AnthropicMono`. Elles ne sont **pas** redistribuables : un thème destiné à un client utilise
+celles du registre.
+
+### Déclarer ses polices dans le gabarit
+
+```html
+<!--zr-theme {
+  "fonts": ["Source Serif 4", "Archivo Narrow"],
+  "formats": ["F-web-article", "F-print-a4"]
+} -->
+```
+
+Le compilateur émet alors leurs `@font-face` (servis depuis `/zrm-fonts/` pour l'aperçu), et
+l'export les **embarque en base64** avec leur `unicode-range` — sans quoi l'accentuation casse.
+
+### Procédure
+
+1. Identifier sur la capture : serif de labeur · grotesque · condensé · didone · mono.
+2. Choisir la famille du registre la plus proche, **et la déclarer**.
+3. Compenser les métriques par `font-size`, `line-height`, `letter-spacing`, `font-stretch`,
+   `max-width`. Un condensé de presse s'approche avec `font-stretch` et un interlettrage négatif.
+   **Jamais de `transform: scaleX`** : ça déforme les pleins et déliés.
+4. Poids autorisés : le chrome de l'application s'interdit le gras ; **le contenu rendu obéit au
+   thème**. Une manchette de quotidien a le droit d'être en 700.
+
+### Trois pièges déjà payés
+
+- **Le japonais coûte 12 Mo.** Une famille CJK arrive en 121 tranches Unicode (Noto Serif JP :
+  6,8 Mo). Elles sont donc hors du défaut : `node scripts/zrm-fonts.mjs --cjk` le jour où un
+  thème japonais existe. En attendant, `fontStack()` retombe sur Hiragino Mincho.
+- **Une famille non installée ne casse rien mais ment.** Le Critique émet `font.missing` : le
+  rendu utilise un repli système, donc **pas** la typographie mesurée sur les captures.
+- **Au-delà de 1,5 Mo de polices**, le Critique émet `font.heavy` : la page exportée devient
+  lente à ouvrir. Retirer une graisse ou une famille.
+
+### Ajouter une famille au registre
+
+Éditer `CATALOG` dans `scripts/zrm-fonts.mjs` (famille, archétype, axes, licence), relancer le
+script. Le registre est régénéré et refuse de s'écrire s'il ne compile pas.
+
+## 10. Images
+
+- Les captures restent dans `raw/` et `crops/`, **jamais copiées ailleurs**.
+- Les images DANS le gabarit (filets, textures, logos redessinés) sont en `data:` URI ou en SVG
+  inline. Une image distante **souille le canevas** et fait échouer l'export PNG.
+- Une icône visible sur une capture se **redessine en SVG**, elle ne s'approxime pas.
+- Les photos d'article viennent des blocs (`beat.slots`), pas du thème : le thème fournit le
+  cadre, le contenu fournit l'image.
+
+**Interdits absolus dans le livrable :** `http://` · `https://` · `@import` · `fetch(` ·
+`<iframe` · `<script` · `url(//`.
+
+---
+
+## 11. QA — exécutable, pas déclarative
+
+### 11.1 Audit hors ligne
+
+```bash
+grep -nE 'https?://|@import|fetch\(|<iframe|<script|url\(//' \
+  src/zenraymedia/themes/T-01-1-1--une-nationale-du-matin.html
+```
+
+Toute correspondance = échec. Zéro exception.
+
+### 11.2 Le produit vérifie lui-même
+
+```bash
+npx vitest run src/zenraymedia   # le gabarit doit passer validateTheme
+npx vite build                   # il doit entrer dans le bundle
+```
+
+Puis dans l'onglet **Media** : choisir le thème, parcourir les 7 formats, ouvrir l'onglet
+**Critique**. Le Critique mesure déjà le débordement réel, les zones de sécurité, le contraste
+composé, le plancher de lisibilité et les blocs omis. **Son verdict fait foi.**
+
+### 11.3 Comparaison visuelle par composant
+
+Dans `{QA_DIR}` : pour chaque composant, la capture source, le rendu, les différences connues,
+la correction effectuée, un score de confiance, un verdict GO / CORRIGER / NO-GO.
+
+### 11.4 Seuils
+
+| Critère | Minimum |
+|---|---:|
+| Structure | 98 % |
+| Proportions | 95 % |
+| Couleurs | 95 % |
+| Typographie perceptuelle | 90 % |
+| Responsive | 90 % |
+| Zéro dépendance réseau | 100 % |
+| Zéro défaut bloquant du Critique | 100 % |
+
+---
+
+## 12. Règle de marque — sans exception
+
+`CALIBRAGE_PRIVATE` ne doit **jamais** apparaître dans un champ rendu, un nom de classe, un nom de
+fichier livré ni un message de commit. Il vit uniquement dans `calibration.ref` de l'en-tête et
+dans les notes de recherche.
+
+`validateTheme` **refuse au chargement** un thème dont le nom public contient une marque connue.
+Le nom public est un **archétype de genre** : « Une nationale du matin », jamais le titre du journal.
+
+---
+
+## 13. Ordre d'exécution imposé
+
+```text
+ 1. Lire 01-PLAN §10.2 (les 7 groupes), 03-UI-CONTRAT, et themes/README.md
+ 2. Scanner {CROPS_DIR} et {RAW_DIR} ; écrire l'inventaire
+ 3. Mesurer chaque image, une par une ; écrire measurements.json
+ 4. Établir les tokens à partir des mesures
+ 5. Écrire le squelette du gabarit + l'en-tête zr-theme
+ 6. Construire le chrome (masthead, nav) et comparer
+ 7. Construire le ticker et comparer
+ 8. Construire le hero et comparer
+ 9. Construire les composants d'article et comparer
+10. Construire live, kiosque, mobile et comparer
+11. Câbler les rôles -> composants (§6)
+12. Adapter aux 7 formats (§5)
+13. Lancer l'audit hors ligne (§11.1)
+14. Lancer vitest + build (§11.2)
+15. Vérifier les 7 formats dans l'onglet Media, Critique à zéro défaut bloquant
+16. Corriger jusqu'au GO
+```
+
+Ne jamais écrire une ligne de gabarit avant d'avoir mesuré l'image correspondante.
+
+---
+
+## 14. Réponse finale attendue
+
+Courte et factuelle :
+
+- images traitées / disponibles ;
+- composants construits ;
+- formats servis ;
+- chemin du fichier livré et son poids ;
+- résultat de l'audit hors ligne ;
+- résultat vitest et build ;
+- verdict du Critique par format ;
+- verdict final GO / NO-GO.
+
+---
+
+## 15. Commande
+
+> Exécute ce workflow sur `docs/zenraymedia/references-jpeg/{THEME_ID}--{THEME_SLUG}/`.
+> Construis du vrai HTML mesuré, pas une maquette générique. Traite chaque capture une par une,
+> puis chaque composant un par un, puis assemble le gabarit. Le livrable est **un seul fichier**
+> déposé dans `src/zenraymedia/themes/` ; il n'est terminé que lorsqu'il s'affiche dans l'onglet
+> Media, sur les sept formats, sans un défaut bloquant du Critique.
+
+---
+
+## 16. Limite connue, à traiter plus tard
+
+Le contrat actuel place **un traitement visuel par rôle** (§6). Un thème de presse qui voudrait
+choisir explicitement le composant d'un bloc — « ce bloc-ci en carte horizontale, celui-là en
+encadré » — demanderait un champ `beat.component` dans le contrat `Cut`, et un sélecteur dans
+l'éditeur d'article. Ce n'est **pas** fait. Les sept rôles couvrent l'essentiel ; le jour où ils
+ne suffisent plus, c'est une extension de contrat (`ZM-L3-06 bis`), pas un contournement à
+improviser dans un gabarit.

@@ -1,0 +1,143 @@
+{
+  "calibrationMedia": "LM",
+  "probes": [
+    {
+      "role": "titre-article",
+      "text": "d’agression",
+      "image": "LM__ARTICLE__TOP__DESKTOP__11.jpg",
+      "refAspect": 5.515625,
+      "refDensity": 0.29028026237328564,
+      "refInkHeight": 39,
+      "warning": null,
+      "verdict": {
+        "family": "Vollkorn",
+        "weight": "700",
+        "archetype": "humaniste",
+        "margin": 0.005409663175539481,
+        "decisive": false,
+        "dominantArchetype": "labeur",
+        "dominantShare": 0.6,
+        "rival": "Libre Baskerville 700 (labeur)"
+      },
+      "calibration": {
+        "family": "Libre Baskerville",
+        "weight": "700",
+        "source": "atelier de calibrage (Matthieu, 2026-07-25)",
+        "rank": 2,
+        "rankAnyWeight": 2,
+        "agrees": false,
+        "installed": true
+      },
+      "ranking": [
+        {
+          "family": "Vollkorn",
+          "weight": "700",
+          "total": 0.9023684245116947,
+          "ratio": 0.9943342776203966,
+          "weightMatch": 0.9419436507649463,
+          "overlap": 0.7220563649390972,
+          "rows": 0.9223428227902997
+        },
+        {
+          "family": "Libre Baskerville",
+          "weight": "700",
+          "total": 0.8969587613361553,
+          "ratio": 0.9759206798866855,
+          "weightMatch": 0.9480964119419337,
+          "overlap": 0.6877001025768549,
+          "rows": 0.9762492983074545
+        },
+        {
+          "family": "Rozha One",
+          "weight": "400",
+          "total": 0.8866296221040022,
+          "ratio": 0.9644808743169399,
+          "weightMatch": 0.9595467281871779,
+          "overlap": 0.6646528250510552,
+          "rows": 0.9534095185567667
+        },
+        {
+          "family": "Literata",
+          "weight": "400",
+          "total": 0.8861538683962559,
+          "ratio": 0.953257790368272,
+          "weightMatch": 0.9035713569954106,
+          "overlap": 0.7222835617328051,
+          "rows": 0.973666080568712
+        },
+        {
+          "family": "Neuton",
+          "weight": "400",
+          "total": 0.8852766922409117,
+          "ratio": 0.9107648725212465,
+          "weightMatch": 0.9847211275635972,
+          "overlap": 0.7039609298195542,
+          "rows": 0.9622564834179166
+        },
+        {
+          "family": "Merriweather",
+          "weight": "700",
+          "total": 0.8830028811293023,
+          "ratio": 0.9348441926345609,
+          "weightMatch": 0.9279001691657646,
+          "overlap": 0.725475774570194,
+          "rows": 0.9497561851547751
+        },
+        {
+          "family": "Literata",
+          "weight": "700",
+          "total": 0.8829287490503644,
+          "ratio": 0.9874125874125874,
+          "weightMatch": 0.8475146946077179,
+          "overlap": 0.7060849279306801,
+          "rows": 0.9928962521423963
+        },
+        {
+          "family": "PT Serif",
+          "weight": "700",
+          "total": 0.8815286472057282,
+          "ratio": 0.9915730337078652,
+          "weightMatch": 0.9180276010706713,
+          "overlap": 0.6645760940192672,
+          "rows": 0.9255144109032718
+        },
+        {
+          "family": "Arvo",
+          "weight": "400",
+          "total": 0.8795548853239142,
+          "ratio": 0.9915730337078652,
+          "weightMatch": 0.8833196384552177,
+          "overlap": 0.6563934019595684,
+          "rows": 0.983840422816433
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "700",
+          "total": 0.8762746124098166,
+          "ratio": 0.9737931034482759,
+          "weightMatch": 0.8458166265704358,
+          "overlap": 0.7064012791531125,
+          "rows": 0.9826169984802201
+        },
+        {
+          "family": "Newsreader",
+          "weight": "700",
+          "total": 0.8754787825273808,
+          "ratio": 0.9390934844192634,
+          "weightMatch": 0.9247181184701756,
+          "overlap": 0.7091584158415841,
+          "rows": 0.9221795293513244
+        },
+        {
+          "family": "Neuton",
+          "weight": "700",
+          "total": 0.8724440244695866,
+          "ratio": 0.9915730337078652,
+          "weightMatch": 0.8338906518890414,
+          "overlap": 0.6959175257731959,
+          "rows": 0.952942788375163
+        }
+      ]
+    }
+  ]
+}

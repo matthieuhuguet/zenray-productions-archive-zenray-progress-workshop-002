@@ -1,0 +1,14 @@
+# T-01-1-1--une-nationale-du-matin — Une nationale du matin
+
+Calibrage (référence du catalogue) : Le Monde
+
+## Sources
+- Capture directe du site officiel (protocole presse/éditorial, pas de GUID/IIG/OFFICIAL — famille 01)
+
+Substitution : aucune
+
+## Contrôle de clôture 2026-07-26
+
+- Corpus historique conservé : 53 fichiers image, tous distincts par SHA-256.
+- Total utile : **52/8** ; la capture `raw/LM__CONSENT__KIOSK__DESKTOP__17.jpg` est explicitement exclue car elle montre la modale de consentement active.
+- Les 52 autres références suffisent à clôturer le thème sous le quota actuel ; aucun ancien fichier n’a été supprimé.

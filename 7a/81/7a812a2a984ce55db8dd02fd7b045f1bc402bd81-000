@@ -1,0 +1,101 @@
+# ZenRayMedia — Analyse d'impact et pré-mortem
+
+> Passe unique, exécutée le 2026-07-25 sur la décision : **concevoir ZenRayMedia et engager sa construction**.
+> Tous les chiffres ci-dessous ont été mesurés pendant cette session, pas rappelés de mémoire.
+> Spécialiste incarné : directeur technique d'un studio de post-production qui doit valider un pipeline
+> avant d'y engager une équipe.
+
+---
+
+## Décision examinée
+
+Concevoir puis construire **ZenRayMedia** : une machine à publier qui découple `Brief × Thème × Format`,
+rend du HTML en ProRes 4444 alpha, et s'appuie sur un catalogue de 1024 thèmes.
+Type : **(a) action à engager** — rien n'est encore construit, tout est encore réversible.
+
+---
+
+## Les quatre lectures
+
+| Lecture | Formulation |
+|---|---|
+| **Littérale** | Écrire le plan et la documentation d'une application qui transforme des notes en médias professionnels, dans tous les formats, via 1024 gabarits, sans coder encore. |
+| **Inverse** | Si la prémisse est fausse, elle l'est ici : **le blocage n'est pas la mise en forme, c'est l'envoi**. 18 mois de freelance ont produit 1 mission alors que les plans de prospection étaient soignés et terminés. Un outil qui met en forme mieux et plus vite ne corrige rien si le geste manquant est *publier*. Et ne rien faire coûte : rien. Le trajet note → média se fait déjà à la main, plus lentement. |
+| **Adjacente** | (1) Quel est le **taux de publication actuel** — combien d'articles publiés le mois dernier ? Si c'est zéro, le goulot n'est pas l'outil. (2) Le catalogue de thèmes est-il un actif **vendable en soi** (un pack de gabarits se vend, une application non finie ne se vend pas) ? (3) Que se passe-t-il si un seul thème, très bon, suffit à publier 50 fois ? |
+| **Reformulée** | *« Construis-moi la machine la plus courte possible entre une note et une publication visible, et prouve-le en publiant une fois. Le reste du catalogue viendra après la preuve. »* — C'est cette version qui est traitée dans la feuille de route V0 du plan directeur. |
+
+---
+
+## Les cinq risques retenus
+
+| # | Risque | Preuve (mesurée cette session) | Sév × Prob | Vérification concrète |
+|---|---|---|---|---|
+| **R1** | **Le chantier se transforme en refuge d'outillage et consomme les 46 jours restants au Japon.** Le plan est riche, il donne envie de commencer par le moteur ; le terrain japonais et la publication passent après, à nouveau. | `memory/matthieu-profil-synthese-2026-07.md:16` — « Tooling refuge : au Japon, l'énergie est partie dans l'infra (uploads, shards, streaming) à 4h du matin au lieu du terrain. **Interdit posé : zéro nouveau chantier d'infra jusqu'au retour (2026-09-09)** ». Ligne 17 : « 18 mois de freelance = 1 mission… plans restés en brouillon ». Calcul : du 2026-07-25 au 2026-09-09 = **46 jours**. | **Irréversible × Élevée** — 46 jours de terrain ne se rattrapent pas. Le schéma est constaté deux fois dans le même document. | **Porte de publication** : la V0 doit produire **un article réellement publié** dans les 7 jours. Preuve = une URL publique. Sans URL au 2026-08-01, le chantier s'arrête jusqu'au 2026-09-09. Le plan écrit ne périme pas ; les 46 jours, si. |
+| **R2** | **Un thème par skill rend le système inutilisable bien avant 1024.** L'index des skills est chargé au démarrage de chaque session, avant tout travail. | Mesuré : **29 skills** portent **15 913 octets** de descriptions, soit **549 octets en moyenne**. Extrapolation à 1024 skills : **561 894 octets ≈ 140 000 tokens** injectés dans **chaque** session, avant la première question. L'index résumé dans `~/.claude/CLAUDE.md` pèse déjà **6 305 octets pour 30 skills**. | **Élevée × Certaine** — c'est de l'arithmétique, pas une hypothèse. | Ne jamais dépasser **1 skill « atelier de thèmes »**. Vérification : `ls -d ~/.claude/skills/*/ \| wc -l` doit rester du même ordre qu'aujourd'hui après la livraison des 1024 thèmes. Les thèmes sont des fichiers de données dans un catalogue interrogeable, jamais des skills. |
+| **R3** | **Rendu non déterministe : images dupliquées ou sautées, impossible à corriger sans tout refaire.** Une capture pilotée par l'horloge réelle produit une vidéo différente à chaque exécution. | Chromium headless est présent (`~/Library/Caches/ms-playwright/chromium_headless_shell-1228`) et `@playwright/test` est déjà en dépendance de développement de ZenRayProgress — donc le pipeline sera écrit avec ces outils, dont **le comportement par défaut est une capture en temps réel**. Aucune horloge virtuelle n'existe aujourd'hui dans le projet. | **Élevée × Élevée** — c'est le comportement par défaut, il faut agir pour l'éviter. | Test de reproductibilité, obligatoire avant toute autre fonctionnalité vidéo : rendre deux fois le même plan de 5 s, comparer `sha256` des deux fichiers → **doivent être identiques**. Puis `ffprobe -count_frames` → le nombre d'images doit valoir exactement `fps × durée` (150 pour 5 s à 30 i/s). Tant que ce test n'est pas vert, aucun autre développement vidéo. |
+| **R4** | **Saturation disque en une douzaine de rendus** si les images intermédiaires touchent le disque. | Mesuré : **385 Gio libres** sur 1,8 Tio (`df -h /`). Calcul : une image RGBA 4K = 3840 × 2160 × 4 = **33,18 Mo** ; 30 s à 30 i/s = 900 images = **29,9 Go pour un seul plan**. Treize plans remplissent le disque. Contexte aggravant déjà vécu sur ce projet : « Workdirs upload cumulés (130 Go vidéo + 37 Go image observés) », registre d'erreurs du 2026-07-12. | **Élevée × Élevée** — la cause exacte (dossiers de travail non nettoyés) s'est déjà produite ici. | Interdiction d'écrire les images sur disque : flux direct vers l'encodeur. Vérification : pendant un rendu de 30 s, `du -sh` du dossier temporaire doit rester **< 100 Mo**, et le dossier doit disparaître en `finally`, quel que soit le résultat. |
+| **R5** | **Marques déposées utilisées comme noms de styles dans un catalogue publié.** Le brief nomme BFM TV, Elle, Carrefour, La Redoute, Squeezie, Inoxtag, PlayStation Studios, Weta, Le Monde, Kojima Productions. Un catalogue public proposant « le style *Elle* » est un usage commercial d'une marque pour désigner un service. | ZenRayProgress est déployé publiquement (Vercel). Le projet porte déjà une règle P0 anti-fuite de métadonnées dans les surfaces publiques (`CLAUDE.md`, section « AUCUNE FUITE DE NOMS MÉDIA DANS GIT PUBLIC »), qui traite exactement cette classe de problème pour les médias. | **Moyenne × Moyenne** — nul en usage strictement privé, réel dès la première publication du catalogue ou d'un livrable commercial. | Séparation stricte : le champ **public** d'un thème est un archétype de genre (« chaîne d'info continue ») ; la marque vit dans un champ **privé** `calibration.ref`, jamais rendu, jamais poussé sur un dépôt public. Vérification avant tout déploiement : `rg -i "bfm\|carrefour\|squeezie\|playstation\|weta\|le monde\|elle" src/ public/` doit ne rien retourner. |
+
+---
+
+## Risques écartés (une ligne)
+
+Écartés parce que déjà tranchés dans le plan directeur ou de portée négligeable ici : rendu vidéo sur Vercel
+(impossible et déjà décidé local, §8 — plafond de réponse ~4,5 Mo, incident du 2026-07-21) ; quota API GitHub
+(la règle `action=read&raw=1` hors quota est déjà en vigueur depuis l'incident du 2026-07-20) ; balise `hvc1`
+sur les MP4 HEVC (règle projet existante, appliquée automatiquement) ; licences de polices (réel mais sans
+effet tant que la diffusion reste personnelle — champ `license` prévu au catalogue, à traiter avant tout
+livrable client) ; sécurité et concurrence d'accès (application mono-utilisateur, aucun écrivain simultané).
+
+---
+
+## Pré-mortem — les deux incidents les plus plausibles
+
+**Incident n°1, le plus probable — « Trois semaines plus tard, il y a un moteur magnifique et zéro
+publication. »**
+Fin août 2026. Le Stage rend des ProRes 4444 impeccables, le catalogue compte 300 thèmes, le Deck est beau.
+Rien n'est sorti. Les journées japonaises sont passées devant l'écran, comme en juin. Le 9 septembre arrive,
+le retour en France aussi, et l'outil sert à publier… la première chose, enfin, mais le trajet est terminé.
+**La décision fautive :** avoir commencé par la couche 6 (le rendu) au lieu de la couche 8 (la publication).
+**La parade :** la V0 ne contient aucun ffmpeg. Elle publie un article. C'est tout.
+
+**Incident n°2 — « Le catalogue est fini, il ne sert à rien. »**
+Les 1024 thèmes existent. À l'usage, 6 sont utilisés, et l'un d'eux ressemble trop à un magazine existant
+pour être montré à un client. Les 1018 autres sont un actif mort, produit à un coût réel en tokens et en
+heures, jamais amorti. **La décision fautive :** avoir traité le catalogue comme un livrable au lieu d'un
+sous-produit de l'usage. **La parade :** un thème n'entre au catalogue qu'après avoir servi une fois, ou
+parce qu'il est explicitement une **commande** (le catalogue écrit d'avance sert de carte, pas de stock —
+il indique quoi construire quand le besoin tombe).
+
+---
+
+## Questions ouvertes (accord par silence sur le défaut)
+
+1. **La porte de publication du R1 est-elle acceptée ?** *Défaut :* oui — V0 bornée à une session, arrêt sans
+   URL publique au 2026-08-01.
+2. **Combien de thèmes réellement construits avant le 2026-09-09 ?** *Défaut :* **4**, dans une seule famille.
+3. **Le catalogue de 1024 est-il livré comme carte ou comme stock ?** *Défaut :* **carte** — écrit en entier
+   (il est peu coûteux et sert de plan), construit à la demande.
+4. **`prores_videotoolbox` accepte-t-il l'alpha ?** *Défaut :* non supposé — `prores_ks` (`yuva444p10le`,
+   vérifié disponible) pour tout ce qui porte de l'alpha.
+5. **Les livrables partent-ils dans ZenRayShards ?** *Défaut :* non en V0 — dossier d'export local, publication
+   explicite ensuite.
+
+---
+
+## Verdict
+
+**GO avec corrections.** La conception est saine, le découplage `Brief × Thème × Format` est juste, et la
+chaîne technique est confirmée disponible sur cette machine (ProRes 4444 alpha vérifié, Chromium headless
+présent, ffmpeg 8.1.1). Trois corrections sont **bloquantes** :
+
+1. **R1 — Porte de publication.** V0 = un article publié, une session, aucune vidéo, aucun ffmpeg. Sans URL
+   publique au 2026-08-01, arrêt jusqu'au 2026-09-09. Ce n'est pas une réduction d'ambition : c'est la
+   condition pour que l'ambition existe encore en septembre.
+2. **R2 — Un seul skill.** Les 1024 thèmes sont des données. La preuve est arithmétique : 140 000 tokens de
+   descriptions par session dans le cas contraire.
+3. **R3 — Test de reproductibilité avant tout code vidéo.** Deux rendus identiques au `sha256` près, sinon
+   rien d'autre ne se construit.
+
+R4 et R5 sont des règles d'écriture, à appliquer dès la première ligne : jamais d'images sur le disque,
+jamais de marque dans un champ public.

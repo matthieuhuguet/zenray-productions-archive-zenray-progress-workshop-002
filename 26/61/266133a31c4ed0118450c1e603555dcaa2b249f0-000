@@ -1,0 +1,171 @@
+# ZenRayMedia — Contrat visuel et inventaire des composants hérités
+
+> Source de vérité : `Memory/Design/ui-design/ui-components-zenray-v14.html`
+> **314 197 caractères · 10 blocs `<style>` · 6 `<script>` · 33 `<article>` · 16 `<section>` · 222 `<svg>` ·
+> 49 variables CSS · 232 classes distinctes · 25 identifiants.**
+> Extraction ciblée effectuée le 2026-07-25. Le fichier n'a pas été lu intégralement : les valeurs ci-dessous
+> ont été extraites par analyse structurelle, ce qui donne les mêmes chiffres pour une fraction du coût.
+
+---
+
+## 1. La loi
+
+> **On hérite. On ne réinvente pas.**
+> Tout composant de ZenRayMedia est soit un composant de `v14` réutilisé tel quel, soit une **recomposition**
+> de primitives de `v14`. Une nouvelle primitive visuelle ne se crée que si aucune combinaison existante ne
+> peut produire l'effet — et elle doit alors être ajoutée à `v14`, pas gardée à part.
+
+---
+
+## 2. Primitives extraites (valeurs exactes, à recopier sans les retoucher)
+
+### 2.1 Le verre — `.glass`
+
+```css
+:root{
+  --fill:      rgba(255,255,255,.26);
+  --blur:      blur(22px) saturate(70%) brightness(1.28);
+  --rim-edge:  rgba(255,255,255,.55);
+  --shadow:    0 2px 10px rgba(0,0,0,.14);
+  --rim:       inset 0 1px 0 var(--rim-edge), inset 0 -1px 0 var(--rim-edge);
+}
+.glass{
+  position:relative; display:grid; place-items:center;
+  border-radius:999px; border:none; cursor:pointer;
+  background:var(--fill);
+  backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--rim), var(--shadow);
+  color:#fff; overflow:hidden;
+}
+```
+
+Trois points non négociables, chacun issu d'une décision déjà payée sur ce projet :
+
+1. **Le rim est identique en haut et en bas.** Pas de `conic-gradient`, abandonné le 2026-07-17 : le reflet
+   centré métallique est instable sur les capsules longues et les panneaux rectangulaires.
+2. **Le bruit est à 5 %**, en `mix-blend-mode: overlay`, posé en `::after` plein cadre — jamais en image de
+   fond, jamais au-dessus de 5 %.
+3. **Trois tailles seulement** : `sm` 48 px · `md` 64 px · `lg` 92 px.
+
+### 2.2 États
+
+| Classe | Effet | Usage dans ZenRayMedia |
+|---|---|---|
+| `.glass.active` | Fond blanc plein, texte `#1d1d1f`, `backdrop-filter` retiré | État actif d'un outil |
+| `.glass.active-tint` | Fond `#0a84ff`, ombre teintée | Action primaire — **une seule par écran** (le bouton Rendre) |
+| `.is-on` | Bascule allumée | États binaires (boucle, muet, sécurité) |
+
+**Règle héritée :** l'état actif se signale par une **bascule**, jamais par un `:hover` — un `:hover` sur un
+toggle produit le clignotement déjà diagnostiqué le 2026-07-22.
+
+### 2.3 Le bruit — `.noise`
+
+```css
+.noise{
+  position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  opacity:.05; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,…feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'…");
+}
+```
+
+### 2.4 Les deux jeux de tokens de surface
+
+**`--theme-*` — surfaces flottantes (verre teinté).** Deux thèmes complets, `.theme-dark` / `.theme-light`,
+portant `--glass-a/-b`, `--rim-main/-soft/-side`, `--outer-line`, `--elevation-a/-b`, `--theme-fg/-muted/-soft/-rail/-fill`.
+
+**`--plan-*` — surfaces d'application (panneaux, listes, grilles).** C'est **le jeu à utiliser pour
+ZenRayMedia**, parce que c'est celui qui a été conçu pour un plan de travail dense.
+
+| Token | Sombre | Clair |
+|---|---|---|
+| `--plan-bg` | `#08090c` | `#edf0f4` |
+| `--plan-panel` | `rgba(255,255,255,.085)` | `rgba(255,255,255,.58)` |
+| `--plan-panel-strong` | `rgba(255,255,255,.13)` | `rgba(255,255,255,.76)` |
+| `--plan-text` | `#f7f7f8` | `rgba(25,27,31,.92)` |
+| `--plan-muted` | `rgba(255,255,255,.52)` | `rgba(25,27,31,.52)` |
+| `--plan-soft` | `rgba(255,255,255,.34)` | `rgba(25,27,31,.34)` |
+| `--plan-grid` | `rgba(255,255,255,.075)` | `rgba(25,27,31,.09)` |
+| `--plan-tile` | `rgba(255,255,255,.10)` | `rgba(255,255,255,.58)` |
+| `--plan-hover` | `rgba(255,255,255,.15)` | `rgba(255,255,255,.82)` |
+| `--plan-rim-main` | `rgba(255,255,255,.252)` | `rgba(34,37,43,.161)` |
+| `--plan-rim-soft` | `rgba(255,255,255,.056)` | `rgba(34,37,43,.063)` |
+| `--plan-rim-side` | `rgba(255,255,255,.02975)` | `rgba(34,37,43,.035)` |
+| `--plan-outer` | `rgba(0,0,0,.231)` | `transparent` |
+
+Accents partagés : `--plan-blue #3b82f7` · `--plan-green #30d158` · `--plan-orange #ff9f0a` ·
+`--plan-violet` · `--plan-warning`.
+Courbe unique : `--ease: cubic-bezier(.16,1,.3,1)`.
+Popover : `background: color-mix(in srgb, var(--plan-bg) 88%, transparent)` +
+`backdrop-filter: blur(25px) saturate(145%)` + `box-shadow: 0 18px 55px rgba(0,0,0,.26), inset 0 0 0 1px var(--plan-grid)`.
+
+---
+
+## 3. Inventaire des composants — et leur emploi dans ZenRayMedia
+
+C'est le tableau le plus utile du document : **rien n'est à dessiner de zéro.**
+
+| Famille de classes `v14` | Ce que c'est aujourd'hui | Emploi dans ZenRayMedia | Ce qui change |
+|---|---|---|---|
+| `.glass` + `.sm/.md/.lg` + `.noise` | Boutons ronds en verre, 3 tailles | Toute la barre d'actions | Rien |
+| `.glass.active-tint` | Action primaire bleue | **Bouton Rendre**, unique par écran | Rien |
+| `.timing-toggle` · `.timing-icon` · `.play-timing` · `.timing-play/pause` | Comparateur de 9 durées pour la transition play↔pause | Réglage de la **courbe de mouvement d'un thème** — le même comparateur sert à choisir un timing d'animation | Le libellé, pas le mécanisme |
+| `.progress-pill` · `.progress-rail` · `.track` | Capsule de progression 48 px, rail 6 px, temps écoulé / restant, sans poignée persistante | **Barre de défilement temporel du Stage** et **progression de rendu** | Deux instances, mêmes dimensions |
+| `.mini-player` · `.mini-player-v2` · `.mini-h*` (cover, eq, title, sub, progress, rail, transport, group, play, route) | Lecteur compact horizontal et vertical, centre absolu, égaliseur animé | **Transport du Stage** : lecture, image précédente/suivante, aller au beat | L'égaliseur devient un indicateur de rendu en cours |
+| `.sbs-*` (`group`, `group-head`, `chevron`, `row`, `thumb`, `add`, `search`, `input`, `drop`, `page-btn`, `demo`) | Navigateur de sources repliable — YouTube / Spotify / Fichiers locaux, avec recherche, vignettes, pagination | **Deux emplois** : (a) le **Vault** (notes, médias, références) ; (b) le **Deck** (catalogue de thèmes par famille repliable, recherche, pagination) | Les groupes deviennent les 16 familles ; les vignettes deviennent des aperçus de thème |
+| `.workspace-sidebar-group` · `-heading` · `-item` · `.workspace-stage` · `-canvas` · `.workspace-demo` · `.workspace-more` · `.workspace-new` · `.workspace-bare-button` | Colonne latérale d'espace de travail + scène de démonstration | Colonne de gauche : Briefs, Cuts, Livrables | Rien |
+| `.museum-stage` · `-head` · `-canvas` · `.v6-stage` · `.v6-canvas` | Cadre de scène avec en-tête et zone de rendu | **Le Stage** : cadre d'aperçu au ratio du format | L'en-tête affiche format + durée + thème |
+| `.v11-plan-day` · `-date` · `-goals` · `-goal` · `-goal-title` · `-goal-time` · `.fused` · `.done` | Grille de planning : colonnes de jours, cartes d'objectifs, fusion de cartes contiguës | **L'éditeur de Cut** : chaque colonne = un beat, chaque carte = un bloc, la fusion = un plan qui absorbe le suivant | Le seul composant à re-libeller en profondeur |
+| `.v11-plan-popover` · `.v11-plan-field` · `.v11-plan-switch` · `.v11-plan-menu-item` | Popover d'édition en place, champ, interrupteur, entrée de menu | Réglages fins d'un beat ou d'un thème, **en place**, sans modale | Rien |
+| `.v14-plan-picker` | Sélecteur compact | **Sélecteur de format** dans la barre de rendu | Rien |
+| `.v13-plan-spec-card` · `.v13-plan-mini-cell` | Carte de spécification, cellule miniature | **Fiche de thème** (les 7 groupes de décisions) et vignette de thème dans le Deck | Rien |
+| `.v11-plan-overdue-row` · `-icon` · `-copy` · `.v11-plan-rescue` | Ligne d'alerte + action de rattrapage | **Sorties du Critique** : « le texte déborde de la zone de sécurité » + bouton corriger | Rien |
+| `.v11-plan-btn` · `.icon` · `.round` · `.primary` · `.row` · `.col` | Boutons et disposition | Partout | Rien |
+| 222 `<svg>` inline, dont les tracés Apple réels (`play.fill` viewBox 24,9141 × 25,043 · `pause.fill` 18,15 × 24,67 · `forward.fill` 42,97 × 22,77 · `backward.fill` en miroir exact · `airpods.pro` · `10.arrow.trianglehead.counterclockwise`) | Jeu d'icônes | Réutilisé tel quel | **Ne jamais approximer une icône Apple** : la règle existante impose le tracé réel |
+
+**Conclusion de l'inventaire :** sur les treize zones d'interface prévues pour ZenRayMedia, **onze existent
+déjà** dans `v14`. Deux seulement demandent un travail de composition : l'éditeur de Cut (dérivé du plan
+board) et la fiche de thème (dérivée de la carte de spécification).
+
+---
+
+## 4. Règles typographiques et de graisse (héritées, non négociables)
+
+| Règle | Valeur | Origine |
+|---|---|---|
+| Familles du chrome | Anthropic **Serif 80 %** · **Sans 15 %** · **Mono 5 %** | Règle projet ZenRayProgress |
+| Jamais Inter, jamais police système par défaut | — | Règle projet |
+| Graisses autorisées dans le chrome | **400 regular**, **500 medium au maximum** | Règle validée : « jamais de gras, toujours regular ou medium » |
+| Taille plancher sur poste fixe | **12 px** | Interface pensée 4K ; sous 12 px, illisible et non professionnel |
+| Chiffres | Mono, tabulaires | Durées, timecodes, dimensions |
+| Contenu **rendu** (le média produit) | **Le thème décide** | Un thème « chaîne d'info » impose son condensé : c'est son travail, pas une entorse |
+
+---
+
+## 5. Géométrie des contrôles (héritée du lecteur v14)
+
+| Contrôle | Dimension |
+|---|---|
+| Action secondaire | **48 px** |
+| Saut / navigation | **64 px** |
+| Lecture / action centrale | **92 px** |
+| Capsule de progression | hauteur **48 px**, rail **6 px** |
+| Rail de volume | **4 px** |
+| Rayon des surfaces flottantes | 16 à 26 px |
+| Rayon des boutons ronds | 999 px |
+
+---
+
+## 6. Plan des maquettes à produire (étape suivante, après validation de ce document)
+
+Trois versions, comparables, jamais concurrentes : chacune teste une hypothèse différente sur **où vit le
+choix du thème**.
+
+| Version | Hypothèse testée | Pages |
+|---|---|---|
+| **A — Trois colonnes** | Le Deck est visible en permanence : le style se choisit à l'œil | 1. Surface complète (clair) · 2. Surface complète (sombre) · 3. Éditeur de Cut · 4. Fiche de thème |
+| **B — Deux colonnes + tiroir** | Le Deck est un tiroir : le Stage prend toute la place | Mêmes 4 pages |
+| **C — Scène plein cadre + barre de commande** | Aucun panneau : tout passe par `⌘K` — le maximum de design soustractif | Mêmes 4 pages |
+
+Chaque page est autonome (styles inclus), en clair **et** en sombre, et n'utilise **que** les primitives du §2.
+Le nombre d'actions entre la note et le rendu est affiché en clair sur chaque maquette — c'est le critère de
+comparaison, pas le goût.

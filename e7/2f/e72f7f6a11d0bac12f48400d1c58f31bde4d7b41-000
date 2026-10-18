@@ -1,0 +1,481 @@
+# Catalogue des thèmes — Volume D : familles 13 à 16 (256 thèmes)
+
+> Dernier volume. Total du catalogue : **16 familles × 8 sous-familles × 8 variantes = 1024 thèmes.**
+> La famille 16 n'est pas un supplément exotique : c'est la famille la plus utile au contexte actuel
+> (séjour au Japon), et celle qui impose au moteur les contraintes typographiques les plus dures
+> (composition verticale, CJK, ruby) — donc celle qui valide le mieux l'architecture.
+
+---
+
+# Famille 13 — Sport & compétition
+
+**Système.** Surface : opaque, habillage permanent en bord d'écran. Palette : couleurs de club, un accent de
+score. Typographie : sans condensé, chiffres tabulaires obligatoires, capitales. Grille : bandeau supérieur
+de score, tiers inférieur de nom. Mouvement : entrées latérales rapides, impact sur le but. Habillage :
+chronomètre, score, logos, diffuseur. Son : nappe de foule, virgule d'action.
+
+## 13-1 — Habillage de match
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-1-1 | Bandeau de score football | Canal+ Ligue 1 | Bandeau haut, chrono, équipes abrégées |
+| T-13-1-2 | Bandeau de score basket | NBA on TNT | Quart-temps, fautes, chrono de possession |
+| T-13-1-3 | Bandeau de tennis | Roland-Garros France Televisions | Sets, jeux, service indiqué |
+| T-13-1-4 | Bandeau de rugby | Six Nations BBC | Essais, transformations, temps additionnel |
+| T-13-1-5 | Composition d'équipe | UEFA Champions League compositions | Terrain schématique, numéros, postes |
+| T-13-1-6 | Statistiques en direct | Opta stats | Possession, tirs, cartons |
+| T-13-1-7 | Ralenti et arbitrage vidéo | VAR Premier League | Cadre d'analyse, lignes tracées |
+| T-13-1-8 | Fin de match | Full Time BBC Sport | Score figé, mention « terminé » |
+
+## 13-2 — Résultats & classement
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-2-1 | Tableau de classement | Premier League table | Grille, points, différence, forme récente |
+| T-13-2-2 | Résultats de journée | Multiplex beIN Sports | Liste de scores, mise à jour en direct |
+| T-13-2-3 | Tableau final | NCAA March Madness bracket | Arbre, progression, finale |
+| T-13-2-4 | Palmarès | Ballon d'Or palmares | Vainqueurs par année |
+| T-13-2-5 | Classement individuel | Classement ATP | Rang, nom, mesure, évolution |
+| T-13-2-6 | Calendrier | Calendrier Formula 1 | Dates, adversaires, domicile / extérieur |
+| T-13-2-7 | Qualification | Scenarios de qualification UEFA | Conditions chiffrées, cas de figure |
+| T-13-2-8 | Bilan de saison | Bilan de saison L'Equipe | Chiffres clés, moments marquants |
+
+## 13-3 — Portrait d'athlète
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-3-1 | Portrait héroïque | Nike portrait athlete | Contre-plongée, noir, ralenti |
+| T-13-3-2 | Fiche d'athlète | Basketball Reference | Taille, poids, palmarès, records |
+| T-13-3-3 | Parcours | The Last Dance | Frise, jalons, obstacles |
+| T-13-3-4 | Entraînement | Under Armour entrainement | Effort, répétition, chiffres de charge |
+| T-13-3-5 | Interview d'après-match | Interview flash Canal+ | Micro, sueur, ton immédiat |
+| T-13-3-6 | Duel | Nadal contre Djokovic | Deux portraits, statistiques opposées |
+| T-13-3-7 | Retour de blessure | Retour de blessure Zverev | Chronologie médicale, retour |
+| T-13-3-8 | Fin de carrière | Adieux Roger Federer Laver Cup | Ton solennel, archives, bilan |
+
+## 13-4 — Résumé & temps forts
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-4-1 | Résumé de match | Match of the Day | Actions montées, score en incrustation |
+| T-13-4-2 | But de la semaine | Prix Puskas FIFA | Ralenti multi-angles, répétition |
+| T-13-4-3 | Top 10 | NBA Top 10 Plays | Décompte, numérotation |
+| T-13-4-4 | Résumé vertical | NBA TikTok vertical | 9:16, sous-titres, 30 secondes |
+| T-13-4-5 | Analyse tactique | Sky Sports Monday Night Football | Télestration, flèches, arrêts |
+| T-13-4-6 | Récapitulatif de journée | Telefoot | Enchaînement de rencontres |
+| T-13-4-7 | Résumé sans commentaire | Wimbledon sans commentaire | Ambiance seule, aucune voix |
+| T-13-4-8 | Bêtisier | Betisier Canal+ Sport | Ton léger, musique décalée |
+
+## 13-5 — Course d'endurance
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-5-1 | Marathon | Marathon de Paris | Kilomètres, temps de passage, carte de parcours |
+| T-13-5-2 | Trail | UTMB | Dénivelé, profil de course, météo |
+| T-13-5-3 | Triathlon | Ironman World Championship | Trois segments, transitions chronométrées |
+| T-13-5-4 | Cyclisme sur route | Tour de France | Profil d'étape, écarts, échappée |
+| T-13-5-5 | Ultra-distance | Barkley Marathons | Heures écoulées, points de ravitaillement |
+| T-13-5-6 | Natation en eau libre | Traversee de la Manche | Température, courant, bouées |
+| T-13-5-7 | Course en équipe | Ekiden | Ordre de passage, temps cumulés |
+| T-13-5-8 | Objectif personnel | Strava objectif personnel | Comparaison à soi-même, progression |
+
+## 13-6 — Sport de combat
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-6-1 | Affiche de combat | UFC fight card | Deux visages face à face, date, lieu |
+| T-13-6-2 | Présentation des combattants | Tale of the Tape UFC | Mensurations comparées, palmarès |
+| T-13-6-3 | Habillage de round | Boxe Canal+ round | Numéro de round, chrono, scores de juges |
+| T-13-6-4 | Ralenti d'impact | Ralenti Phantom UFC | Multi-angles, image par image |
+| T-13-6-5 | Pesée | Pesee UFC | Poids affiché, confrontation |
+| T-13-6-6 | Décision | Decision des juges | Cartes de juges, annonce |
+| T-13-6-7 | Arts martiaux traditionnels | Grand Sumo NHK | Sobriété, respect, terminologie |
+| T-13-6-8 | Préparation | Camp d'entrainement Rocky | Répétition, régime, compte à rebours |
+
+## 13-7 — Sport mécanique
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-7-1 | Habillage de grand prix | Formula 1 habillage | Position, écart, tour, pneus |
+| T-13-7-2 | Grille de départ | Grille de depart F1 | Positions, temps au tour, écarts |
+| T-13-7-3 | Télémétrie | Telemetrie F1 TV Pro | Vitesse, régime, freinage, comparaison |
+| T-13-7-4 | Arrêt au stand | Pit stop Red Bull Racing | Chronomètre au dixième, équipe |
+| T-13-7-5 | Rallye | Rallye Monte-Carlo WRC | Notes de copilote, temps par secteur |
+| T-13-7-6 | Endurance | 24 Heures du Mans | Heure de course, relais, météo |
+| T-13-7-7 | Moto | MotoGP | Angle de prise de virage, ralenti |
+| T-13-7-8 | Course électrique | Formula E | Énergie restante, régénération |
+
+## 13-8 — Sport olympique & multi-disciplines
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-13-8-1 | Habillage olympique | Paris 2024 | Palette de l'édition, pictogrammes de discipline |
+| T-13-8-2 | Tableau des médailles | Tableau des medailles CIO | Or, argent, bronze, drapeaux |
+| T-13-8-3 | Cérémonie d'ouverture | Ceremonie d'ouverture Paris 2024 | Défilé des délégations, ton solennel |
+| T-13-8-4 | Épreuve chronométrée | Photo-finish Omega | Photo-finish, temps au millième, record |
+| T-13-8-5 | Épreuve jugée | Gymnastique artistique FIG | Notes de jury, difficulté, exécution |
+| T-13-8-6 | Sport paralympique | Jeux Paralympiques Paris 2024 | Classification expliquée, respect du vocabulaire |
+| T-13-8-7 | Podium | Podium olympique | Hymne, drapeaux, ordre |
+| T-13-8-8 | Record battu | Record du monde Bolt Berlin 2009 | Ancien record barré, nouveau affiché |
+
+---
+
+# Famille 14 — Événement & affiche
+
+**Système.** Surface : format d'affiche, lisible à distance. Palette : deux couleurs franches maximum.
+Typographie : titre monumental, informations pratiques en corps réduit mais lisible. Grille : hiérarchie
+stricte quoi / qui / quand / où. Mouvement : version animée en boucle courte. Habillage : logos partenaires,
+mentions légales, billetterie. Son : identité sonore courte.
+
+## 14-1 — Concert & salle
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-1-1 | Affiche de concert | Le Bataclan | Nom d'artiste dominant, date, salle |
+| T-14-1-2 | Programmation de saison | Saison Philharmonie de Paris | Liste chronologique, abonnement |
+| T-14-1-3 | Première partie | Premiere partie La Cigale | Hiérarchie de noms, ordre de passage |
+| T-14-1-4 | Concert acoustique | Tiny Desk Concert | Palette douce, capacité limitée |
+| T-14-1-5 | Concert en plein air | Rock en Seine | Photographie de site, météo, horaires |
+| T-14-1-6 | Concert symphonique | Orchestre de Paris | Serif, programme détaillé, chef et solistes |
+| T-14-1-7 | Concert caritatif | Concert des Enfoires | Cause affichée, reversement |
+| T-14-1-8 | Complet | Complet Olympia | Bandeau, liste d'attente |
+
+## 14-2 — Exposition & galerie
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-2-1 | Affiche d'exposition | Centre Pompidou affiche | Œuvre emblématique, dates, institution |
+| T-14-2-2 | Vernissage | Vernissage Palais de Tokyo | Date, heure, invitation |
+| T-14-2-3 | Exposition monographique | Retrospective Hokusai Grand Palais | Nom seul, période couverte |
+| T-14-2-4 | Exposition collective | Biennale de Venise | Liste, commissaire, thème |
+| T-14-2-5 | Galerie commerciale | Galerie Perrotin | Liste de prix sur demande, discrétion |
+| T-14-2-6 | Exposition itinérante | Exposition itinerante Van Gogh | Villes et dates, carte |
+| T-14-2-7 | Dernière semaine | Derniers jours Fondation Louis Vuitton | Compte à rebours, rappel |
+| T-14-2-8 | Exposition photographique | Rencontres d'Arles | Une image pleine, tirage et format |
+
+## 14-3 — Théâtre & spectacle vivant
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-3-1 | Affiche de théâtre | Comedie-Francaise | Titre, auteur, mise en scène, distribution |
+| T-14-3-2 | Danse contemporaine | Compagnie Peeping Tom | Corps en mouvement, typographie fine |
+| T-14-3-3 | Opéra | Opera Bastille | Serif, distribution, durée et entracte |
+| T-14-3-4 | Cirque et arts de la rue | Cirque du Soleil | Couleurs vives, promesse de sensation |
+| T-14-3-5 | Humour et one-man-show | Point Virgule | Portrait, accroche drôle |
+| T-14-3-6 | Spectacle jeune public | Theatre Dunois jeune public | Âge conseillé, durée, couleurs franches |
+| T-14-3-7 | Festival de théâtre | Festival d'Avignon | Grille de créneaux, lieux multiples |
+| T-14-3-8 | Création en résidence | Residence Chaillot | Sortie de résidence, ton exploratoire |
+
+## 14-4 — Conférence professionnelle
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-4-1 | Affiche de conférence | VivaTech | Thème, dates, lieu, intervenants clés |
+| T-14-4-2 | Programme | Programme Web Summit | Créneaux, salles, pistes parallèles |
+| T-14-4-3 | Intervenant | Speaker SXSW | Portrait, titre d'intervention, biographie |
+| T-14-4-4 | Appel à contributions | Call for papers SIGGRAPH | Dates limites, thèmes, format |
+| T-14-4-5 | Sponsors et partenaires | Partenaires Slush | Niveaux, logos hiérarchisés |
+| T-14-4-6 | Inscription | Billetterie Web Summit | Tarifs par catégorie, échéances |
+| T-14-4-7 | Édition hybride | GDC hybride | Deux parcours, modalités |
+| T-14-4-8 | Restitution | Restitution Slush | Chiffres, ressources, rediffusions |
+
+## 14-5 — Club & soirée
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-5-1 | Flyer de soirée | Concrete Paris | Line-up, horaires, entrée |
+| T-14-5-2 | Soirée techno | Berghain | Typographie technique, noir, monochrome |
+| T-14-5-3 | Soirée à thème | Soiree a theme Rex Club | Consigne visuelle, ambiance |
+| T-14-5-4 | Résidence de club | Residence Boiler Room | Même gabarit, artiste variable |
+| T-14-5-5 | Soirée d'ouverture | Ouverture Warehouse | Ton événementiel, invitation |
+| T-14-5-6 | Afterwork | Afterwork Wanderlust | Horaires, offre, ton décontracté |
+| T-14-5-7 | Soirée en extérieur | Open air Peninsula | Lieu, coucher de soleil, météo |
+| T-14-5-8 | Clôture de saison | Cloture de saison Nuits Sonores | Rétrospective, ton nostalgique |
+
+## 14-6 — Affiche de cinéma
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-6-1 | Affiche principale | Affiche Drive Nicolas Winding Refn | Visage dominant, titre, bloc de crédits |
+| T-14-6-2 | Affiche de personnage | Character posters Dune | Un personnage par affiche, série |
+| T-14-6-3 | Affiche teaser | Teaser poster Oppenheimer | Symbole, date, aucun visage |
+| T-14-6-4 | Affiche de festival | Affiche Festival de Cannes | Lauriers, mentions, sobriété |
+| T-14-6-5 | Affiche illustrée | Affiche illustree Studio Ghibli | Illustration, signature d'artiste |
+| T-14-6-6 | Affiche minimaliste | Saul Bass minimal | Une forme, une couleur, un titre |
+| T-14-6-7 | Affiche internationale | Affiche japonaise de Star Wars | Titre traduit, crédits adaptés |
+| T-14-6-8 | Bloc de crédits | Billing block Hollywood | Typographie condensée, hiérarchie contractuelle |
+
+## 14-7 — Festival pluridisciplinaire
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-7-1 | Identité de festival | Identite Nuits Sonores | Motif décliné sur tous les supports |
+| T-14-7-2 | Programmation complète | Programmation Hellfest | Jours, scènes, horaires |
+| T-14-7-3 | Annonce de tête d'affiche | Tete d'affiche Coachella | Un nom, très grand, date |
+| T-14-7-4 | Plan du site | Plan du site Glastonbury | Scènes, services, accès |
+| T-14-7-5 | Informations pratiques | Infos pratiques Vieilles Charrues | Transports, camping, règlement |
+| T-14-7-6 | Pass et billetterie | Pass Tomorrowland | Types de pass, phases de vente |
+| T-14-7-7 | Bilan d'édition | Bilan Solidays | Fréquentation, images, remerciements |
+| T-14-7-8 | Appel à bénévoles | Benevoles Les Vieilles Charrues | Missions, contreparties, inscription |
+
+## 14-8 — Événement privé & célébration
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-14-8-1 | Faire-part | Faire-part Papier Tigre | Calligraphie, mise en page centrée |
+| T-14-8-2 | Mariage | Mariage Rock My Wedding | Palette douce, programme, plan de table |
+| T-14-8-3 | Anniversaire | Anniversaire Paperless Post | Ton chaleureux, âge, thème |
+| T-14-8-4 | Naissance | Naissance Minted | Prénom, date, mesures |
+| T-14-8-5 | Remise de diplôme | Remise de diplome Sciences Po | Institution, promotion, date |
+| T-14-8-6 | Départ et pot | Pot de depart | Ton interne, message collectif |
+| T-14-8-7 | Hommage | Hommage Notre-Dame | Sobriété absolue, portrait, dates |
+| T-14-8-8 | Réunion de famille | Reunion de famille Ancestry | Photographies d'archive, arbre |
+
+---
+
+# Famille 15 — Architecture, design & art
+
+**Système.** Surface : blanc de galerie, image souveraine. Palette : neutre, la couleur vient de l'œuvre.
+Typographie : grotesque discret, légendes systématiques, aucune emphase. Grille : composition asymétrique,
+alignements optiques. Mouvement : très lent ou nul. Habillage : cartel (titre, année, matière, dimensions).
+Son : absent par défaut.
+
+## 15-1 — Portfolio d'architecte
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-1-1 | Fiche de projet | A Pattern Language: Towns, Buildings, Construction | Photo, plan, coupe, données du programme |
+| T-15-1-2 | Plan et dessin | The Timeless Way of Building | Trait fin, échelle, cotation |
+| T-15-1-3 | Perspective 3D | Déclin et survie des grandes villes américaines | Rendu, contexte, lumière étudiée |
+| T-15-1-4 | Chantier | Bjarke Ingels Group chantier | Étapes datées, structure apparente |
+| T-15-1-5 | Photographie d'architecture | Non-Lieux : Introduction à une anthropologie de la surmodernité | Lignes verticales redressées, lumière naturelle |
+| T-15-1-6 | Concours | Seeing Like a State | Planche A0, texte de parti, schémas |
+| T-15-1-7 | Réhabilitation | Le Jardin Zen | Existant et projet superposés |
+| T-15-1-8 | Monographie d'agence | Cities: Skylines II | Projets alignés, chronologie, données |
+
+## 15-2 — Galerie d'art contemporain
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-2-1 | Cartel | Histoire de l'Art E. H. Gombrich | Auteur, titre, année, technique, dimensions |
+| T-15-2-2 | Vue d'accrochage | La Distinction | Salle entière, échelle humaine |
+| T-15-2-3 | Œuvre isolée | Blue Period | Fond neutre, aucune ombre parasite |
+| T-15-2-4 | Texte critique | The Creative Act: A Way of Being | Colonne étroite, serif, notes |
+| T-15-2-5 | Portfolio d'artiste | Mythologies | Sélection d'œuvres, biographie, expositions |
+| T-15-2-6 | Édition et multiple | La Société du spectacle | Numérotation, certificat |
+| T-15-2-7 | Performance | Angel S Egg | Séquence photographique, durée |
+| T-15-2-8 | Art numérique | Pentiment | Boucle, paramètres, jeton d'authenticité |
+
+## 15-3 — Design d'objet & mobilier
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-3-1 | Fiche produit design | The Design of Everyday Things | Vue de trois quarts, dimensions, matériaux |
+| T-15-3-2 | Dessin technique | La Petite Philosophie du Design | Cotes, coupes, tolérances |
+| T-15-3-3 | Matière et finition | L'Art de la Couleur | Échantillons, texture en macro |
+| T-15-3-4 | Processus de fabrication | About Face: The Essentials of Interaction Design | Étapes, machines, gestes |
+| T-15-3-5 | Mise en situation | Don't Make Me Think, Revisited | Objet dans un lieu réel, lumière naturelle |
+| T-15-3-6 | Collection | Méthodes de design UX | Alignement, déclinaisons |
+| T-15-3-7 | Design d'auteur | Creativity, Inc. | Portrait du designer, intention |
+| T-15-3-8 | Écoconception | La Magie Du Rangement | Matières, réparabilité, fin de vie |
+
+## 15-4 — Bande démo 3D & showreel
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-4-1 | Showreel généraliste | Houdini Foundations | Montage rythmé, 60 à 90 secondes |
+| T-15-4-2 | Découpage par plan | Mathematics for 3D Game Programming and Computer Graphics | Couches successives : géométrie, matière, lumière |
+| T-15-4-3 | Rendu isolé | ArtStation turntable | Rotation lente, fond neutre, éclairage d'étude |
+| T-15-4-4 | Comparaison avant / après | VFX breakdown | Volet coulissant, plaque source |
+| T-15-4-5 | Simulation | Game Feel | Ralenti, paramètres affichés |
+| T-15-4-6 | Environnement | Death Stranding | Travelling, échelle, profondeur atmosphérique |
+| T-15-4-7 | Personnage | Nier Automata | Turntable, expressions, rig |
+| T-15-4-8 | Fiche technique | Legendary Games Chronicle: Final Fantasy | Rôle exact par plan, logiciels |
+
+## 15-5 — Direction artistique & identité
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-5-1 | Charte graphique | Creativity, Inc. | Logo, zone de protection, usages interdits |
+| T-15-5-2 | Planche d'ambiance | The Creative Act: A Way of Being | Images sans texte, palette extraite |
+| T-15-5-3 | Système typographique | Steal like an Artist - Voler comme un artiste | Familles, tailles, exemples réels |
+| T-15-5-4 | Palette | L'Art de la Couleur | Références précises, contrastes vérifiés |
+| T-15-5-5 | Déclinaisons | Show Your Work - Partagez comme un artiste | Supports multiples, même identité |
+| T-15-5-6 | Refonte | Start with Why | Ancien et nouveau, justification |
+| T-15-5-7 | Identité animée | Perennial Seller | Logo animé, virgule sonore |
+| T-15-5-8 | Système de composants | The War of Art | Primitives, états, règles d'assemblage |
+
+## 15-6 — Photographie d'auteur
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-6-1 | Série photographique | L'œil du photographe et l'art de la composition | Séquence ordonnée, légendes minimales |
+| T-15-6-2 | Portrait | Composer ses images pour le cinéma (The Visual Story) | Cadrage serré, regard, lumière unique |
+| T-15-6-3 | Paysage | Hiroshige Blue 3 Episodes | Horizon, échelle, tirage suggéré |
+| T-15-6-4 | Photographie de rue | Perfect Days | Grain, noir et blanc, contexte |
+| T-15-6-5 | Photographie documentaire | Dans un recoin de ce monde | Légende factuelle, lieu et date |
+| T-15-6-6 | Nature morte | Design Hunting in Toyama | Fond neutre, matière, ombre construite |
+| T-15-6-7 | Photographie de nuit | Kisoji: Highroad Among Mountains | Sources ponctuelles, bruit assumé |
+| T-15-6-8 | Livre photo | Hokusai | Séquencement, chemin de fer, papier |
+
+## 15-7 — Illustration & bande dessinée
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-7-1 | Planche de bande dessinée | Moebius planche | Cases, gouttières, bulles, onomatopées |
+| T-15-7-2 | Couverture d'album | une de BD | Illustration pleine, titre intégré |
+| T-15-7-3 | Illustration éditoriale | Levius (1) | Image conceptuelle accompagnant un texte |
+| T-15-7-4 | Storyboard | Blue Period (1) | Vignettes numérotées, indications de mouvement |
+| T-15-7-5 | Character design | Quartier Lointain (1) | Turnaround, expressions, échelle comparée |
+| T-15-7-6 | Illustration jeunesse | Tongari Boushi no Atelier | Rondeur, couleurs franches, peu de texte |
+| T-15-7-7 | Roman graphique | Real | Palette réduite, narration muette possible |
+| T-15-7-8 | Fanzine | Kokō no Hito | Photocopie, agrafe, DIY assumé |
+
+## 15-8 — Art technique & making-of
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-15-8-1 | Décomposition technique | Houdini Foundations | Nœuds, paramètres, résultat |
+| T-15-8-2 | Outil maison | Game Programming Patterns | Interface de l'outil, gain mesuré |
+| T-15-8-3 | Comparatif de méthodes | The Gamer's Brain | Deux approches, coût et rendu |
+| T-15-8-4 | Étude de matériau | Mathematics for 3D Game Programming and Computer Graphics | Sphères d'essai, éclairage normalisé |
+| T-15-8-5 | Optimisation | Game Engine Architecture | Avant / après, budget de polygones, temps de rendu |
+| T-15-8-6 | Procédural | SideFX Houdini procedural | Paramètres variés, variations produites |
+| T-15-8-7 | Documentation d'atelier | Keep Your Hands Off Eizouken | Étapes reproductibles, versions logicielles |
+| T-15-8-8 | Journal de progression | Indie Game The Movie | Entrées datées, essais ratés inclus |
+
+---
+
+# Famille 16 — Japon & Asie
+
+**Système.** Surface : dense ou totalement vide, jamais entre les deux. Palette : rouge, blanc, encre, ou
+palette pastel saturée selon le registre. Typographie : gothique et mincho japonais, composition verticale
+possible, ruby pour les lectures, alternance kana/kanji/latin. Grille : verticale ou horizontale selon le
+support ; bandeaux latéraux. Mouvement : apparition par bloc, aucune interpolation molle. Habillage :
+sous-titres permanents, encadrés d'information, pastilles. Son : virgule sonore courte, voix enjouée ou
+silence total.
+
+> **Note d'ingénierie** : cette famille impose au moteur la composition verticale (`writing-mode:
+> vertical-rl`), les annotations ruby, la césure japonaise et les polices CJK — les contraintes les plus
+> lourdes du catalogue. Si l'architecture les tient, elle tient tout le reste.
+
+## 16-1 — Variété & télévision japonaise
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-1-1 | Sous-titrage de variété | Run for the Money | Sous-titres colorés géants, contour épais |
+| T-16-1-2 | Encadré d'information | Begin Japanology | Cartouche d'angle, texte vertical |
+| T-16-1-3 | Réaction en vignette | Kiss Or Die | Vignette d'invité en coin, réaction |
+| T-16-1-4 | Émission culinaire | gastronomie TV | Gros plan, sous-titre de dégustation |
+| T-16-1-5 | Jeu télévisé | Ainori: Love Wagon | Compteur de points, buzzer, dramatisation |
+| T-16-1-6 | Reportage de voyage | Design Hunting in Toyama | Carte, distance, prix affichés |
+| T-16-1-7 | Talk d'idoles | Offline Love | Palette pastel, typographie ronde |
+| T-16-1-8 | Information japonaise | Old Enough! Comme Des Grands | Bandeau vertical, sobriété, horloge |
+
+## 16-2 — Anime : eyecatch & générique
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-2-1 | Générique d'ouverture | Cowboy Bebop | Montage rythmé sur refrain, crédits en surimpression |
+| T-16-2-2 | Générique de fin | Shigatsu wa kimi no uso | Défilement lent, illustration unique |
+| T-16-2-3 | Eyecatch | Neon Genesis Evangelion | 2 secondes, logo, virgule sonore |
+| T-16-2-4 | Carton de titre d'épisode | Mushishi S1 | Typographie calligraphique, numéro d'épisode |
+| T-16-2-5 | Aperçu du prochain épisode | Frieren | Voix de personnage, extraits rapides |
+| T-16-2-6 | Fiche de personnage | Monogatari | Nom, doubleur, attributs |
+| T-16-2-7 | Annonce de saison | Dan Da Dan S02 | Date de diffusion, chaîne, plateformes |
+| T-16-2-8 | Habillage de diffusion | Samurai Champloo | Logo permanent, mentions horaires |
+
+## 16-3 — Manga & édition
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-3-1 | Planche de manga | Vagabond (1) | Lecture de droite à gauche, cases dynamiques |
+| T-16-3-2 | Couverture de tome | Berserk (1) | Personnage, numéro de tome, logo de série |
+| T-16-3-3 | Page couleur | One Piece (1) | Couleur exceptionnelle, titre de chapitre |
+| T-16-3-4 | Obi et bandeau | Oyasumi Punpun (1) | Bande rouge, accroche courte, chiffres de vente |
+| T-16-3-5 | Magazine de prépublication | Gintama (1) | Sommaire dense, papier bon marché |
+| T-16-3-6 | Annonce de sortie | Vinland Saga (1) | Date, prix, points de vente |
+| T-16-3-7 | Doujinshi | Takopii No Genzai | Impression simple, mention d'événement |
+| T-16-3-8 | Adaptation | Look Back | Comparaison planche / plan |
+
+## 16-4 — Konbini & vie quotidienne
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-4-1 | Étiquette de prix | La Fille du Konbini | Prix taxes incluses, pastille de promotion |
+| T-16-4-2 | Nouveauté en rayon | Comme un Lundi | Bandeau « nouveau », date de mise en vente |
+| T-16-4-3 | Édition limitée régionale | Sakuna of Rice and Ruin | Nom de préfecture, illustration régionale |
+| T-16-4-4 | Menu de restaurant | MidnightDinners | Photo par plat, prix, options |
+| T-16-4-5 | Affichage de gare | Wood Job! | Ligne, quai, horaire, pictogrammes |
+| T-16-4-6 | Consigne et politesse | Usagi Drop | Ton poli, illustration douce, pictogramme |
+| T-16-4-7 | Distributeur automatique | Barakamon | Grille de produits, chaud / froid |
+| T-16-4-8 | Point de fidélité | Somali And The Forest Spirit | Cumul, cadeau, date limite |
+
+## 16-5 — K-pop & idoles
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-5-1 | Concept photo | Oshi No Ko | Palette conceptuelle, membre par membre |
+| T-16-5-2 | Calendrier de promotion | Bocchi the Rock! | Grille de dates, jalons de sortie |
+| T-16-5-3 | Clip vidéo | Promare | Montage rapide, chorégraphie, changements de décor |
+| T-16-5-4 | Chorégraphie filmée | Free! | Plan large fixe, une seule prise |
+| T-16-5-5 | Album physique | My Dress Up Darling | Versions multiples, photocarte, précommande |
+| T-16-5-6 | Émission musicale | Kaguya Sama : Love is War S03 | Habillage de chaîne, votes |
+| T-16-5-7 | Rencontre de fans | Belle | Billetterie, tirage au sort, règles |
+| T-16-5-8 | Contenu de coulisses | Megalo Box | Ton informel, sous-titres bilingues |
+
+## 16-6 — Tourisme & patrimoine
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-6-1 | Affiche de destination | Kisoji: Highroad Among Mountains | Photographie de saison, calligraphie, slogan court |
+| T-16-6-2 | Itinéraire | Le Jardin Zen | Carte, durée, transports, budget |
+| T-16-6-3 | Site patrimonial | Silence | Sobriété, vocabulaire exact, horaires |
+| T-16-6-4 | Saison des cerisiers | Suzume | Prévision de floraison par région, dates |
+| T-16-6-5 | Feuillage d'automne | Hiroshige Blue 3 Episodes | Palette chaude, pics de couleur par altitude |
+| T-16-6-6 | Onsen et ryokan | Hokusai | Codes d'usage, tatami, discrétion |
+| T-16-6-7 | Festival local | Sominsai : The End of a 1000-year-old Festival | Dates, procession, lanternes |
+| T-16-6-8 | Guide pratique | Le Joueur de Go | Transports, cartes, mots utiles |
+
+## 16-7 — Gastronomie & izakaya
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-7-1 | Carte d'izakaya | MidnightDinners | Colonnes verticales, prix à droite, calligraphie |
+| T-16-7-2 | Fiche de plat | Noma: My Perfect Storm | Photo unique, origine, saison |
+| T-16-7-3 | Ramen | La Saveur des Ramen | Macro sur bouillon, garnitures nommées |
+| T-16-7-4 | Sushi | Jiro Dreams of Sushi | Fond sombre, un morceau par plan, silence |
+| T-16-7-5 | Pâtisserie japonaise | Les Délices de Tokyo | Saison, forme, couleur, thé associé |
+| T-16-7-6 | Saké et boissons | Drunk | Région, degré, brasserie, accord |
+| T-16-7-7 | Formule du midi | Gyokō no Nikuko-chan | Composition du plateau, prix unique |
+| T-16-7-8 | Devanture | Hana-bi | Noren, lanterne, typographie peinte |
+
+## 16-8 — Rétro Shōwa & city pop
+
+| ID | Thème | Calibrage | Signature |
+|---|---|---|---|
+| T-16-8-1 | Pochette city pop | Golden Boy | Illustration au marqueur, gradient, palmier |
+| T-16-8-2 | Publicité d'époque | réclame Shōwa | Trame d'impression, typographie de plomb |
+| T-16-8-3 | Interface rétro | FEZ | Police bitmap, palette 16 couleurs |
+| T-16-8-4 | Cassette et walkman | Crayon Shin-chan | Étiquette manuscrite, compteur |
+| T-16-8-5 | Néons de quartier | Ghost Wire Tokyo | Enseignes empilées, reflets mouillés |
+| T-16-8-6 | Photographie argentique | Le Tombeau des Lucioles | Halations, grain, dates incrustées |
+| T-16-8-7 | Affiche de cinéma Shōwa | Ashita no Joe | Composition dense, calligraphie de titre |
+| T-16-8-8 | Nostalgie contemporaine | Doraemon | Codes rétro, exécution moderne, grain léger |
+
+---
+
+## Récapitulatif du catalogue complet
+
+| Volume | Familles | Thèmes |
+|---|---|---|
+| A | 01 Presse · 02 Télévision · 03 Cinéma · 04 Jeu vidéo | 256 |
+| B | 05 Publicité · 06 Luxe · 07 Social vertical · 08 Créateur | 256 |
+| C | 09 Musique · 10 Tech · 11 Corporate · 12 Science | 256 |
+| D | 13 Sport · 14 Événement · 15 Art & design · 16 Japon & Asie | 256 |
+| **Total** | **16 familles · 128 sous-familles** | **1024** |
+
+**Rappel de méthode.** Ce catalogue est une **carte**, pas un stock. Il indique quoi construire quand le
+besoin tombe, et il coûte presque rien à écrire d'avance. La construction réelle d'un thème (fichier de
+tokens validé + aperçu généré) se fait à la demande, par l'atelier, par lots de 64. Aucun thème n'est
+construit avant d'avoir une raison d'exister.

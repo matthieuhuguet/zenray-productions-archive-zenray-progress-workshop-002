@@ -1,0 +1,56 @@
+# Méthode canonique — vidéo dans le drive (CMAF/fMP4, sans réencodage)
+
+> Code : `Scripts/video-hls-lib.mjs` (HLS .ts AES-128, legacy), `Scripts/video-mse-lib.mjs` (fMP4 chunké MSE),
+> lecteurs `HlsVideo` + `StreamVideoMSE.jsx`. Shards vidéo harmonisés `zenray-vid-public-NN`.
+
+## Décision d'architecture (2026-06-09)
+
+Pivot vers **CMAF / fMP4** (conteneur moderne, HLS+DASH compatible), **repackaging SANS PERTE** par défaut.
+Modèle proche YouTube/Netflix, pas le vieux HLS `.ts` pur.
+
+### Pourquoi ne PAS rester en .ts
+
+Le HLS historique segmente en MPEG-TS (`.ts`), qui **ne porte pas le VP9** (codec des webm). Réencoder les
+557 Go de webm juste pour rentrer en `.ts` serait une **erreur d'archi** : lent (GPU ~temps réel) + perte CRF.
+
+### Le fait prouvé (spike validé)
+
+Repackaging `-c copy` d'un webm VP9 → **fMP4 CMAF** :
+```
+ffmpeg -i src.webm -c copy -f hls -hls_time 6 -hls_segment_type fmp4 \
+       -hls_fmp4_init_filename init.mp4 -hls_segment_filename 'seg_%03d.m4s' out.m3u8
+```
+Mesuré : **678× temps réel (0,08 s pour 32 Mo), zéro perte, même taille.** fMP4 porte H.264 ET VP9/AV1 →
+**un seul codepath** pour mp4 et webm, aucun réencodage.
+
+### Le vrai facteur de découpage
+
+Ce n'est PAS HLS le but, c'est la **limite GitHub 100 Mo/blob**. On segmente UNIQUEMENT parce qu'un gros
+fichier ne tient pas en un blob. Médiane des vidéos = 30 Mo → la majorité tiendrait en 1 blob. Mais segmenter
+en fMP4 reste utile (seek, streaming progressif, futur ladder adaptatif) et c'est quasi gratuit en `-c copy`.
+
+### Chiffrement — le point ouvert
+
+ffmpeg 8.1.1 **ne sait PAS** chiffrer en AES-128 HLS des segments fMP4 (seulement mpegts). Donc pour fMP4 :
+- soit **chiffrer nous-mêmes** les segments en AES-GCM (réutiliser le modèle image `Scripts/lib/img-pipeline.mjs`)
+  + un **loader hls.js custom** qui fetch+déchiffre (cohérent avec public+chiffré+jsDelivr) ;
+- soit réutiliser le **chemin MSE** (`video-mse-lib.mjs` + `StreamVideoMSE.jsx`) qui chiffre/chunke déjà, en
+  changeant son transcode de réencode H.264 → `-c copy` (max réutilisation, mais shard privé + /api/stream,
+  moins scalable que le CDN jsDelivr).
+
+## Cible (à confirmer)
+
+- **mp4 H.264** → fMP4 `-c copy` (lossless, instantané).
+- **webm VP9** → fMP4 `-c copy` (lossless, instantané) — plus de réencodage.
+- Segments + init poussés sur **`zenray-vid-public-NN`** (cap 5 Go, rollover), servis par **jsDelivr** (commit pinné).
+- Lecteur **hls.js** (MSE) : lit fMP4 VP9 sur Chrome/Firefox/Edge. **Safari natif ne décode pas VP9 en MSE** →
+  réencodage H.264 réservé en *fallback Safari* si un jour nécessaire (pas maintenant).
+- Workflow : tester 1 vidéo de bout en bout (repackage → push → lecture dans Create) → expand via
+  `eagle-video-migrate.mjs` (heaviest-first, verify-manifeste-avant-stage, cap 5 Go).
+
+## État
+
+- [x] Spike repackaging lossless fMP4 (VP9) — 678× temps réel, validé.
+- [ ] Décision chiffrement (AES-GCM+loader custom vs MSE `-c copy`).
+- [ ] Push fMP4 chiffré → zenray-vid-public-NN + manifeste + lecture Create (1 vidéo test).
+- [ ] Expand sur les 2049 vidéos (863 Go).

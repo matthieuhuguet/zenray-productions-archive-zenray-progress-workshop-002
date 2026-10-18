@@ -1,0 +1,519 @@
+# MÉTA-PROMPT ZENRAYMEDIA — T-01-7-8 — Affichette d'information
+
+> **Nature du livrable :** prompt privé de production d’un studio de microcomposants ZenRayMedia.  
+> **Calibrage privé obligatoire :** **avis public**. Ce nom sert à la recherche et au contrôle qualité, mais ne doit jamais apparaître dans le nom public du thème, dans l’interface livrée ni dans un dépôt public.
+
+---
+
+## 0. Variables entièrement remplies
+
+```yaml
+THEME_ID: "T-01-7-8"
+PUBLIC_THEME_NAME: "Affichette d'information"
+FAMILY_ID: "01"
+FAMILY_NAME: "Presse & éditorial"
+SUBFAMILY_ID: "01-7"
+SUBFAMILY_NAME: "Presse gratuite & locale"
+PRIVATE_CALIBRATION_REF: "avis public"
+PRIVATE_CALIBRATION_TYPE: "publication, média, plateforme éditoriale ou archétype de presse"
+CALIBRATION_VISIBILITY: "private-only"
+CALIBRATION_PUBLICATION_RULE: "never render, never publish, never commit to a public repository"
+THEME_SIGNATURE: "Une seule information, très grande, très lisible"
+FAMILY_SYSTEM: "Surface : papier, grain 2 %, aucune ombre. Palette : encre 92 %, un seul accent. Typographie : serif de labeur, mesure 62-68 signes, hiérarchie par la taille. Grille : 6 à 12 colonnes, filets fins. Mouvement : aucun ou fondu 200 ms. Habillage : filets, chapeaux, signatures, légendes. Son : muet par défaut."
+LANGUAGE: "fr-FR"
+PRIMARY_OUTPUT: "bibliothèque de composants éditoriaux HTML/SVG + compositions article, couverture, newsletter et carte sociale"
+ASSET_MINIMUM: 64
+ASSET_TARGET: 96
+ASSET_MAXIMUM: 256
+MIN_COMPONENT_PACKAGES: 32
+APP_SOURCE_OF_TRUTH: "ui-components-zenray-v14 / ZenRayMedia Core"
+HTML_NAMESPACE: ".zrm-theme-t-01-7-8"
+OUTPUT_ROOT: "themes/volume-a/t-01-7-8/"
+COPYRIGHT_MODE: "reference structurelle privée; reconstruction originale; provenance et droits obligatoires"
+```
+
+## 1. Mission exacte
+
+Tu es simultanément **directeur artistique spécialisé en Presse & éditorial**, product designer senior, motion designer, front-end architect, asset librarian, chercheur média et QA engineer.
+
+Construis **un studio de composants consacré exclusivement au thème « Affichette d'information »**, calibré avec précision sur **avis public** et contraint par la signature :
+
+> **Une seule information, très grande, très lisible**
+
+Le résultat n’est **jamais** une page HTML générique et n’est **jamais** un template monolithique. Il s’agit d’une collection de microcomposants indépendants, stylisés, sérialisables et drag-and-dropables que ZenRayMedia peut combiner pour fabriquer des articles, vidéos, trailers, flyers, overlays ou compositions selon la famille.
+
+Le thème est hors sujet si remplacer **avis public** par une autre référence ne change presque rien au résultat. La calibration doit modifier concrètement la grille, la densité, la typographie, le rythme, les composants, les ratios, les états, les assets et les règles de composition.
+
+## 2. Verrou de calibration — avis public
+
+### 2.1 Recherche obligatoire
+
+Effectue une recherche web dédiée à **avis public**, sans te contenter du nom ou d’une impression générale. Inspecte au minimum les surfaces suivantes :
+
+- page d’accueil ou une
+- page de rubrique
+- article long
+- article court
+- mobile ou application
+- newsletter
+- réseaux sociaux
+- archives ou éditions historiques
+
+Requêtes de départ déjà remplies :
+
+- `"avis public" site officiel Affichette d'information`
+- `"avis public" Presse gratuite & locale design typography grid motion`
+- `"avis public" exemples représentatifs Presse & éditorial`
+- `"avis public" mobile social video official`
+- `"avis public" archive branding visual identity`
+- `"avis public" accessibility responsive safe zones`
+
+Tu dois identifier les URL officielles ou institutionnelles réellement pertinentes. Ne fabrique aucune URL. Si une surface est inaccessible, marque-la `[NON VÉRIFIÉ]`.
+
+Si **avis public** est un archétype générique plutôt qu’une entité nommée, identifie **trois réalisations professionnelles concrètes** correspondant exactement à cet archétype, puis choisis un benchmark principal et deux benchmarks de contrôle. Enregistre ce choix dans `calibration.private.json`; ne remplace jamais silencieusement la valeur source `avis public`.
+
+### 2.2 Rapport de preuves
+
+Crée `research/calibration-evidence.private.md` avec **au moins 20 observations sourcées**, dont au moins 12 produisent directement un composant ou une règle.
+
+Colonnes obligatoires :
+
+| source_url | date_verified | capture_or_timestamp | observed_fact | measured_value | interpretation | abstracted_rule | resulting_component_id | confidence |
+|---|---|---|---|---|---|---|---|---|
+
+Distingue strictement :
+
+1. **fait observé** ;
+2. **interprétation** ;
+3. **décision originale ZenRayMedia**.
+
+### 2.3 Test d’irremplaçabilité
+
+Avant validation, réponds par écrit :
+
+- Quelles 12 décisions seraient différentes avec une autre référence que **avis public** ?
+- Quels 8 composants portent le plus clairement l’ADN abstrait de **avis public** ?
+- Quelles caractéristiques ont été volontairement rejetées pour éviter la copie ?
+- Pourquoi le thème reste publiquement nommé **« Affichette d'information »** et non **« style avis public »** ?
+
+Si les réponses sont vagues, verdict automatique : `NO-GO`.
+
+## 3. Système hérité de la famille
+
+Applique intégralement ce système, puis spécialise-le avec la sous-famille, la signature et la calibration :
+
+> Surface : papier, grain 2 %, aucune ombre. Palette : encre 92 %, un seul accent. Typographie : serif de labeur, mesure 62-68 signes, hiérarchie par la taille. Grille : 6 à 12 colonnes, filets fins. Mouvement : aucun ou fondu 200 ms. Habillage : filets, chapeaux, signatures, légendes. Son : muet par défaut.
+
+Règle éditoriale et média de la famille :
+
+> La qualité littéraire, la structure, la longueur des titres, la mesure de ligne, la hiérarchie éditoriale et le rapport texte/image sont aussi importants que la couleur.
+
+Le système familial est une contrainte de base. **avis public** sert à viser le niveau professionnel et à choisir les détails spécifiques ; il ne remplace pas les règles de la famille.
+
+## 4. Studio de microcomposants — jamais une page unique
+
+### 4.1 Contrat de chaque composant
+
+Chaque composant doit vivre dans son propre dossier :
+
+```text
+components/<component-id>/
+  component.html
+  component.css
+  component.js
+  component.schema.json
+  component.manifest.json
+  preview.html
+  preview-data.json
+  component.svg              # si pertinent
+  motion.css                 # si pertinent
+  motion.timeline.json       # si pertinent
+  README.md
+```
+
+Chaque composant doit :
+
+- posséder une seule racine avec `data-zrm-component`;
+- être chargeable et supprimable sans effet de bord ;
+- fonctionner isolément dans `preview.html`;
+- exposer ses propriétés éditables dans `component.schema.json`;
+- définir ses slots, contraintes de taille, ratios et dépendances ;
+- supporter drag, drop, duplication, réordonnancement, verrouillage et suppression ;
+- sérialiser son état en JSON ;
+- fournir `init()`, `update(props)`, `serialize()` et `destroy()` si JavaScript est nécessaire ;
+- ne jamais dépendre d’un chatbot pour conserver son état ;
+- ne jamais écrire dans un état global implicite.
+
+### 4.2 Contrat drag-and-drop ZenRayMedia
+
+Utilise le type de transfert :
+
+```text
+application/x-zenray-component
+```
+
+Payload minimal :
+
+```json
+{
+  "componentId": "t-01-7-8:<component-id>",
+  "themeId": "T-01-7-8",
+  "version": "1.0.0",
+  "instanceId": "<uuid>",
+  "props": {},
+  "slots": [],
+  "assetRefs": [],
+  "timeline": null
+}
+```
+
+Le compositor doit accepter les composants dans plusieurs surfaces : document, canvas libre, frame vidéo, overlay transparent et timeline.
+
+### 4.3 Liste minimale de composants spécifiques à produire
+
+Les composants ci-dessous ne sont pas des suggestions : ils constituent le **seed obligatoire** de ce thème. Étends la liste jusqu’à **32 packages minimum**.
+
+1. `shell-de-document-isole` — shell de document isolé.
+2. `navigation-de-rubrique` — navigation de rubrique.
+3. `breadcrumb-editorial` — breadcrumb éditorial.
+4. `category-chip` — category chip.
+5. `headline-stack` — headline stack.
+6. `dek-chapeau` — dek/chapeau.
+7. `byline-et-metadonnees` — byline et métadonnées.
+8. `figure-hero` — figure hero.
+9. `legende-et-credits` — légende et crédits.
+10. `corps-de-texte-multi-colonnes` — corps de texte multi-colonnes.
+11. `intertitre-h2-h3` — intertitre H2/H3.
+12. `pull-quote` — pull quote.
+13. `fact-box` — fact box.
+14. `timeline-chronologie` — timeline/chronologie.
+15. `tableau-de-donnees` — tableau de données.
+16. `related-content-card` — related content card.
+17. `author-card` — author card.
+18. `notes-sources` — notes/sources.
+19. `social-card` — social card.
+20. `print-export-frame` — print/export frame.
+21. `bloc-agenda` — bloc agenda.
+22. `breve-locale` — brève locale.
+23. `encadre-pratique` — encadré pratique.
+24. `annonce-classee` — annonce classée.
+25. `calendrier-local` — calendrier local.
+26. `portrait-de-membre` — portrait de membre.
+27. `appel-a-participation` — appel à participation.
+28. `avis-public` — avis public.
+29. `module-signature-une-seule-information` — module signature — Une seule information.
+30. `module-signature-tres-grande` — module signature — très grande.
+31. `module-signature-tres-lisible` — module signature — très lisible.
+32. `hero-specifique-affichette-d-information` — hero spécifique — Affichette d'information.
+33. `version-compacte-affichette-d-information` — version compacte — Affichette d'information.
+34. `version-mobile-affichette-d-information` — version mobile — Affichette d'information.
+35. `preview-de-calibration-interne-affichette-d-information` — preview de calibration interne — Affichette d'information.
+
+Les modules issus de la signature doivent être des composants réels, pas de simples commentaires CSS. Par exemple, « Une seule information, très grande, très lisible » doit produire des géométries, contraintes, states et previews identifiables.
+
+## 5. Contrat HTML/CSS/SVG/Motion précis
+
+### 5.1 Isolation
+
+- Namespace racine obligatoire : `.zrm-theme-t-01-7-8`.
+- Interdiction des sélecteurs globaux `body`, `html`, `*`, `h1`, `button`, `img`, `svg`.
+- Tous les tokens doivent être préfixés `--zrm-t-01-7-8-`.
+- Utilise `contain`, des couches CSS et des imports explicites pour empêcher les fuites.
+- Aucun `!important` sauf justification documentée dans `research/technical-decisions.md`.
+- Le shell de l’application réutilise les primitives ZenRayMedia V14 : `.glass`, `.active`, `.active-tint`, focus visible, Dark/Light et progressive disclosure.
+- Le média rendu reste isolé du shell et peut avoir sa propre surface.
+
+### 5.2 Tokens obligatoires
+
+Crée :
+
+```text
+tokens/color.css
+tokens/type.css
+tokens/space.css
+tokens/grid.css
+tokens/radius.css
+tokens/shadow.css
+tokens/motion.css
+tokens/media.css
+tokens/z-index.css
+```
+
+Chaque token doit avoir une valeur, un usage, un fallback et une justification liée soit au système familial, soit à la preuve de calibration **avis public**.
+
+### 5.3 SVG
+
+- SVG lisibles, viewBox stable, aucune dimension codée sans raison.
+- Variantes `currentColor` lorsque l’asset est fonctionnel.
+- Aucun logo, pictogramme propriétaire ou dessin protégé reproduit.
+- Les formes inspirées d’une observation doivent être abstraites et documentées.
+- Chaque SVG dispose d’un aperçu sur fond clair, sombre et transparent.
+
+### 5.4 Animation HTML
+
+- Les animations doivent être pilotables par temps déterministe.
+- Expose `window.__ZRM_FRAME__`, `window.__ZRM_FPS__` et `window.__ZRM_DURATION__`.
+- Aucun hasard non seedé.
+- Tous les timings sont exprimés en millisecondes et en frames.
+- Fournis `prefers-reduced-motion`.
+- Les composants vidéo doivent rendre correctement à 24, 25, 30 et 60 fps lorsque pertinent.
+- Prévois fond opaque et alpha lorsque le composant peut être utilisé en overlay.
+
+### 5.5 États obligatoires
+
+Chaque composant fournit au minimum :
+
+`default`, `hover`, `focus-visible`, `selected`, `editing`, `dragging`, `drop-target`, `loading`, `empty`, `error`, `disabled`, `mobile`, `dark-shell`, `light-shell`, `reduced-motion`.
+
+## 6. AssetPlan — 96 assets ciblés
+
+Crée `asset-plan.csv` et `asset-plan.json` avec **96 entrées ciblées**, jamais moins de 64 et jamais plus de 256.
+
+Répartition obligatoire :
+
+- **32** — packages de microcomposants HTML/CSS/SVG
+- **16** — rôles d’images et crops éditoriaux
+- **12** — icônes, filets, séparateurs et pictogrammes SVG
+- **8** — textures/papiers/grains/motifs
+- **8** — spécimens typographiques et tests de hiérarchie
+- **8** — états motion et interaction
+- **8** — renditions sociales et print
+- **4** — données et contenus de démonstration
+
+Ajoute des assets spécifiques à la signature :
+
+- un cluster d’assets consacré à **Une seule information**
+- un cluster d’assets consacré à **très grande**
+- un cluster d’assets consacré à **très lisible**
+
+Chaque asset possède :
+
+```text
+asset_id
+theme_id
+component_ids
+role
+media_type
+source_url
+source_domain
+creator
+license
+usage_status
+local_path
+sha256
+width
+height
+duration_ms
+fps
+ratio
+alpha_mode
+dominant_colors
+alt_text
+caption
+focal_point
+safe_crop
+locale
+date_verified
+derivatives
+required_or_optional
+```
+
+Aucun asset ne passe en `ready` sans source et statut de droits explicites. Les captures de recherche restent privées et ne sont jamais réutilisées comme assets finaux sans autorisation.
+
+## 7. Style éditorial, images, vidéo et son
+
+### 7.1 Écriture et information
+
+Déduis de **avis public** des règles mesurées concernant :
+
+- longueur des titres ;
+- niveau de langage ;
+- densité ;
+- structure des introductions ;
+- place des citations ;
+- organisation des informations ;
+- CTA et métadonnées ;
+- légendes et crédits.
+
+Ne copie aucune voix identifiable. Produit un style original correspondant au thème public **« Affichette d'information »**.
+
+### 7.2 Images
+
+Définis :
+
+- rôles d’images ;
+- ratios ;
+- focal points ;
+- safe crops ;
+- densité d’images ;
+- relation image/texte ;
+- traitement couleur ;
+- légendes ;
+- fallback ;
+- alt text.
+
+Les choix doivent traduire la signature **Une seule information, très grande, très lisible**, pas seulement la palette de **avis public**.
+
+### 7.3 Vidéo et Motion UI
+
+Même si la sortie principale est statique, crée les microcomposants animables pertinents : transitions, cartes, intertitres, lower-thirds, titres, séparateurs, CTA ou overlays.
+
+Chaque animation doit être exportable :
+
+```text
+HTML/CSS/JS déterministe
+→ capture Chromium frame par frame
+→ FFmpeg
+→ H.264/H.265/WebM
+→ ProRes 4444 .mov si alpha requis
+```
+
+### 7.4 Son
+
+Le son est conforme au système familial. Produis uniquement jingles courts, cues, impacts, ambiances, room tone ou markers nécessaires. Pas de composition musicale complète.
+
+## 8. Architecture exacte du thème
+
+```text
+themes/volume-a/t-01-7-8/
+  theme.manifest.json
+  calibration.private.json
+  .gitignore
+  README.md
+  tokens/
+  components/
+  compositions/
+    component-lab.html
+    studio-shell.html
+    sample-composition.html
+  assets/
+  motion/
+  audio/
+  sample-content/
+  previews/
+  research/
+    calibration-evidence.private.md
+    calibration-summary.private.md
+    copyright-report.md
+    technical-decisions.md
+  tests/
+    dom.spec.js
+    isolation.spec.js
+    keyboard.spec.js
+    responsive.spec.js
+    visual.spec.js
+    deterministic-render.spec.js
+    assets.spec.js
+```
+
+`calibration.private.json` et tous les fichiers `*.private.*` doivent être inclus dans `.gitignore`.
+
+## 9. Manifestes obligatoires
+
+### 9.1 `theme.manifest.json`
+
+Inclure :
+
+- identité publique du thème ;
+- famille et sous-famille ;
+- version ;
+- namespace ;
+- liste des composants ;
+- tokens ;
+- formats de sortie ;
+- ratios ;
+- capacités de rendu ;
+- dépendances ;
+- asset IDs ;
+- tests ;
+- compatibilité ZenRayMedia ;
+- migrations.
+
+Ne jamais inclure **avis public** dans le manifeste public.
+
+### 9.2 `calibration.private.json`
+
+Inclure :
+
+```json
+{
+  "ref": "avis public",
+  "type": "publication, média, plateforme éditoriale ou archétype de presse",
+  "visibility": "private",
+  "researchStatus": "pending",
+  "evidenceFile": "research/calibration-evidence.private.md",
+  "minimumEvidenceRows": 20,
+  "minimumReferenceSpecificDecisions": 12
+}
+```
+
+## 10. Previews obligatoires
+
+Produis au minimum :
+
+1. `component-lab-desktop.png` ;
+2. `component-lab-mobile.png` ;
+3. `sample-composition-primary.png` ;
+4. `sample-composition-secondary.png` ;
+5. `transparent-overlay-preview.mov` lorsque pertinent ;
+6. `motion-loop-preview.mp4` lorsque pertinent ;
+7. `social-4x5.png` ;
+8. `story-9x16.png`.
+
+Les previews doivent démontrer les composants séparément puis assemblés. Une unique capture de page ne suffit pas.
+
+## 11. Tests
+
+Teste obligatoirement :
+
+- absence de fuite CSS hors `.zrm-theme-t-01-7-8` ;
+- montage/démontage répété de chaque composant ;
+- sérialisation et restauration identiques ;
+- drag-and-drop clavier et souris ;
+- responsive 1440, 1280, 1024, 768 et 390 px ;
+- contrastes AA ;
+- focus visible ;
+- reduced-motion ;
+- assets manquants ;
+- liens cassés ;
+- licences ;
+- rendu déterministe image par image ;
+- alpha et couleurs ;
+- absence du terme privé **avis public** dans les outputs publics.
+
+## 12. Critères de refus
+
+Déclare `NO-GO` si une seule condition est vraie :
+
+- le résultat est principalement une page HTML monolithique ;
+- moins de 32 packages de composants sont produits ;
+- moins de 64 assets sont planifiés ;
+- le plan n’atteint pas la cible de 96 sans justification ;
+- **avis public** n’a pas produit au moins 12 décisions spécifiques et sourcées ;
+- le résultat pourrait être obtenu en remplaçant **avis public** par une autre référence ;
+- la signature **Une seule information, très grande, très lisible** n’est pas visible dans les composants ;
+- le CSS fuit hors namespace ;
+- les composants ne sont pas sérialisables ou drag-and-dropables ;
+- les états loading, empty, error, mobile ou reduced-motion sont absents ;
+- un asset `ready` n’a pas de source/licence ;
+- la calibration privée apparaît dans un output public ;
+- l’identité finale copie littéralement la référence.
+
+## 13. Format de réponse attendu
+
+Retourne, dans cet ordre :
+
+1. résumé du calibrage **avis public** avec preuves ;
+2. décisions originales ZenRayMedia ;
+3. registre des composants ;
+4. arborescence ;
+5. manifests ;
+6. AssetPlan ;
+7. HTML/CSS/JS/SVG individuels ;
+8. compositions de démonstration ;
+9. previews ;
+10. tests ;
+11. rapport droits/licences ;
+12. verdict `GO`, `GO AVEC CORRECTIONS` ou `NO-GO`.
+
+Le livrable n’est terminé que lorsque le thème **« Affichette d'information »** est un véritable studio d’assets et de microcomposants, clairement calibré sur **avis public**, mais publiquement original et indépendant.

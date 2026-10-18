@@ -1,0 +1,155 @@
+# ZenRayMedia — état réel du WBS au 2026-07-25
+
+> Audit ligne à ligne des **162 tâches** de `04-WBS-COMPOSANTS.md`, demandé par Matthieu :
+> « ça m'étonnerait que tu aies codé toutes les features à 100 % ».
+> Il a raison. Voici le compte exact, sans arrondi favorable.
+>
+> **Fait : 79 / 162 (49 %) au premier audit ; 87 / 162 (54 %) après les cartes X et Y du 2026-07-25.** Deux tâches sont retirées du périmètre sur sa demande (registre et
+> intention), ce qui ramène le dénominateur utile à 160.
+
+---
+
+## Vue d'ensemble
+
+| Couche | Fait | Total | Reste |
+|---|---|---|---|
+| L0 — Contrats | **10** | 12 | 2 |
+| L1 — Vault (sources) | **1** | 9 | 8 |
+| L2 — Brief | **5** | 11 | 4 (+2 retirés) |
+| L3 — Cut | **10** | 13 | 3 |
+| L4 — Thème | **10** | 16 | 6 |
+| L5 — Format | **7** | 9 | 2 |
+| L6 — Stage | **6** | 17 | 11 |
+| L7 — Forge | **4** | 15 | 11 |
+| L8 — Wire (publication) | **6** | 9 | 3 |
+| L9 — Interface | **18** | 24 | 6 |
+| L10 — Catalogue 1024 | **0** | 9 | 9 |
+| L11 — Critique | **7** | 10 | 3 |
+| L12 — Exploitation | **2** | 8 | 6 |
+| **Total** | **87** | **162** | **75** |
+
+**Lecture honnête de ce tableau :** le produit tient debout de bout en bout sur **un seul chemin**
+— une note devient un article, une image ou un A4, exporté et enregistré dans Create. Tout ce qui
+touche aux **sources** (L1), à la **vidéo réellement encodée** (L6/L7) et au **catalogue** (L10)
+est conçu et documenté mais pas construit.
+
+---
+
+## Ce qui manque, nommément
+
+### L0 — Contrats (10/12)
+- `ZM-L0-08` Résolveur de références universel — seuls les chemins `.zmedia.json` sont résolus ; un média de ZenRayShards ou un fichier local ne l'est pas.
+- `ZM-L0-12` Politique d'erreur — les messages nomment la couche, mais aucun nettoyage d'état partiel n'est formalisé (rien n'écrit à mi-chemin aujourd'hui, donc sans conséquence pour l'instant).
+
+### L1 — Vault : **rien n'est fait** (0/9)
+`ZM-L1-01` à `ZM-L1-09`. Aucune source externe n'entre dans l'application : ni page Create,
+ni fichier Markdown de Memory, ni média de ZenRayShards, ni séquence alpha, ni lit musical, ni
+élément sonore. **Aujourd'hui on colle du texte à la main.** C'est le trou le plus large du plan.
+
+### L2 — Brief (4/11)
+- `ZM-L2-03`/`ZM-L2-04` **retirés du périmètre** le 2026-07-25 sur ta demande.
+- `ZM-L2-05` Attachement de preuves par glisser-déposer.
+- `ZM-L2-07` Contraintes de langue (multilingue).
+- `ZM-L2-08` Saisie des mentions obligatoires — le Critique les vérifie, mais aucune interface ne permet d'en déclarer.
+- `ZM-L2-09` Historique réversible — aucune annulation.
+- `ZM-L2-11` Suggestion de 12 thèmes selon le registre.
+
+### L3 — Cut (9/13)
+- `ZM-L3-06` Emplacements média dans un bloc — **le modèle de données les porte, l'interface ne les expose pas**. C'est le « il manque les images » que tu as signalé.
+- `ZM-L3-10` Plan sonore.
+- `ZM-L3-11` Chapitrage (YouTube, ancres).
+- `ZM-L3-12` Sous-titres `.srt`.
+
+### L4 — Thème (10/16)
+- `ZM-L4-07` Groupe Son — déclaré dans le schéma, jamais appliqué.
+- `ZM-L4-08` Héritage famille → sous-famille → variante — **pas de mécanisme d'héritage** : avec un seul thème il n'a jamais été exercé. C'est pourtant ce qui rend 1024 thèmes tenables.
+- `ZM-L4-11` Registre des 64 familles typographiques et de leurs licences.
+- `ZM-L4-13` Aperçu vivant par thème dans le Deck.
+- `ZM-L4-14` Atelier de thèmes (le skill unique).
+- `ZM-L4-12` Catalogue interrogeable — **partiel** : on liste et on groupe par famille, on ne cherche pas encore.
+
+### L5 — Format (7/9)
+- `ZM-L5-08` Espaces colorimétriques réels (Display-P3, CMYK) — déclarés, non appliqués à l'export.
+- `ZM-L5-09` Plafonds de poids par plateforme — déclarés, non vérifiés.
+
+### L6 — Stage (6/17)
+Le compilateur, l'aperçu, le préchauffage et la capture d'image fixe fonctionnent.
+**Tout le reste est écrit dans le script généré mais jamais exécuté ni mesuré** :
+`ZM-L6-04` horloge virtuelle · `ZM-L6-05` **test de reproductibilité sha256** · `ZM-L6-06`
+positionnement des animations · `ZM-L6-07` interdiction des boucles temps réel · `ZM-L6-09`
+capture opaque · `ZM-L6-10` capture RGBA · `ZM-L6-11` flux sans disque · `ZM-L6-12` parallélisme
+par plan · `ZM-L6-13` nettoyage garanti · `ZM-L6-15` défilement temporel · `ZM-L6-16` rendu d'un
+extrait · `ZM-L6-17` reprise après échec.
+
+> `ZM-L6-05` reste la **porte** : tant que deux rendus du même plan ne donnent pas la même
+> empreinte, aucune autre tâche vidéo ne doit démarrer (règle posée dans `02-RISQUES`, R3).
+
+### L7 — Forge (4/15)
+Les commandes, la sonde et le script sont produits — **rien n'a jamais encodé une image**.
+Manquent : `ZM-L7-01` à `ZM-L7-10` (encodage réel, conformité, timeline, transitions, mixage,
+normalisation, sous-titres), `ZM-L7-13` vignette de livrable, `ZM-L7-14` accélération matérielle,
+`ZM-L7-15` garde-fou disque.
+
+### L8 — Wire (3/9)
+- **Nouveau, hors WBS initial :** enregistrement du document `.zmedia.json` dans Create, avec fil d'Ariane. Fait aujourd'hui.
+- `ZM-L8-01` Publier une **page d'article** dans Create (distinct de l'enregistrement du document).
+- `ZM-L8-02` Indexation dans la recherche du site.
+- `ZM-L8-05`/`ZM-L8-06` Publication d'image et de vidéo dans ZenRayShards.
+- `ZM-L8-07` Anonymat des chemins publics.
+- `ZM-L8-09` **Preuve de publication : l'URL.** C'est la porte V0 de `02-RISQUES` R1, toujours pas franchie.
+
+### L9 — Interface (17/24)
+- `ZM-L9-06` Liste de preuves (glisser-déposer).
+- `ZM-L9-09`/`ZM-L9-10` Transport et défilement temporel (sans objet tant que la vidéo n'est pas rendue).
+- `ZM-L9-13` Vignette de thème.
+- `ZM-L9-14` Recherche dans le Deck.
+- `ZM-L9-22` Comparateur de courbes de mouvement.
+- `ZM-L9-20` Panneau du Critique — **fait**, mais un seul type de correction est proposé.
+
+### L10 — Catalogue : **rien n'est fait** (0/9)
+`ZM-L10-01` à `ZM-L10-09`. Un seul thème existe, à ta demande. Le catalogue des 1024 est écrit
+comme **carte** (`05-THEMES-*`), pas construit comme stock — c'est la décision de `01-PLAN` §17 Q3.
+
+### L11 — Critique (7/10)
+- `ZM-L11-07` Cohérence multilingue.
+- `ZM-L11-08` Contrôle de la couche alpha.
+- `ZM-L11-10` Correction en un clic — **partiel** : deux correctifs seulement (`refit`, `shrink`).
+
+### L12 — Exploitation (2/8)
+- `ZM-L12-01` Ligne de commande · `ZM-L12-02` Rendu par lot · `ZM-L12-03` Reprise de lot ·
+  `ZM-L12-05` Mesure de performance · `ZM-L12-06` Garde-fou disque · `ZM-L12-07` Purge des travaux.
+
+---
+
+## Les trois prochaines cartes, dans l'ordre qui a du sens
+
+| # | Carte | Tâches couvertes | Pourquoi celle-là d'abord |
+|---|---|---|---|
+| **1** | **Publier une page d'article + URL** | `ZM-L8-01`, `-02`, `-09` | C'est la porte V0. Tant qu'elle n'est pas franchie, tout le reste est de l'outillage. Un article publié vaut plus que dix fonctionnalités. |
+| **2** | **Images dans les blocs** | `ZM-L1-03`, `-04`, `ZM-L2-05`, `ZM-L3-06`, `ZM-L9-06` | Sans image, aucun format visuel (1:1, 4:5, 9:16, A4) n'a de raison d'exister. C'est ce qui débloque la moitié des formats déjà codés. |
+| **3** | **Héritage de thèmes + un deuxième thème** | `ZM-L4-08`, `ZM-L4-13`, `ZM-L10-01` | L'héritage n'a jamais été exercé. Le construire à deux thèmes coûte peu ; le découvrir à cinquante coûte cher. |
+
+Le reste — vidéo réellement encodée (L6/L7), catalogue (L10), exploitation (L12) — attend
+`ZM-L6-05`, le test de reproductibilité, et n'a aucune raison de démarrer avant.
+
+
+---
+
+## Mise à jour du 2026-07-25 — cartes X et Y livrées
+
+**Carte X — publier (ZM-L8-01, -02, -09) : FAIT.** Le bouton « Publier » écrit une page `.md`
+dans Create à côté du document, l'ajoute à l'index de recherche (`action=index-add`, même chemin
+que la création d'un plan), et copie son **adresse** `?page=<chemin>` — un lien profond réel :
+ouvrir cette URL bascule sur Create et ouvre la page. Le Markdown est déterministe et ne contient
+jamais de HTML compilé : une page `.md` est un citoyen de Create, elle s'y ouvre, s'y cherche,
+s'y déplace et s'y modifie. **La porte V0 est franchissable.**
+
+**Carte Y — images (ZM-L1-04, ZM-L2-05, ZM-L3-06, ZM-L9-06) : FAIT.** Bouton et glisser-déposer
+par bloc, 4 images au maximum, redimensionnement par `fileToWebp` (helper déjà présent dans le
+projet, 1400 px / q0.82), vignettes retirables en un clic. Les images sont encodées en `dataUrl` :
+la page reste autonome et l'export PNG fonctionne — une image distante souillerait le canevas et
+ferait échouer l'encodage. Le Critique surveille le poids du document (alerte au-delà de 6 Mo).
+
+**Reste ouvert sur ces deux couches :** `ZM-L1-03` (résoudre un média déjà stocké dans
+ZenRayShards au lieu de l'encoder à nouveau) et `ZM-L1-01/-02` (lire une page Create ou un
+Markdown de Memory comme source de notes).
