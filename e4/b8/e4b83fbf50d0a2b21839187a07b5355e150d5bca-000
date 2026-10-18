@@ -1,0 +1,191 @@
+# Audit — Pipeline VIDEO / AUDIO / HLS (ZenRayProgress)
+
+Branche : `refactor/unified-ingest`. Audit READ-ONLY. Aucun push, aucun deploy.
+
+Objet : cartographier exactement comment une vidéo/audio est transcodée, stockée, streamée, rendue — pour que le routeur d'ingestion unifié et le viewer unifié réutilisent l'existant sans le casser.
+
+---
+
+## 0. Vue d'ensemble en une phrase
+
+Une vidéo locale → ffmpeg la coupe en segments HLS chiffrés AES-128 (.ts) → segments anonymisés (nommés par SHA) poussés en CLAIR sur un shard PUBLIC (`zenray-vid-public-NN`), servis par jsDelivr@SHA → playlists (.m3u8) + clé AES + manifeste `.media.json {type:'hls'}` poussés dans le repo PRIVÉ `zenray-data` → l'app lit le manifeste, sert le master via `/api/hls`, et `hls.js` (ou Safari natif) reconstitue le flux, en demandant la clé à `/api/hls-key` (gated par Origin/Referer).
+
+L'audio et le PDF, eux, n'empruntent PAS le HLS : ils passent par le pipeline chunks chiffrés (`type:'chunked-media'`, AES-GCM, déchiffré à la volée par `/api/stream`).
+
+---
+
+## 1. INGESTION — le routeur actuel (point d'accroche n°1)
+
+### Classifieur unique : `routeFile()`
+`src/capture/universalCapture.js` L660-708. C'EST le routeur à unifier. Logique par mime puis extension, dans cet ordre :
+
+| Ordre | Test | Pipeline appelée | Manifeste produit |
+|---|---|---|---|
+| 1 | `image/*` ou ext img | `captureImage` (L249) | `.img.json` (shard img, vignette réelle) |
+| 2 | `audio/*` (mime) | `captureAudio` (L611) | `.media.json {type:'chunked-media'}` + index `audio/manifest.json` |
+| 3 | `video/*` ou ext `[mp4,webm,mkv,avi,mov,m4v,ts,flv,wmv]` | `captureVideoServerHls` (L476) si localhost, sinon refus | (créé par le push HLS, pas ici) |
+| 4 | markdown/txt | `captureText` | `.md` |
+| 5 | ext audio nue (mime vide) | `captureAudio` | idem ligne 2 |
+| 6 | pdf | `captureBinaryMedia(...,'pdf')` (L635) | `.media.json {type:'chunked-media'}` famille `zenray-pdf-public-NN` |
+| 7 | fallback | `captureBinaryMedia` générique | `.media.json {type:'chunked-media'}` |
+
+Point d'entrée public : `captureFiles(files, {folder,onProgress,mode,vis})` L739 — pool parallèle (FILE_CONCURRENCY), résilient par fichier.
+
+OBSERVATION refactor : ce routeur n'a PAS de pipeline chunks-binaires-opaques (`.file.json`). Celle-ci vit uniquement dans `Scripts/archive-folder.mjs` (bulk, hors-app). Le diagnostic du patron est exact : aujourd'hui l'app route déjà image→img / vidéo→HLS / audio→chunked / pdf→chunked. C'est l'archive bulk (`.file.json`) qui re-chunke aveuglément images et vidéos. Le bon refactor : faire que `archive-folder.mjs` (et l'upload mobile) appellent la MÊME classification que `routeFile`, et ne tombent sur les chunks binaires QUE pour les formats non ouvrables.
+
+VIDÉO = chemin unique localhost :
+- `captureVideoServerHls` (L476) : POST le fichier brut à `/api/transcode-local?dest=&name=`, récupère un `jobId`, suit la progression en SSE (`/api/transcode-events`). Repli `captureVideoLocalCmd` (L504) qui génère une commande Terminal (`/api/upload-cmd`) si le serveur natif est indisponible.
+- Hors localhost : refus explicite (notif), pas d'upload (le transcodage exige ffmpeg natif).
+- LEGACY inerte conservé : `captureVideoTranscode` (L441, placeholder `{transcoding:true}` + `enqueueTranscode`), `captureVideoNative`/chunked-media web-native (`WEB_NATIVE_VIDEO`, `TRANSCODE_OVER_BYTES` L31-32). Plus routés mais lisibles pour rétrocompat.
+
+---
+
+## 2. TRANSCODAGE — `Scripts/video-hls-lib.mjs` (cœur réutilisable)
+
+Deux fonctions exportées : `transcodeHls()` (local, ne pousse rien) et `pushHls()` (upload). `loadResult()` permet de re-pousser sans retranscoder.
+
+### `transcodeHls(file, opts)` L130-273
+- Opts : `{ workDir, crf='21', sampleSec, log, onProgress }`.
+- `probe()` (importé de `video-mse-lib.mjs`) → durée, pistes audio, sous-titres.
+- **Chiffrement AES-128** (L157-162) : clé 16 octets + IV 16 octets aléatoires PAR vidéo. Key-info-file 3 lignes pour ffmpeg ; l'URI dans la playlist est un placeholder `ZR_HLS_KEY_URI` réécrit ensuite.
+- **Format segment = MPEG-TS (.ts), PAS fMP4** (L176-180) : ffmpeg 8.1.1 ne sait pas chiffrer AES-128 du fMP4. Conséquence : pas d'init segment, pas d'EXT-X-MAP. Lu nativement par Safari + hls.js. (Le commentaire d'en-tête L1 parle d'un pivot CMAF/fMP4 mais le code actif produit du .ts.)
+- **Ladder / stratégies d'encodage** (L191-202) — NB : ce n'est PAS un multi-résolution réel. `var_stream_map` = 1 piste vidéo + N audios (`v:0` + `a:i`), pas plusieurs hauteurs. Le « ladder 360/720/1080/4K » mentionné dans le contexte projet est un objectif/UI (sélecteur de qualité dans le lecteur) mais le transcodeur actuel sort UNE seule variante vidéo. Stratégies = vitesse d'encodage, pas qualités multiples :
+  - `remux` (`-c:v copy`) si source déjà H.264 8-bit yuv420p → zéro réencodage.
+  - `hw` (`h264_videotoolbox`, GPU) sinon, keyframes forcées toutes `HLS_TIME`.
+  - `cpu` (`libx264 -preset fast -crf 21 -g 48`) en dernier repli.
+  - Audio : `copy` si déjà AAC, sinon `aac 160k stéréo`.
+- `HLS_TIME = 6 s` (L114).
+- **Poster** (L239-245) : 1 frame à ~1/3 durée, webp 480px, best-effort. Référencé `poster` dans le manifeste (URL jsDelivr en clair).
+- **Sous-titres** : VTT monolithique (`extractSubs`), playlist subs générée à la main (1 segment = durée totale).
+- `.zr-meta.json` (L266) persisté dans `outDir` pour reprise (`loadResult`).
+
+### `pushHls(token, result, opts)` L402-543
+- `opts` : `{ apiBase='http://localhost:3000', contentRepo='zenray-data', publicRepo=null, onProgress, log }`.
+- **Résout le shard PUBLIC actif** via `/api/upload-shard {action:'active-shard', kind:'vid', vis:'public'}` (rollover serveur auto si > ~4,5 Go). Famille `zenray-vid-public-NN` (regex `VID_SHARD_RE`). `ensurePublicRepo` garantit l'existence.
+- **Hash + collecte** : chaque segment/init/poster/VTT → SHA-256 → chemin `ab/cd/<hash>.<ext>` (`shardPathFor` L122). Poussés en base64 via `pushBlobs` (Git Data API, jamais de clone) sur le repo public → renvoie `commitPublic` (SHA).
+- **URLs jsDelivr PINNÉES sur le SHA** (L419) : `https://cdn.jsdelivr.net/gh/<owner>/<publicRepo>@<sha>/<ab/cd/hash.ext>` (cache immuable).
+- **Réécriture des playlists** (`rewriteMediaPlaylist`, `rewriteMaster` L278-352) : chaque nom de segment local → URL jsDelivr@SHA absolue ; `EXT-X-KEY URI` → `/api/hls-key?v=<dest>/<base>/.hlskey.bin` ; URI des media playlists dans le master → `/api/hls?path=<dest>/<base>/<playlist>.m3u8`.
+- **Push texte** sur `zenray-data` (privé) : media playlists, playlists subs, master, **clé AES** (`.hlskey.bin`, base64, jamais publique/CDN), **manifeste**.
+
+### Manifeste HLS `.media.json` (FORMAT DE DONNÉES, L516-536)
+```json
+{
+  "type": "hls", "v": 1, "name": "<base>.mp4",
+  "mime": "application/vnd.apple.mpegurl",
+  "duration": <sec>,
+  "master": "pages/Videos/<base>/master.m3u8",   // chemin content, servi via /api/hls
+  "enc": "AES-128",
+  "keyUri": "/api/hls-key?v=pages/Videos/<base>/.hlskey.bin",
+  "keyPath": "pages/Videos/<base>/.hlskey.bin",   // privé (zenray-data)
+  "iv": "<hex>",
+  "poster": "https://cdn.jsdelivr.net/gh/.../<hash>.webp",  // ou absent
+  "publicRepo": "zenray-vid-public-NN",
+  "commitPublic": "<sha>",
+  "probe": { "duration": <sec> },
+  "audio": [{lang,label,default}],
+  "subs": [{lang,label}],
+  "size": <octets segments>, "count": <nb .ts>, "segments": <nb>,
+  "createdAt": "<iso>"
+}
+```
+Chemin manifeste : `<dest>/<base>/<base>.mp4.media.json` (dest par défaut `pages/Videos`).
+
+### CLI : `Scripts/video-hls.mjs` (77 l)
+Wrapper CLI sur la lib (transcode + push, `--resume`, `--push`, `--sample`). C'est ce qu'appelle le serveur `/api/transcode-local` (voir `server/hls-cli.js`). Jumeaux MSE : `video-mse-lib.mjs` / `video-mse.mjs` (ancien pipeline MSE/fMP4, encore présent, lecteur `StreamVideoMSE.jsx`).
+
+---
+
+## 3. STOCKAGE (résumé des emplacements)
+
+| Donnée | Repo | Visibilité | Service |
+|---|---|---|---|
+| Segments .ts chiffrés + poster + VTT (nommés SHA) | `zenray-vid-public-NN` | PUBLIC | jsDelivr@SHA (URL absolue dans playlists) |
+| Playlists .m3u8 (master + media + subs) | `zenray-data` (`CONTENT_REPO`) | privé | `/api/hls` (Content-Type mpegurl) |
+| Clé AES-128 `.hlskey.bin` | `zenray-data` | privé | `/api/hls-key` (gated) |
+| Manifeste `.media.json` | `zenray-data` | privé | `/api/page?action=read` |
+| Chunks audio/pdf chiffrés AES-GCM | `zenray-pdf-public-NN` / famille média publique | PUBLIC chiffré | `/api/stream` (déchiffre Range) |
+
+---
+
+## 4. SERVING — endpoints serveur
+
+- `server/hls.js` : sert les .m3u8 en texte. **GARDE : accepte `path` qui commence par `pages/` (PAS strictement `pages/Videos/`) et finit par `.m3u8`**, refuse `..` et path absolu. Content-Type `application/vnd.apple.mpegurl`, `Cache-Control: no-store`.
+- `server/hls-key.js` : sert la clé 16 octets. Deux voies : (1) token signé (`?token=`, pour ffmpeg/VLC sans Origin) ; (2) gate Origin/Referer (anti-hotlinking, seul rempart sans login). `keyPathFor` exige `pages/` + `.hlskey.bin`. Lecture binaire fiable via git/blobs (la Contents API corrompt le binaire). `no-store`.
+- `server/hls-download-info.js` : compose un token signé + commande ffmpeg + URL VLC + nom de sortie pour le panneau de téléchargement. Ne renvoie JAMAIS la clé brute, ne reconstruit jamais la vidéo. (`hls-download-script.js` = script de DL, `hls-token.js` = sign/verify HMAC, `hls-cli.js` = pont serveur→CLI transcode.)
+- `server/stream.js` : streaming Range pour les `chunked-media` (déchiffre les chunks publics à la volée) — utilisé pour audio inline, image inline, PDF, et téléchargement reconstitué.
+
+INCOHÉRENCE À NOTER (point d'accroche refactor) : `video-hls-lib.pushHls` calcule `keyUri`/`master` à partir de `dest` (par défaut `pages/Videos`), mais `hls-key.js` n'autorise la clé que sous `pages/` (commentaire dit `pages/Videos/` mais `VIDEOS_PREFIX='pages/'`). Donc une vidéo rangée hors `pages/Videos` fonctionne pour le master (`/api/hls` accepte `pages/`) MAIS la clé doit rester sous `pages/`. À harmoniser si on veut ranger les vidéos n'importe où dans Create.
+
+---
+
+## 5. RENDU — viewer actuel (point d'accroche n°2 : le viewer à unifier)
+
+### Routeur de rendu : `src/components/MediaViewer.jsx` (237 l)
+C'EST le viewer à unifier pour les `.media.json`. `readManifest(path)` (`src/media/chunked.js` L67) lit le manifeste via `/api/page`. Puis branche par type/mime, dans cet ordre :
+
+1. `type==='hls'` + `master` → `<HlsVideo master="/api/hls?path=<m.master>" manifest=m>` (L138). Mode **immersif Apple TV** (page épurée, titre masqué) quand HLS prêt. Panneau détails/DL repliable (`HlsDownloadPanel`). Toggle élargir (`vidWide`, persisté localStorage).
+2. `transcoding:true` (legacy) → barre de progression + re-poll toutes les 4 s.
+3. inline (`playableInline` L22 : video mp4/webm/ogg, audio, image) + `type!=='hls'` :
+   - vidéo `mse-av` → `StreamVideoMSE`, sinon `StreamVideo`.
+   - audio → `<audio src="/api/stream?path=...">`.
+   - image → `<img src="/api/stream...">`.
+4. PDF (`mime==='application/pdf'`, type≠hls) → `<iframe src="/api/stream...">` en carte liquid glass.
+5. non-inline vidéo → `VideoPlayer` (DL reconstitué si non supporté).
+6. fallback non-inline → carte fichier (glyphe + badge ext via `fileKind`) + bouton « Télécharger » (`loadChunked` reconstitue le blob déchiffré, 1 clic).
+
+Badge « CDN public » si `type==='hls'` ou `cdnRepo` présent, sinon « Vercel » (legacy).
+
+### Lecteur HLS : `src/components/HlsVideo.jsx` (397 l)
+Reçoit `{ t, master, manifest }`.
+- **Choix moteur** (L120-210) : tente `hls.js` (import dynamique) D'ABORD (contrôle fin audio/subs/résolutions, `Hls.isSupported()`) ; repli **Safari natif** (`canPlayType('application/vnd.apple.mpegurl')`, `el.src=master`).
+- hls.js : events `MANIFEST_PARSED` (levels, audioTracks), `LEVEL_SWITCHED`, `AUDIO_TRACK*`, `SUBTITLE_TRACK*`, `ERROR` (récup réseau/média auto). `crossOrigin="anonymous"`.
+- **Sélecteur de qualité** (Auto/-1 = ABR + chaque level) piloté par `hls.currentLevel`. NB : alimenté par `hls.levels` — donc montré seulement si le master a plusieurs variantes ; avec le transcodeur mono-variante actuel, le sélecteur n'aura souvent qu'« Auto ».
+- UI **Apple TV+** Liquid Glass : autoplay muté, contrôles qui s'estompent, scrub type YouTube (pointer capture), pistes audio/sous-titres, vitesse, PiP, plein écran (object-fit contain), raccourcis clavier. Accent `#d97757`.
+
+### Poster / icône : `MediaIcon` dans `src/App.jsx` L875-907
+- Lit `mime` (depuis l'index `getNodeMime`, sinon manifeste caché localStorage `zrmime:`) et `poster` (champ du manifeste, URL jsDelivr en clair, caché `zrposter:`).
+- `mime==='application/pdf'` → icône PDF. Sinon si `poster` → vignette frame + badge play. Sinon → icône `play.rectangle`.
+- `isMediaPath(p)` = `p.endsWith('.media.json')` (App.jsx L72). Vignette archive `.file.json` : `FileNodeThumb` (L912+) lit `thumb`/`poster` du manifeste `.file.json`.
+
+### Lecteur audio (deux contextes distincts)
+- **Dans le Finder/MediaViewer** : `<audio src="/api/stream?path=...">` natif (déchiffrement chunked côté serveur).
+- **Onglet Audio** (`src/components/Audio.jsx`, 352 l) : bibliothèque type Spotify lisant `audio/manifest.json` (tracks avec `streamPath`), lecteur GLOBAL `PlayerContext`/`AudioPlayer` qui survit aux changements d'onglet, lit par Range via `/api/stream`. Capture audio (`captureAudio`) écrit le `.media.json` ET ajoute la piste à `audio/manifest.json` (mutex anti-écrasement).
+
+---
+
+## 6. FLUX COMPLET (entrée → stockage → rendu)
+
+VIDÉO :
+1. drop/capture in-app → `captureFiles` → `routeFile` → `captureVideoServerHls` → POST brut `/api/transcode-local`.
+2. serveur (`hls-cli.js`) lance `Scripts/video-hls.mjs` → `transcodeHls` (ffmpeg, AES-128, .ts, poster) → `pushHls` (segments SHA→jsDelivr public, playlists+clé+manifeste→zenray-data privé). SSE de progression.
+3. arbre rafraîchi → nœud `.media.json {type:'hls'}` visible, `MediaIcon` affiche le poster.
+4. ouverture → `MediaViewer` → `readManifest` → `HlsVideo(master=/api/hls?path=…)` → hls.js fetch master (`/api/hls`) → media playlists → segments jsDelivr@SHA → clé (`/api/hls-key`, gate Origin) → lecture.
+
+AUDIO : `routeFile` → `captureAudio` → chunks AES-GCM (public chiffré) + `.media.json {type:'chunked-media'}` + index `audio/manifest.json`. Rendu : `<audio>/api/stream` (Finder) ou onglet Audio (PlayerContext). PDF : `captureBinaryMedia` → chunks → `.media.json` → iframe `/api/stream`.
+
+---
+
+## 7. POINTS D'ACCROCHE POUR LE REFACTOR UNIFIÉ
+
+1. **Routeur d'ingestion partagé** : `routeFile()` (universalCapture.js L660) est déjà LE classifieur in-app correct. Extraire sa table de décision (image→img / video→HLS / audio→chunked / pdf→chunked / autre→chunked) dans un module pur partageable, puis faire que (a) `archive-folder.mjs`, (b) l'upload mobile l'appellent. Les vrais binaires opaques (projets, zip, propriétaires) → seule branche qui descend vers `.file.json` chunks 19 Mo. Garde-fou : `.file.json` v4 déjà en ligne reste lu/téléchargé tel quel (additif).
+2. **Viewer unifié** : `MediaViewer.jsx` route déjà par type/mime pour `.media.json`. Le viewer unifié doit ajouter une branche `.file.json` (archive chunk, via `FileNodeViewer.jsx` existant) et `.img.json` (image inline) à côté du HLS/audio/pdf, en réutilisant `HlsVideo`, `<audio>/api/stream`, l'iframe PDF, et le viewer chunk pour les vrais binaires. La détection se fait sur l'extension feuille (`.img.json`/`.media.json`/`.file.json`) + `type`/`mime`.
+3. **Poster/vignette unifiés** : `MediaIcon` (.media.json `poster`) et `FileNodeThumb` (.file.json `thumb`/`poster`) et `ImgNodeThumb` (.img.json) coexistent déjà dans App.jsx. Un composant tuile unique pourrait router selon l'extension feuille.
+4. **Mobile (~390px)** : l'ingestion vidéo exige localhost (ffmpeg natif) → l'upload mobile vidéo doit soit cibler le serveur local, soit n'autoriser image/audio/binaire en mobile et différer la vidéo. HLS adaptatif déjà mobile-friendly. `HlsVideo` est `playsInline` + responsive mais ses contrôles Apple-TV denses sont à vérifier à 390px. `MediaViewer` a `vidWide` mais pas de breakpoint mobile explicite.
+5. **Cohérence chemin** : harmoniser `dest` libre vs garde `pages/` de `hls-key.js`/`hls.js` si on veut ranger les vidéos hors `pages/Videos`.
+6. **Multi-résolution réel** : si on veut un vrai ladder 360/720/1080/4K (le sélecteur qualité du lecteur l'attend), il faut étendre `transcodeHls` à un vrai `var_stream_map` multi-hauteurs ; aujourd'hui mono-variante.
+7. **Réutiliser tel quel** : `video-hls-lib.mjs` (transcode+push), `HlsVideo.jsx` (lecteur), `server/hls*.js` (serving+clé+DL), `/api/stream` (audio/pdf/image inline + DL reconstitué), `chunked.js` (readManifest/loadChunked). Ne pas réinventer.
+
+---
+
+## 8. FICHIERS CLÉS (récap)
+
+- `src/capture/universalCapture.js` — routeur d'ingestion `routeFile` L660, `captureFiles` L739, captures par type.
+- `Scripts/video-hls-lib.mjs` — `transcodeHls` L130, `pushHls` L402, `loadResult` L366, manifeste L516.
+- `Scripts/video-hls.mjs` — CLI transcode/push/resume.
+- `src/components/MediaViewer.jsx` — routeur de rendu `.media.json` (L138 HLS, L165 inline, L177 PDF).
+- `src/components/HlsVideo.jsx` — lecteur HLS hls.js+natif (moteur L120, qualité/audio/subs).
+- `src/App.jsx` — `MediaIcon` L875, `FileNodeThumb` L912, `isMediaPath` L72.
+- `src/media/chunked.js` — `readManifest` L67, `loadChunked`, `uploadChunked`.
+- `src/components/Audio.jsx` + `src/audio/PlayerContext.jsx` + `AudioPlayer.jsx` — onglet audio global.
+- `server/hls.js` (playlists), `server/hls-key.js` (clé gated), `server/hls-download-info.js` (+`hls-download-script.js`,`hls-token.js`,`hls-cli.js`), `server/stream.js` (Range déchiffré).
+- `src/lib/fileKind.js` — label+couleur+taille pour cartes fichier.

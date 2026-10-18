@@ -1,0 +1,58 @@
+# Audit complet ZenRayProgress — suivi (démarré 2026-07-15 04:36)
+
+Demande de Matthieu : lecture séquentielle de tout le code (206 fichiers, 35 800 lignes), propositions
+performance/sécurité/longévité/protocole anti-bug, simplifications/merges de features, **aucun code écrit**.
+Exécution choisie : `/loop 30 min`, séquentiel, un agent par tick, un sous-système par tick, écriture CSV
+immédiate sur disque (jamais perdu même si le cron meurt). Cron session-only (voir note en bas).
+
+## Règle de reprise (pour CHAQUE tick, y compris après compaction de contexte)
+
+1. Lire ce fichier, trouver la première case `[ ]` non cochée ci-dessous.
+2. Spawner un agent general-purpose (Agent tool) qui : lit INTÉGRALEMENT tous les fichiers du périmètre
+   du tick, cherche performance/sécurité/longévité/anti-bug/simplification, écrit ses lignes dans
+   `docs/AUDIT-2026-07-15-findings.csv` (append, jamais réécrire les lignes existantes) via Write/Edit
+   AVANT de rendre la main. Colonnes exactes : `Zone,Fichier,Ligne,Catégorie,Sévérité,Constat,Recommandation,Effort`.
+   Catégorie ∈ {Performance,Sécurité,Longévité,Anti-bug,Simplification}. Sévérité ∈ {Faible,Moyenne,Haute,Critique}.
+   **Aucun code ne doit être modifié** — audit en lecture seule uniquement.
+3. Une fois l'agent revenu, cocher la case du tick ci-dessous, committer + pousser (PROGRESS.md pas touché
+   à chaque tick, seulement à la fin — cette page EST le tracker vivant).
+4. Si le tick coché est le dernier (#7, synthèse), append une entrée PROGRESS.md récapitulative, puis
+   appeler CronDelete sur l'ID ci-dessous pour arrêter le loop. Sinon, ne rien faire de plus : le prochain
+   tick arrivera seul dans 30 min.
+
+## Cron
+
+- ~~ID du job : `a39b4f37`~~ — **arrêté sur demande de Matthieu à 05:xx** (plus d'attente de 30 min entre
+  les ticks). Poursuite immédiate et séquentielle : chaque tick est lancé dès que le précédent a rendu la
+  main (notification de tâche en fond), un seul agent à la fois, même règle de reprise ci-dessus. Si cette
+  chaîne s'interrompt (session fermée), reprendre manuellement au prochain `[ ]` non coché.
+
+## Tranches (7 ticks)
+
+- [x] Tick 1 — `src/App.jsx` seul (4877 lignes). Noyau Finder/Create : navigation, sélection, drag&drop,
+      raccourcis clavier, corbeille, menu contextuel, FinderPathPanel, intégration Music.
+- [x] Tick 2 — `src/components/` **A→NotionPasteMenu.jsx** alphabétique (25 fichiers, ~4738 lignes) :
+      Articles, BuildBoard, CanvasNodeViewer, CreateDock, DatabaseTable, Databases, DownloadsView,
+      DriveDashboard, EagleInspector, EmbedNodeViewer, FeaturesBoard, FileNodeViewer, Gallery, GmapsViewer,
+      HlsDownloadPanel, HlsVideo, Icon, ImageNodeViewer, IndexView, LanguageSwitcher, LibFilePreview,
+      MediaViewer, MobileUploadButton, Notifications, NotionPasteMenu.
+- [x] Tick 3 — `src/components/` **PageEditorBN.jsx→fin** + `blocks/` + `focusPageBody.js` + `linkPaste/`
+      + `subtitles/` (21 fichiers, ~4780 lignes) : PageEditorBN, PinGate, QuickLookOverlay, ShareImagePage,
+      ShareVideoPage, SharedFolderPage, Shelf, SpotlightSearch, StreamVideo, StreamVideoMSE, TypedCell,
+      VideoPlayer, VideoPlayer2, Views, blocks/BookmarkBlock, blocks/EmbedBlock, blocks/bnSchema,
+      blocks/safeUrl, focusPageBody, linkPaste/classifyUrl, subtitles/SubtitleLayer.
+- [x] Tick 4 — `scripts/` **add-games-backlog.mjs→migrate-media-git.mjs** alphabétique (36 fichiers,
+      ~5585 lignes) : pipeline Eagle, posters, fix/regen manifests, import Notion/Shelf, local-server,
+      migrations legacy.
+- [x] Tick 5 — `scripts/` **music-ingest.mjs→zenray-uploader.mjs** alphabétique + `scripts/lib/*`
+      (~46 fichiers, ~7542 lignes) : pipeline vidéo (DASH/HLS/MSE/transcode), upload img/vidéo/audio,
+      rename/reorg shards, librairies partagées scripts/lib/.
+- [x] Tick 6 — reste : `src/audio/` + `src/create/` + `src/search/` + `src/table/` + `src/capture/` +
+      `src/lib/` + `api/` + fichiers racine `src/*.js(x)` (theme.js, dirCache.js, main.jsx, api.js,
+      safeMarked.js) — ~43 fichiers, ~5545 lignes.
+- [x] Tick 7 — voir docs/AUDIT-2026-07-15-SYNTHESIS.md
+
+## Périmètre explicitement exclu (déjà connu, ne pas ré-auditer)
+
+- `scripts/_staging/` : code gelé du refactor R-D en cours (voir tâche R-D GATED), pas un audit de plus.
+- `node_modules/`, `dist/`, `docs/` (le dossier de doc lui-même n'est pas du code applicatif).

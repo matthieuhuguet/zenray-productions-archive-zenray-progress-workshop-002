@@ -1,0 +1,34 @@
+# Sport (16 October 2026)
+
+Vue `sport` du menu Create (QuickTools, après Goals). Demande de Matthieu : base d'exercices en tuiles, saisie en un tap sur mobile et desktop,
+une seule carte Plan par jour qui s'allonge, bloc Sport dans la note du jour, objectif visuel, et jour modifiable pour consigner une séance passée.
+Maquettes validées : `~/.claude/skills/zenray-edit/designs/2026-10-16-sport-round-5` (tuile C) et `round-9` (page complète).
+
+## Où est quoi
+
+| Pièce | Fichier | Rôle |
+|---|---|---|
+| Réglages (HDA) | `src/config/sport.js` | préréglages 3 | 4 séries et 6 | 8 reps, défauts, pas de charge, chemin de repli du plan, balises de la note, photos d'objectif, échelle d'espacement |
+| Données Plan | `src/sport/sportPlan.js` | fonctions pures : une tâche `sport-<date>`, `sport.entries`, note lisible, dernière performance, plan actif |
+| Note du jour | `src/sport/dayNote.js` | bloc entre `<!-- sport:start -->` et `<!-- sport:end -->`, réécrit sans jamais doubler une ligne ; dossier résolu sur la liste réelle (jamais deviné) |
+| Vue | `src/sport/SportView.jsx`, `sport.css` | tuiles (image + nom), UNE feuille de réglages (tuile C), carte du jour, onglet Objectif visuel |
+| Exercices | `src/sport/exercises.json` | 11 exercices, tous avec image (`program` 1 à 11). Ceux sans image ont été retirés le 16 October 2026 ; un exercice se rajoute avec son image |
+| Images | `public/sport/img`, `public/sport/goal` | découpes confirmées par Matthieu ; photos d'objectif |
+| Tests | `src/sport/*.test.js(x)` | 21 tests, dont la base d'exercices (images présentes, ordre du programme) : carte unique, jour passé, balises idempotentes, valeurs cliquables |
+
+## Règles de données
+
+- **Le plan EST le journal.** Aucune table à part : la carte `sport-<date>` porte `sport.entries` (structuré) et `note` (lisible).
+  Le Plan la montre comme n'importe quelle tâche faite ; les champs inconnus sont conservés par ses mutations (spread).
+- Ajouter un exercice ajoute une ligne à la MÊME carte ; le modifier la remplace sur place (heure d'origine gardée) ;
+  retirer le dernier supprime la carte.
+- Écriture Plan : `saveJsonWithRetry` (lecture fraîche, sha, réessais). Écriture note : lecture fraîche, sha, 4 essais.
+- Un plan introuvable ou illisible n'est JAMAIS traité comme vide : la vue le dit et n'écrit rien.
+- Plan actif : réglage manuel `localStorage zr:sport:planPath`, sinon premier plan épinglé (`zr:plan:pinned`), sinon cache `zr:plan:paths`,
+  sinon `SPORT.plan.fallbackPath`.
+
+## Ajouter
+
+- Un exercice : une entrée dans `exercises.json` (+ image `public/sport/img/<id>.webp`).
+- Une photo d'objectif : fichier dans `public/sport/goal/` + une ligne dans `SPORT.goalPhotos`.
+- Une valeur cliquable : `SPORT.presets`.

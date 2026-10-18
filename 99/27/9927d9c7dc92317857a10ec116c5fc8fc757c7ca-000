@@ -1,0 +1,58 @@
+# Architecture média ZenRayProgress (ingestion, HEVC/streaming, types de fichiers)
+
+> Source de vérité. Le site n'héberge AUCUN média : GitHub + jsDelivr font stockage et diffusion. La nature du fichier décide s'il est *streamé* (vidéo/audio/pdf), *affiché* (image) ou *reconstitué au téléchargement* (le reste).
+
+## 1. Séquence globale (bulk, ex. 188 Go DJI)
+
+`archive-folder.mjs <dossier> <destination>` parcourt le dossier récursivement. Pour CHAQUE fichier, le routeur pur `classify.js` choisit la pipeline selon le type :
+
+- image → pipeline image (vignette + affichage + original, chiffrés)
+- vidéo → pipeline DASH
+- audio / pdf → pipeline « média chunké » (déchiffrable, lisible en streaming)
+- le reste → « archive chunks » (morceaux opaques, re-téléchargeables)
+
+Traitement **séquentiel** et **idempotent** : avant de traiter, `sha256` du fichier local ; si un manifeste existe déjà côté distant → saut. Permet de relancer sans tout refaire (mais oblige à re-hasher la source à chaque redémarrage). Chaque résultat écrit un petit **manifeste** dans `zenray-data` (`pages/.../`) qui dit au site comment afficher/lire. Les gros binaires vont sur des dépôts **publics** servis par jsDelivr.
+
+## 2. HEVC + streaming (cœur)
+
+Deux étapes : transcoder (`transcodeDash`) puis pousser (`pushDash`).
+
+**Transcoder** — un seul ffmpeg produit 4 qualités :
+```
+source 4K ──[décodage matériel videotoolbox]──> split ──> scale 360/720/1080/2160p
+   ──> encodeur HEVC matériel (hevc_videotoolbox, -realtime 1)
+   ──> packaging CMAF : segments 10 s + manifestes .mpd (DASH) + .m3u8 (HLS)
+```
+Contraintes dures :
+- **HEVC** (≈2× moins d'octets que H.264 = clé anti-lag) ; le M5 a un bloc silicium HEVC dédié → `-realtime 1` débride à **1,62× le temps réel** (vs 0,92× sans). `-hwaccel videotoolbox` = décodage matériel, 3× moins de CPU.
+- **tag `hvc1`** obligatoire (sinon dash.js/Safari ne lisent pas).
+- **`maxrate` adaptatif** : crête plafonnée pour qu'un segment 10 s ne dépasse JAMAIS 19 Mo (jsDelivr refuse > 20 Mo). Sans ça, la 4K casse en « not available ».
+
+**Pousser** (`pushDash`) — chaque segment haché (`sha256`), renommé par empreinte, envoyé sur `zenray-vid-public-NN`. Manifestes réécrits vers les **URLs jsDelivr** figées sur le **commit SHA** (immuable). Transport :
+- ≤ 120 fichiers → **Data API** GitHub (rapide).
+- > 120 fichiers (longues vidéos, ~1000 segments) → **`git push`** (clone shallow + add + commit + push). Raison : le Data API (`git/trees` avec `base_tree`) **timeoute** (502 puis 422) sur un shard qui grossit → la vidéo retombait en chunk. Le transport git (packfile) n'a pas cette limite.
+
+Lecteur : `dash.js` (Chrome/Firefox/iPhone) bascule la qualité selon la connexion = streaming adaptatif.
+
+## 3. Fichiers ni image ni vidéo
+
+- **Audio / PDF → « média chunké » lisible.** Découpé, **chiffré AES-GCM**, poussé sur un shard + manifeste `.media.json`. Le site déchiffre et lit en streaming (audio sans tout télécharger, PDF page par page). D'où `audio -> chunked-media (streamable)`.
+- **Tout le reste → « archive chunks ».** Morceaux de **19 Mo hachés anonymes** (dépôt public, rien d'exploitable) + manifeste **privé** `.file.json`. Pas lisible dans le navigateur mais **re-téléchargeable bit à bit** (le site recolle en streaming). Shards roulent à ~4,3 Go (< limite GitHub 5 Go) ; un fichier de 16 Go réparti sur plusieurs shards via `parts[]`.
+
+## Progression au fil de l'eau (visibilité incrémentale, 2026-06-29)
+
+Le bulk ne doit JAMAIS donner l'impression de « naviguer dans le vide » : chaque fichier uploadé apparaît vite, pas en bloc à la fin.
+
+- **Parallélisme par type (`ZR_ONLY`)** : 2 runs concurrents — `novideo` (images/audio/chunks, rapide) ∥ `video` (encode lent). Types → shards séparés → zéro conflit. Wrappers `~/.zr-runs/dji-novideo.sh` et `dji-video.sh`, logs séparés.
+- **Vidéo SÉQUENTIELLE 1-par-1** : encode → push (segments + manifeste committés) → log `✓ EN LIGNE` → vidéo suivante. Chaque vidéo est CONFIRMÉE en ligne avant la suivante (le manifeste `.media.json` est dans zenray-data). Remplace l'ancien pipeline ∥ qui pouvait perdre un push silencieusement.
+- **Images/audio par LOTS de 256 (`ZR_BATCH`)** : `flushStreamBatch()` committe les manifestes `.img.json`/`.media.json` tous les 256 fichiers PENDANT la boucle (au lieu d'un seul commit en fin de dossier). Log `📤 LOT EN LIGNE`. Raison : l'URL jsDelivr d'une image est pinnée sur le commit du shard, connu seulement après un flush ; on flushe donc tous les 256 au lieu d'à la fin. Bonus : source purgeable plus tôt.
+- **Auto-refresh de l'arbre (25 s)** : `App.jsx` re-fetch l'index global (`/api/page?action=tree`) toutes les 25 s → les fichiers uploadés en fond apparaissent sans Cmd+R. (Le Finder dérive le contenu d'un dossier de cet index global, pas d'un appel live par dossier.)
+- **Détection de vie des runs = nom du wrapper** (`pgrep -f dji-novideo.sh`), JAMAIS la ligne `node` (qui ne contient pas le type) — sinon relances en double.
+
+## Fichiers clés
+- `Scripts/classify.js` — routeur pur par type
+- `Scripts/video-dash-lib.mjs` — `transcodeDash` + `pushDash` + `pushBlobsGit`
+- `Scripts/video-mse-lib.mjs` — `pushBlobs` (Data API), `probe`, `ffmpegProgress`
+- `Scripts/img-ingest.mjs` — pipeline image (git push), `makeImgShardCtx`
+- `Scripts/media-ingest.mjs` — audio/pdf chunked-media
+- `Scripts/archive-folder.mjs` — orchestrateur bulk + archive chunks

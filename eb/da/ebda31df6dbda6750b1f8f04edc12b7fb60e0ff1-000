@@ -1,0 +1,519 @@
+# Plan Articles -> matthieuhuguet.com
+
+Document pour Claude. Objectif: developper le workflow complet qui permet de creer un article dans ZenRayProgress, de le relier au backbone Create/Eagle-like, puis de le publier proprement sur le site public `matthieuhuguet.com` (`ZenRayWebsite`) sans edition manuelle du site.
+
+Ce plan est volontairement architecture-first. Il ne contient pas de patch a appliquer tel quel.
+
+---
+
+## 1. Diagnostic
+
+### Ce qui existe deja
+
+- `src/components/Articles.jsx` fournit deja un onglet Articles avec brouillons, BlockNote, meta editoriale, export JSON et bouton Publier.
+- Les brouillons sont stockes dans `zenray-content` via `/api/page`:
+  - `articles/index.json`
+  - `articles/<id>.article.json`
+- `api/publish.js` publie deja vers `matthieuhuguet/ZenRayWebsite` en creant une branche `article/<slug>` depuis `master`.
+- La publication ecrit uniquement `public/articles/<slug>.json` dans le repo du site.
+- L'UI suppose ensuite l'URL `https://www.matthieuhuguet.com/reels/<slug>`.
+
+### Ce qui manque
+
+- `ZenRayWebsite` ne consomme pas encore `public/articles/<slug>.json`.
+- La route `/reels/<slug>` du site public repose encore sur `PROJECTS` hardcode dans `src/App.jsx`.
+- Les medias insérés dans les articles peuvent rester en URL privee/proxy (`/api/img`, `/api/shard`, `/api/stream`) et donc casser sur le domaine public.
+- Le statut `published` dans ZenRayProgress veut dire "branche creee", pas encore "visible en production".
+- Il n'y a pas de contrat d'article versionne, pas de validation slug/schema/assets, pas de PR creee, pas de preview Vercel capturee.
+
+---
+
+## 2. Decision d'architecture
+
+### Frontiere a conserver
+
+Articles reste une application separee de Create.
+
+Raison: Create repond a "ou est range ce noeud ?" alors qu'Articles repond a "ce contenu est-il publie, sous quel slug, sur quelle branche, a quelle URL ?". Ce cycle editorial ne doit pas polluer le modele Finder.
+
+### Integration avec le backbone
+
+Articles doit reutiliser le backbone, mais par references:
+
+- Un article peut referencer une page source Create: `sourceNodePath: "pages/.../draft.md"`.
+- Un article peut referencer des medias Create: `mediaRefs: [{ nodePath, role, alt, caption }]`.
+- Un article peut referencer des projets existants: `relatedProjects: [{ id, slug, title, url }]`.
+- Les inverses restent derives: ne pas ecrire la relation dans les deux sens.
+
+### Regle media publique
+
+Un article public ne doit jamais dependre d'un proxy prive ZenRayProgress.
+
+Donc au publish:
+
+- Les `.img.json` et `.media.json` doivent etre resolus cote serveur.
+- Les assets retenus doivent etre copies/promus dans le repo public `ZenRayWebsite`, par exemple:
+  - `public/articles/<slug>/hero.webp`
+  - `public/articles/<slug>/media/<asset-id>.webp`
+  - `public/articles/<slug>/media/<asset-id>.mp4`
+- Le JSON public ne reference que des chemins publics du site:
+  - `/articles/<slug>/hero.webp`
+  - `/articles/<slug>/media/<asset-id>.webp`
+  - `/projects/<project-slug>/thumbnail.webp`
+
+---
+
+## 3. Contrat de donnees
+
+### Source interne: `ArticleDraft`
+
+Chemin actuel acceptable: `articles/<id>.article.json`.
+
+Schema cible:
+
+```json
+{
+  "schema": "article.draft.v1",
+  "id": "a...",
+  "title": "Titre",
+  "subtitle": "",
+  "slug": "mon-article",
+  "status": "draft",
+  "language": "fr",
+  "theme": "white",
+  "font": "serif",
+  "size": 17,
+  "ratio": "free",
+  "sourceNodePath": "pages/Projects/My Draft.md",
+  "blocks": [],
+  "mediaRefs": [
+    {
+      "id": "hero",
+      "role": "hero",
+      "nodePath": "pages/References/image.img.json",
+      "alt": "Alt text",
+      "caption": ""
+    }
+  ],
+  "relatedProjects": [
+    {
+      "id": 34,
+      "slug": "hda-stairs-component",
+      "title": "HDA Stairs Component",
+      "url": "https://matthieuhuguet.com/reels/hda-stairs-component"
+    }
+  ],
+  "seo": {
+    "description": "",
+    "ogImageRef": "hero"
+  },
+  "publication": {
+    "targetRepo": "matthieuhuguet/ZenRayWebsite",
+    "targetBranch": "master",
+    "canonicalBaseUrl": "https://matthieuhuguet.com",
+    "routeBase": "/reels",
+    "latestRunId": null,
+    "publishedAt": null,
+    "liveUrl": null
+  },
+  "updatedAt": 0
+}
+```
+
+Statuses:
+
+- `draft`: local seulement.
+- `ready`: valide pour publication.
+- `published_to_branch`: branche/fichiers crees, pas encore merge.
+- `preview`: PR ou preview Vercel disponible.
+- `live`: deploy prod confirme.
+- `archived`: contenu retire de l'index public, source conservee.
+
+### Artefact public: `ArticlePublic`
+
+Chemin cible dans le site: `public/articles/<slug>.json`.
+
+```json
+{
+  "schema": "article.public.v1",
+  "slug": "mon-article",
+  "title": "Titre",
+  "subtitle": "",
+  "language": "fr",
+  "canonicalUrl": "https://matthieuhuguet.com/reels/mon-article",
+  "updatedAt": "2026-05-31T00:00:00.000Z",
+  "seo": {
+    "description": "",
+    "ogImage": "/articles/mon-article/hero.webp"
+  },
+  "hero": {
+    "type": "image",
+    "src": "/articles/mon-article/hero.webp",
+    "alt": "Alt text",
+    "w": 1600,
+    "h": 900
+  },
+  "blocks": [],
+  "assets": [
+    {
+      "id": "hero",
+      "type": "image",
+      "src": "/articles/mon-article/hero.webp",
+      "alt": "Alt text",
+      "caption": "",
+      "w": 1600,
+      "h": 900
+    }
+  ],
+  "relatedProjects": []
+}
+```
+
+### Index public
+
+Ajouter un index public pour eviter de scanner les fichiers au runtime:
+
+```json
+{
+  "schema": "articles.index.v1",
+  "items": [
+    {
+      "slug": "mon-article",
+      "title": "Titre",
+      "url": "/reels/mon-article",
+      "hero": "/articles/mon-article/hero.webp",
+      "updatedAt": "2026-05-31T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+Chemin: `public/articles/index.json`.
+
+---
+
+## 4. Architecture cible
+
+```mermaid
+flowchart LR
+  A["ZenRayProgress / Articles"] --> B["ArticleDraft in zenray-content"]
+  C["Create pages"] --> B
+  D["Eagle-like media nodes"] --> B
+  E["Projects mirror"] --> B
+  B --> F["Publish compiler"]
+  F --> G["ArticlePublic JSON"]
+  F --> H["Public assets copied to ZenRayWebsite"]
+  G --> I["Branch article/<slug>"]
+  H --> I
+  I --> J["GitHub PR / Vercel preview"]
+  J --> K["matthieuhuguet.com/reels/<slug>"]
+```
+
+Le composant critique est le `Publish compiler`: il transforme une source privee et riche en artefact public autonome.
+
+Responsabilites du compiler:
+
+- Valider le draft.
+- Resoudre les refs Create/media/projets.
+- Copier ou convertir les medias vers `ZenRayWebsite/public/articles/<slug>/`.
+- Recrire les URLs privees en URLs publiques.
+- Produire `public/articles/<slug>.json`.
+- Mettre a jour `public/articles/index.json`.
+- Optionnellement mettre a jour `public/sitemap.xml`.
+- Creer branche + commit + PR.
+
+---
+
+## 5. Plan de developpement pour Claude
+
+### Phase 0 - Verrouiller les constantes
+
+Objectif: supprimer les hardcodes fragiles.
+
+Actions:
+
+- Ajouter une config unique pour:
+  - `WEBSITE_REPO`
+  - `WEBSITE_BRANCH`
+  - `WEBSITE_PUBLIC_BASE_URL`
+  - `WEBSITE_ROUTE_BASE`
+- Par defaut actuel:
+  - repo: `matthieuhuguet/ZenRayWebsite`
+  - branche: `master`
+  - base URL: `https://matthieuhuguet.com`
+  - route: `/reels`
+- Ne plus hardcoder `https://www.matthieuhuguet.com/reels/` dans `Articles.jsx`.
+- Traiter `zenray.vercel.app` et tout autre ancien domaine comme alias historique, pas comme source de verite.
+
+Livrable:
+
+- Une fonction de config partagee cote API et UI.
+- Les liens UI utilisent la config.
+
+### Phase 1 - Stabiliser le modele Articles
+
+Objectif: rendre les brouillons fiables avant d'ajouter le site.
+
+Actions:
+
+- Introduire `schema: "article.draft.v1"` dans chaque draft.
+- Ajouter une migration douce pour les anciens drafts sans schema.
+- Remplacer l'index fragile par un index reconstruit ou une API dediee:
+  - minimum: `articles/index.json` reste, mais validation/reconciliation au chargement.
+  - ideal: `GET /api/articles` liste les `articles/*.article.json`.
+- Debouncer l'autosave BlockNote comme `PageEditorBN`.
+- Ajouter validation:
+  - titre obligatoire.
+  - slug obligatoire et unique.
+  - slug stable apres publication.
+  - description SEO recommandee.
+  - hero image recommandee.
+
+Livrable:
+
+- Articles peut encore publier comme avant, mais le draft est versionne et validable.
+
+### Phase 2 - Relier Create sans fusionner avec Create
+
+Objectif: permettre a l'article d'utiliser le contexte du backbone.
+
+Actions:
+
+- Ajouter `sourceNodePath` optionnel:
+  - choisir une page Create source.
+  - ouvrir la source depuis l'article.
+  - afficher "source liee" dans l'UI.
+- Ajouter `relatedProjects`:
+  - lire `src/projects.json` ou une version serveur synchronisee.
+  - permettre de choisir un projet existant.
+  - stocker id/slug/url/title au moment de la selection.
+- Ajouter `mediaRefs`:
+  - selectionner un media existant `.img.json` ou `.media.json`.
+  - selectionner un asset public existant de projet.
+  - upload direct: utiliser le pipeline media existant, puis ajouter la ref au draft.
+
+Important:
+
+- Ne pas transformer l'article en type Finder.
+- Ne pas ajouter `.article.json` a `typeOfPath` sauf besoin explicite futur.
+- Ne pas utiliser `.zr-tags.json` comme tags editoriaux d'article.
+
+Livrable:
+
+- Depuis Articles, on peut attacher une page source, des medias Create/Eagle, et des projets existants.
+
+### Phase 3 - Compiler les assets publics
+
+Objectif: garantir que le site public n'a besoin d'aucun token ZenRayProgress.
+
+Actions:
+
+- Implementer un resolver serveur pour `mediaRefs`.
+- Pour `.img.json`:
+  - lire le manifest via GitHub/content.
+  - telecharger l'image depuis le shard prive via token serveur.
+  - convertir/exporter en WebP public si necessaire.
+  - ecrire dans `ZenRayWebsite/public/articles/<slug>/`.
+- Pour `.media.json`:
+  - si image/video deja publique, preferer le lien public.
+  - sinon exporter un format web public compatible.
+  - eviter AVIF/AV1 sur le site public; rester WebP/H.264 selon la strategie actuelle de `ZenRayWebsite`.
+- Pour `/api/img?...` deja dans des blocks:
+  - detecter et rewriter vers un fichier public copie.
+  - ne jamais laisser l'URL relative `/api/img` dans `ArticlePublic`.
+- Pour `/api/shard` et `/api/stream`:
+  - meme regle: resolve + copy/promote, jamais publier le proxy prive.
+
+Livrable:
+
+- Un article publie contient des assets publics autonomes sous `public/articles/<slug>/`.
+
+### Phase 4 - Publication API v2
+
+Objectif: passer de "write JSON sur branche" a "run de publication traçable".
+
+Actions:
+
+- Garder `/api/publish` mais le faire evoluer vers:
+  - validation draft.
+  - compilation `ArticlePublic`.
+  - copie assets.
+  - update `public/articles/<slug>.json`.
+  - update `public/articles/index.json`.
+  - update sitemap si retenu.
+  - commit atomique sur `article/<slug>`.
+- Retourner des erreurs HTTP correctes:
+  - `400` validation.
+  - `401/403` token.
+  - `409` slug/branche conflit.
+  - `500` GitHub/fetch.
+- Ajouter `GET /api/publish/status?slug=<slug>`.
+- Ajouter `POST /api/publish/pr` si le token a `Pull requests RW`.
+- Stocker un `PublicationRun` dans le draft:
+  - run id.
+  - branche.
+  - commit SHA.
+  - compare URL.
+  - PR URL.
+  - preview URL si connue.
+  - statut.
+  - logs courts.
+
+Livrable:
+
+- Le bouton Publier donne un statut precis: branche, PR/preview, ou erreur exploitable.
+
+### Phase 5 - ZenRayWebsite: renderer data-driven
+
+Objectif: rendre les articles sans modifier `App.jsx` a chaque article.
+
+Actions cote `ZenRayWebsite`:
+
+- Ajouter un chargeur `articles/index.json`.
+- Ajouter un chargeur `articles/<slug>.json`.
+- Ajouter `ArticleRenderer` pour les blocks publics.
+- Modifier `pathToActive`:
+  - `/reels/<slug>` cherche d'abord un article public.
+  - fallback sur `PROJECTS` existant.
+- Modifier `activeToPath` si necessaire:
+  - projets: `p.slug || slugify(p.title)`.
+  - articles: `/reels/<slug>`.
+- Garder compat totale avec les pages hardcode existantes.
+
+Decision recommandee:
+
+- Extraire `PROJECTS` de `src/App.jsx` vers `src/projects.data.js` avant d'automatiser les updates projets.
+- Ne pas ecrire par regex dans un `App.jsx` monolithique.
+
+Livrable:
+
+- Un fichier `public/articles/<slug>.json` merge dans le site devient visible sur `/reels/<slug>`.
+
+### Phase 6 - UX publication
+
+Objectif: transformer le systeme en outil quotidien rapide.
+
+Actions:
+
+- Dashboard Articles:
+  - Drafts.
+  - Ready.
+  - Branch published.
+  - Preview.
+  - Live.
+  - Archived.
+- Checklist avant publish:
+  - slug unique.
+  - titre.
+  - hero.
+  - description SEO.
+  - assets resolus.
+  - aucun proxy prive restant.
+- Boutons:
+  - Publier branche.
+  - Creer PR.
+  - Ouvrir preview.
+  - Ouvrir live.
+  - Re-publier.
+  - Archiver.
+- Afficher les liens reseaux seulement quand `liveUrl` est confirme ou quand l'utilisateur accepte de partager une preview.
+
+Livrable:
+
+- L'utilisateur sait exactement si l'article est juste pousse sur une branche, en preview, ou live.
+
+### Phase 7 - Archive projets / aggregation
+
+Objectif: relier articles, projets et archive sans casser l'existant.
+
+Actions:
+
+- Faire de `src/projects.json` un miroir synchronisable, pas une source editee a la main.
+- Cote site, extraire `PROJECTS` vers un fichier data.
+- Ajouter un champ projet:
+  - `slug`
+  - `archived`
+  - `articleSlugs`
+  - `publicAssets`
+- Dans ZenRayProgress:
+  - montrer les articles lies sur une fiche projet.
+  - montrer les projets lies depuis un article.
+  - garder l'archive dashboard separee de l'archive portfolio.
+
+Livrable:
+
+- Un projet peut devenir un hub: fiche projet, medias, articles publies, liens externes.
+
+---
+
+## 6. Ordre de PR conseille
+
+1. PR ZenRayProgress: config domaines + schema `article.draft.v1` + validation + autosave debounce.
+2. PR ZenRayWebsite: `ArticleRenderer` minimal + route `/reels/<slug>` lisant `public/articles/<slug>.json`.
+3. PR ZenRayProgress: publish compiler JSON-only sans medias complexes.
+4. PR ZenRayProgress: resolver/copieur d'images `.img.json` et `/api/img`.
+5. PR ZenRayWebsite: index articles + sitemap + SEO.
+6. PR ZenRayProgress: PR creation + status endpoint + UI statuts.
+7. PR ZenRayWebsite: extraction `PROJECTS` vers `src/projects.data.js`.
+8. PR ZenRayProgress: relations projets/articles + UX archive.
+
+---
+
+## 7. Criteres d'acceptation
+
+- Creer un article depuis ZenRayProgress en moins de 3 clics.
+- Sauvegarder un draft sans spammer les commits GitHub.
+- Lier au moins:
+  - une page source Create.
+  - un media Eagle-like existant.
+  - un projet existant.
+- Publier cree une branche `article/<slug>` dans `ZenRayWebsite`.
+- Le JSON public ne contient aucune URL privee `/api/img`, `/api/shard`, `/api/stream`.
+- Les assets necessaires existent dans `ZenRayWebsite/public/articles/<slug>/`.
+- Apres merge/deploy, `https://matthieuhuguet.com/reels/<slug>` affiche l'article.
+- ZenRayProgress affiche le vrai statut: branche, PR, preview, live.
+- Les anciens projets hardcode continuent de fonctionner.
+
+---
+
+## 8. Risques a surveiller
+
+- `published` actuel est trompeur: il signifie branche creee, pas live.
+- Les URLs relatives de medias casseront sur le domaine public si elles ne sont pas re-ecrites.
+- `ZenRayWebsite/src/App.jsx` est monolithique; toute insertion automatique dans ce fichier est risquee.
+- Le site public suit une strategie WebP/H.264; ne pas reintroduire AVIF/AV1 dans les assets publics.
+- Le fallback `WEBSITE_GITHUB_TOKEN || GITHUB_TOKEN` donne trop de droits si le token global est utilise.
+- Si ZenRayProgress est accessible publiquement sans auth serveur, `/api/publish` et `/api/repos` sont sensibles.
+- Les references par chemin (`sourceNodePath`, `mediaRefs.nodePath`) cassent si le noeud est deplace; accepter d'abord ce risque ou ajouter plus tard des ids stables.
+- Les medias `.img.json` vs `.md + .props.eagle` sont encore en tension; pour Articles, supporter les deux en lecture, mais publier un artefact public unique.
+
+---
+
+## 9. Ce qu'il ne faut pas faire
+
+- Ne pas fusionner Articles dans le Finder Create comme type de noeud.
+- Ne pas publier directement sur `master`.
+- Ne pas exposer les tokens GitHub ni les chemins de shards prives dans le JSON public.
+- Ne pas obliger l'utilisateur a modifier `ZenRayWebsite/src/App.jsx` pour chaque article.
+- Ne pas dupliquer les assets si un asset public du portfolio existe deja et peut etre reference proprement.
+- Ne pas annoncer "live" avant confirmation de merge/deploy.
+
+---
+
+## 10. Resume pour implementation
+
+Le bon modele est:
+
+1. Articles reste une chaine editoriale separee.
+2. Create/Eagle/Projects fournissent des references.
+3. Le publish compiler transforme ces references privees en artefacts publics autonomes.
+4. ZenRayWebsite lit ces artefacts via un renderer generique.
+5. Le statut editorial suit tout le cycle: draft -> branche -> PR/preview -> live.
+
+La premiere etape utile pour Claude est donc de livrer un vertical slice minimal:
+
+- un draft `article.draft.v1`,
+- un publish `article.public.v1` JSON-only,
+- un `ArticleRenderer` dans `ZenRayWebsite`,
+- une route `/reels/<slug>` qui affiche cet article,
+- aucun media prive dans le JSON public.

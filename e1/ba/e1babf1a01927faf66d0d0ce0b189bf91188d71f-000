@@ -1,0 +1,1059 @@
+# Plan Ref - PureRef / Miro pour ZenRayProgress
+
+Date: 2026-05-31
+Statut: plan d'architecture et de developpement, sans implementation dans ce thread.
+Destination: document a donner a Claude pour coder la feature.
+
+## 1. Intention produit
+
+Ref est le module ZenRay qui permet de composer des boards de references persistants, a la PureRef / Miro, directement relies au backbone Create, aux medias deja heberges, aux shards GitHub `zenray-media-NN`, et aux futures publications du site.
+
+Ref ne remplace pas Create et ne remplace pas Gallery/Eagle. La separation doit rester nette:
+
+- Create: explorer, creer, organiser et relier les contenus du workspace.
+- Gallery/Eagle: retrouver, filtrer, qualifier et inspecter des assets.
+- Ref: composer, comparer, annoter, raconter et connecter des assets dans un espace visuel permanent.
+
+Le premier ecran de Ref doit etre un outil utilisable, pas une landing page: une liste de projets/boards et un board vide ou l'utilisateur peut immediatement drop/paste/drag des medias.
+
+## 2. Decision de nommage
+
+Nom UI: `Ref`
+
+Identifiants internes proposes:
+
+- view key: `ref`
+- dossier de donnees: `pages/Ref/`
+- fichier board: `*.canvas.json`
+- fichier embed: `*.embed.json`
+- composant app: `RefApp`
+- composant board: `RefBoard`
+- renderer de fichier canvas: `CanvasNodeViewer`
+- renderer embed: `EmbedNodeViewer`
+
+Ne pas appeler le module `PureRef` dans le code. PureRef est l'inspiration produit, `Ref` est le produit ZenRay.
+
+## 3. Contexte repo actuel
+
+Les agents ont audite le repo en lecture seule. Points importants:
+
+- `src/App.jsx` utilise encore le modele legacy `{ id, view }` pour les onglets. Le helper cible `src/lib/createNav.js` existe, mais n'est pas encore branche dans `App.jsx`.
+- `src/create/node.js` reconnait deja les types `.canvas.json` et `.embed.json`.
+- `api/page.js` liste deja `.canvas.json` et `.embed.json` dans les dossiers et l'arbre.
+- L'ouverture d'un node ne route pas encore `canvas` et `embed`. Tout ce qui n'est pas `image`, `media` ou `db` peut tomber dans l'editeur page.
+- `api/page.js` ne sait pas encore mover `.canvas.json` et `.embed.json`.
+- Le canvas actuel du dashboard est stocke en `localStorage('zr:canvas:home')`. Ce n'est pas acceptable pour Ref.
+- Le pipeline `captureFiles` existe deja et gere images, medias, audio, pdf, autres fichiers, videos a transcoder et markdown.
+- Les shards `zenray-media-NN` existent deja via `/api/upload-shard`.
+- La galerie image a deja une base utile: virtualisation, inspecteur Eagle-like, Quick Look.
+- Le player audio global existe via `PlayerContext`.
+- Attention: plusieurs fichiers du worktree sont deja modifies hors de ce plan. Claude ne doit pas les revert.
+
+Fichiers a examiner avant implementation:
+
+- `src/App.jsx`
+- `src/create/node.js`
+- `src/create/buildNodes.js`
+- `src/lib/createNav.js`
+- `src/capture/universalCapture.js`
+- `src/components/Gallery.jsx`
+- `src/components/EagleInspector.jsx`
+- `src/audio/PlayerContext.jsx`
+- `src/components/MediaViewer.jsx`
+- `api/page.js`
+- `api/upload-shard.js`
+- `api/shard.js`
+- `api/stream.js`
+- `api/unfurl.js`
+
+## 4. Architecture cible
+
+### 4.1 Principe central
+
+Un board Ref ne stocke jamais de binaire, jamais de data URL, jamais de base64. Il stocke uniquement:
+
+- des references vers des nodes Create existants;
+- des references vers des manifests `.img.json`, `.media.json`, `.embed.json`;
+- des informations de layout;
+- des annotations;
+- des liens;
+- des metadonnees legeres.
+
+Les assets restent dans les shards ou dans les pages existantes. Dupliquer un objet sur un board duplique l'item de layout, pas le fichier source.
+
+### 4.2 Structure de fichiers
+
+Structure recommandee:
+
+```text
+pages/Ref/
+  <Projet>.md
+  <Projet>.props.json
+  <Projet>/
+    Boards/
+      <Board>.canvas.json
+    Assets/
+      <Image>.img.json
+      <Audio>.media.json
+      <File>.media.json
+    Embeds/
+      <Embed>.embed.json
+    Notes/
+      <Note>.md
+```
+
+Pourquoi `pages/Ref/` plutot que `pages/References/`:
+
+- `references` existe deja comme vue read-only de galerie.
+- `Ref` devient un produit distinct: boards, projets, liens, export, memoire permanente.
+- Cela evite de melanger galerie d'assets et composition de boards.
+
+Les projets Ref doivent rester des pages Create normales (`.md + .props.json`) afin de pouvoir etre recherches, lies, publies, archives et enrichis plus tard.
+
+### 4.3 Schema `.canvas.json`
+
+Schema conceptuel, a formaliser dans un module de validation:
+
+```json
+{
+  "schema": "zenray.ref.canvas.v1",
+  "id": "canvas_<id>",
+  "title": "Moodboard",
+  "projectPath": "pages/Ref/Project/Boards/Moodboard.canvas.json",
+  "createdAt": "2026-05-31T00:00:00.000Z",
+  "updatedAt": "2026-05-31T00:00:00.000Z",
+  "settings": {
+    "background": "#f6f6f4",
+    "grid": false,
+    "snap": 8,
+    "unit": "px"
+  },
+  "items": {
+    "item_abc": {
+      "id": "item_abc",
+      "kind": "image-ref",
+      "ref": "pages/Ref/Project/Assets/image.img.json",
+      "x": 120,
+      "y": 80,
+      "w": 320,
+      "h": 240,
+      "rotation": 0,
+      "z": 10,
+      "locked": false,
+      "hidden": false,
+      "opacity": 1,
+      "fit": "contain",
+      "crop": null,
+      "style": {},
+      "meta": {
+        "caption": "",
+        "tags": []
+      },
+      "updatedAt": "2026-05-31T00:00:00.000Z"
+    }
+  },
+  "groups": {},
+  "frames": {},
+  "links": [],
+  "comments": {},
+  "schemaNotes": []
+}
+```
+
+Regle importante: `items` doit etre un objet indexe par id, pas un tableau. Cela rend les merges multi-onglets beaucoup plus simples: on peut fusionner item par item avec `updatedAt`.
+
+Kinds minimum:
+
+- `image-ref`
+- `media-ref`
+- `audio-ref`
+- `embed-ref`
+- `text`
+- `sticky`
+- `shape`
+- `arrow`
+- `frame`
+- `group`
+- `comment-pin`
+
+Chaque item doit avoir une position absolue dans l'espace canvas. Pour les groupes, choisir une seule regle:
+
+- soit les enfants gardent des positions absolues et le groupe est une selection persistante;
+- soit les enfants deviennent relatifs au groupe.
+
+Pour V1, recommander positions absolues + groupe comme enveloppe. C'est plus simple a merger et moins dangereux pendant drag/ungroup.
+
+### 4.4 Schema `.embed.json`
+
+Les embeds ne doivent jamais stocker du HTML arbitraire.
+
+Schema conceptuel:
+
+```json
+{
+  "schema": "zenray.ref.embed.v1",
+  "id": "embed_<id>",
+  "provider": "youtube",
+  "url": "https://www.youtube.com/watch?v=...",
+  "canonicalUrl": "https://www.youtube-nocookie.com/embed/<id>",
+  "providerId": "<id>",
+  "title": "Video title",
+  "thumbnailRef": "pages/Ref/Project/Assets/youtube-thumb.img.json",
+  "start": 0,
+  "createdAt": "2026-05-31T00:00:00.000Z",
+  "updatedAt": "2026-05-31T00:00:00.000Z",
+  "embedPolicy": {
+    "lazy": true,
+    "sandbox": true,
+    "allow": "accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  }
+}
+```
+
+Providers V1:
+
+- YouTube
+- Vimeo si besoin
+- URL bookmark simple via unfurl
+
+Ref doit afficher une carte thumbnail inactive par defaut. L'iframe ne se monte qu'au clic/play, et se demonte quand l'utilisateur sort du mode lecture ou quand trop d'iframes sont actives.
+
+## 5. Decision librairie canvas
+
+### 5.1 Recommandation
+
+Recommandation: partir sur `tldraw` si la licence production est acceptee pour ZenRay.
+
+Raison:
+
+- Ref demande un vrai infinite canvas: pan, zoom, selection, resize, rotation, outils, raccourcis, historique, assets, formes custom et persistence.
+- Refaire tout cela from scratch avec Konva/Fabric augmenterait fortement le risque.
+- Excalidraw est excellent pour un whiteboard MIT, mais Ref demande des cartes media custom, des manifests Create, un inspecteur, des embeds audio/YouTube, des liens/backlinks, et une integration fine avec le backbone. Cela risque de forcer des wrappers/forks rapidement.
+
+Decision gate obligatoire avant gros dev:
+
+1. Faire un spike d'une journee.
+2. Creer un board local de test avec 50 images, 10 textes, 5 embeds, 5 audios.
+3. Verifier custom shapes, persistence JSON, assets references, drag/drop externe, drag depuis Create, undo/redo, performance.
+4. Verifier la licence tldraw pour la production ZenRay.
+5. Si licence ou contraintes bloquantes: basculer sur Excalidraw comme fallback, ou Konva seulement si l'on accepte de developper un moteur canvas complet.
+
+### 5.2 Comparatif
+
+| Option | Avantages | Risques | Decision |
+|---|---|---|---|
+| tldraw | Infinite canvas complet, custom shapes, store/snapshots, interactions riches | licence production a valider, integration a respecter | choix prefere |
+| Excalidraw | MIT, whiteboard mature, simple a embedder, export solide | moins naturel pour cards media custom, backlinks, inspecteur, asset store ZenRay | fallback |
+| Konva/Fabric | controle total, canvas bas niveau | trop de features a reimplementer: selection, transforms, history, culling, text edit, export | eviter V1 |
+| React Flow | excellent nodes/edges | pas adapte a moodboard libre type PureRef | non recommande |
+
+Sources a verifier pendant le spike:
+
+- tldraw docs: https://tldraw.dev/docs
+- tldraw license: https://tldraw.dev/community/license
+- Excalidraw docs: https://docs.excalidraw.com/
+- Excalidraw GitHub/license: https://github.com/excalidraw/excalidraw
+- Konva React docs: https://konvajs.org/docs/react/
+
+## 6. Plan de developpement pour Claude
+
+### Phase 0 - Invariants et garde-fous avant UI
+
+Objectif: rendre les types `canvas` et `embed` non dangereux avant de construire Ref.
+
+Taches:
+
+1. Ajouter un renderer explicite pour `.canvas.json`.
+   - `CanvasNodeViewer` doit ouvrir un board, ou afficher un etat "unsupported" lisible pendant la migration.
+   - Un `.canvas.json` ne doit jamais tomber dans `PageEditorBN`.
+
+2. Ajouter un renderer explicite pour `.embed.json`.
+   - `EmbedNodeViewer` doit afficher une carte embed securisee.
+   - Aucun HTML iframe brut ne doit etre persiste.
+
+3. Completer `api/page.js` pour `move` sur `.canvas.json` et `.embed.json`.
+   - Les sidecars eventuels doivent suivre si necessaire.
+   - Les references internes doivent etre mises a jour ou signalees comme potentiellement cassees.
+
+4. Introduire un helper JSON avec conflit SHA.
+   - Pattern: read current -> merge -> save.
+   - Fusion par `items[id].updatedAt` pour les boards.
+   - Support `BroadcastChannel` pour eviter que deux onglets s'ecrasent.
+
+5. Corriger le modele de trash media avant d'autoriser Ref a supprimer des assets.
+   - Soft trash par defaut.
+   - Purge binaire seulement via action explicite.
+   - Ne jamais detruire des chunks juste parce qu'un item canvas est supprime.
+
+6. Decider HLS/MSE pour videos.
+   - Le worker actuel peut produire HLS alors que le viewer route surtout MSE.
+   - Ref V1 peut eviter l'import video lourd, mais le renderer media ne doit pas afficher des manifests "termines" illisibles.
+
+Acceptance criteria Phase 0:
+
+- Ouvrir un `.canvas.json` ne charge jamais l'editeur Markdown.
+- Ouvrir un `.embed.json` ne charge jamais l'editeur Markdown.
+- Move d'un canvas/embed fonctionne ou retourne une erreur claire et non destructive.
+- Supprimer un item du board ne supprime pas le fichier source.
+- Deux onglets modifiant deux items differents ne perdent pas de donnees au reload.
+
+### Phase 1 - App Ref et persistence minimale
+
+Objectif: creer Ref comme application permanente.
+
+Taches:
+
+1. Ajouter `ref` a la navigation legacy actuelle dans `src/App.jsx`.
+   - `VIEW_LABELS.ref = 'Ref'`.
+   - Ajouter l'entree dans le groupe Apps ou Create selon design final.
+   - Recommandation: top-level app a cote de Create/Articles/Audio, pas sous `references`.
+
+2. Creer `RefApp`.
+   - Liste des projets Ref.
+   - Liste des boards par projet.
+   - Boutons: nouveau projet, nouveau board, importer asset, ouvrir board.
+   - Etat vide utilisable: drop/paste immediat.
+
+3. Creer la structure `pages/Ref/`.
+   - Projet = page Markdown + props.
+   - Board = `.canvas.json`.
+
+4. Creer `RefBoard`.
+   - Pan/zoom.
+   - Selection.
+   - Drag.
+   - Resize.
+   - Rotate si la librairie le donne gratuitement; sinon V1.
+   - Z-order.
+   - Delete item.
+   - Duplicate item.
+   - Undo/redo.
+   - Autosave debounced + save sur pointerup.
+   - Statut discret: saved/saving/conflict/offline.
+
+5. Creer les resolvers de references.
+   - `image-ref` -> manifest `.img.json` -> thumbnail.
+   - `audio-ref` -> manifest `.media.json` -> `/api/stream`.
+   - `media-ref` -> card media.
+   - `embed-ref` -> `.embed.json`.
+   - `page-ref` -> node Create.
+
+Acceptance criteria Phase 1:
+
+- Creer un projet Ref.
+- Creer un board.
+- Ajouter une image depuis un fichier local.
+- Sauvegarder le board sur GitHub-backed content, pas localStorage.
+- Recharger la page et retrouver les items au meme endroit.
+- Dupliquer un item ne duplique pas le binaire.
+- Supprimer un item ne supprime pas l'asset.
+
+### Phase 2 - Drag/drop Create, Finder, Gallery, URL
+
+Objectif: rendre Ref utile avec les assets deja existants et les imports Finder.
+
+Taches:
+
+1. DnD interne depuis Create/Gallery.
+   - Ajouter un MIME interne `application/zenray-node+json`.
+   - Payload: `{ type, contentPath, title, thumb, manifestPath, sourceView }`.
+   - Drop interne = creation d'un item `ref`, sans re-upload.
+
+2. DnD externe depuis macOS Finder.
+   - Detecter `DataTransfer.files`.
+   - Appeler le pipeline `captureFiles(files, { folder: projectAssetsFolder })`.
+   - Ajouter les items crees aux coordonnees world du drop.
+   - Images -> `.img.json`.
+   - Audio/SFX -> `.media.json`.
+   - PDF/autres -> `.media.json` card.
+   - Video lourde -> V1: refuser proprement ou mettre en queue avec placeholder explicite.
+
+3. Paste.
+   - Image clipboard -> capture image.
+   - URL YouTube -> `.embed.json`.
+   - URL image distante -> option: bookmark ou download explicite.
+   - Texte -> text item.
+
+4. Drop multiple.
+   - Auto-layout autour du point de drop.
+   - Contact sheet simple si plus de 10 fichiers.
+   - Upload queue visible avec retry.
+
+Acceptance criteria Phase 2:
+
+- Drag d'un asset Create existant ajoute une reference sans nouvel upload.
+- Drop Finder upload l'image dans un shard puis cree un item.
+- Drop d'un fichier audio cree une card audio jouable.
+- Paste d'une URL YouTube cree une carte embed lazy.
+- Drop de 50 images ne freeze pas l'UI et affiche une progression.
+
+### Phase 3 - Features PureRef / Miro essentielles
+
+Objectif: atteindre une experience de composition productive.
+
+Features MVP/V1:
+
+- Texte libre.
+- Sticky note.
+- Caption sur image.
+- Overlay texte sur image.
+- Multi-selection.
+- Marquee selection.
+- Lock/unlock.
+- Hide/show.
+- Group/ungroup.
+- Align left/center/right.
+- Align top/middle/bottom.
+- Distribute horizontal/vertical.
+- Equal width/height.
+- Tidy grid.
+- Masonry/contact sheet.
+- Smart guides.
+- Snap to object.
+- Snap to frame.
+- Frames nommees.
+- Frame navigation.
+- Quick Look pleine resolution.
+- Inspector droit.
+- Tags/rating/notes.
+- Search dans le board.
+- Minimap si board large.
+- Export frame PNG.
+- Export board/contact sheet PNG ou PDF.
+
+Raccourcis proposes:
+
+- `V`: selection.
+- `H`: pan.
+- `T`: texte.
+- `F`: frame.
+- `A`: arrow.
+- `R`: shape.
+- `P`: pen si disponible.
+- `Space`: Quick Look si selection; hold + drag pour pan si pas en edition.
+- `Cmd/Ctrl+Z`: undo.
+- `Shift+Cmd/Ctrl+Z`: redo.
+- `Cmd/Ctrl+D`: duplicate.
+- `Cmd/Ctrl+A`: select all.
+- `Cmd/Ctrl+G`: group.
+- `Shift+Cmd/Ctrl+G`: ungroup.
+- `Cmd/Ctrl+L`: lock.
+- `Delete/Backspace`: delete item.
+- Arrow keys: nudge 1px.
+- Shift + arrows: nudge 10px.
+- `[` / `]`: z-order.
+- `Shift+[` / `Shift+]`: send back/front.
+- `1-5`: rating.
+- `0`: clear rating.
+- `Cmd/Ctrl+0`: fit all.
+- `Cmd/Ctrl+1`: 100%.
+- `Cmd/Ctrl+2`: fit selection.
+
+Attention: tout raccourci doit respecter le focus input/contentEditable. Ref ne doit pas detruire du texte pendant l'edition.
+
+### Phase 4 - Audio, SFX, embeds et media riches
+
+Objectif: integrer les medias non-image sans casser performance ni UX.
+
+Audio/SFX:
+
+- Unifier Ref sur manifests shardes `.media.json`.
+- Ne pas utiliser le chemin SFX actuel qui envoie du `data:audio` vers `/api/img`.
+- Ajouter `duration`, `peaks` optionnel, `mime`, `size`, `repo`, `chunks`.
+- Card audio: nom, wave/mini preview, tags, duration, bouton play.
+- Utiliser `PlayerContext`.
+- Pas d'autoplay.
+- Ne pas monter 100 lecteurs audio HTML en meme temps.
+
+YouTube:
+
+- Parser URL avec allowlist.
+- Canonicaliser vers `youtube-nocookie.com/embed/<id>`.
+- Stocker provider/id/start/title/thumbnail, pas du HTML.
+- Iframe `loading="lazy"`.
+- Iframe sandboxee.
+- L'iframe ne doit pas capturer drag/keyboard tant que l'utilisateur n'est pas en mode lecture.
+
+Video:
+
+- V1: supporter les videos deja existantes via card `.media.json`.
+- Eviter upload massif video dans Ref tant que HLS/MSE n'est pas stabilise.
+- Si upload video est autorise: queue explicite, taille limite, renderer coherent.
+
+PDF/fichiers:
+
+- Card document avec titre, type, taille, source.
+- Quick Look ou ouverture viewer dedie si deja disponible.
+
+### Phase 5 - Memoire permanente et liens
+
+Objectif: faire de Ref un vrai systeme de memoire, pas juste un canvas.
+
+Backlinks:
+
+- Un asset doit pouvoir afficher les boards ou frames ou il apparait.
+- Les backlinks doivent etre derives des `.canvas.json`, pas stockes a double dans chaque asset.
+- Prevoir un index cache reconstruisible.
+
+Relations:
+
+- Item -> page Create.
+- Item -> article.
+- Item -> project.
+- Item -> URL externe.
+- Item -> autre board.
+- Frame -> URL partageable.
+
+Recherche:
+
+- Rechercher dans title/caption/tags/notes/source/provider.
+- Search board local instantanee.
+- Search globale Ref via index reconstruisible.
+
+Versioning:
+
+- Snapshots legers du board.
+- Restore snapshot.
+- Diff lisible au moins au niveau: item added/moved/deleted/edited.
+
+### Phase 6 - Pont Ref vers Articles et site public
+
+Objectif: permettre a Ref de preparer des assets et references pour les articles publies sur le site, sans transformer Ref en CMS.
+
+Regles:
+
+- Ref reste un outil de composition/reference.
+- Articles reste le systeme de redaction/publication.
+- Un article peut pointer vers un board, une frame ou un asset Ref.
+- Une frame Ref peut devenir un "article asset pack": images selectionnees, captions, sources, ordre, credits.
+- Le site public ne doit pas charger un board complet si l'article a seulement besoin d'une image/frame exportee.
+
+Features conseillees:
+
+- Depuis une frame Ref: `Copy as article block`.
+- Depuis une frame Ref: export PNG/WebP pour hero/inline image.
+- Depuis une selection Ref: creer une liste d'assets pour un article.
+- Dans l'inspector d'un item: "used in articles".
+- Dans Articles: picker permettant de choisir un board/frame Ref.
+- Dans Ref: badge si une frame est referencee par un article publie.
+
+Implementation conceptuelle:
+
+- Les liens Article -> Ref doivent utiliser des ids stables, pas seulement des paths.
+- Les exports publics doivent etre generes comme assets normaux, pas servis depuis un canvas prive complet.
+- Les captions/sources doivent rester attachables a l'item ou a l'export.
+- Si le board change apres publication, l'article ne doit pas changer silencieusement sauf action explicite "update export".
+
+## 7. Uploads et shards `zenray-media-NN`
+
+### 7.1 Regle de stockage
+
+Les fichiers importes depuis Finder vont dans les shards `zenray-media-NN`, pas dans le JSON du board.
+
+Le board stocke:
+
+- manifest path;
+- type;
+- preview metadata;
+- layout.
+
+### 7.2 Rollover shards
+
+Probleme actuel: `active-shard` bascule quand le compteur depasse le seuil, mais il ne reserve pas la taille du fichier a venir.
+
+Plan Claude:
+
+1. Modifier le contrat conceptuel de `active-shard` pour accepter `reserveBytes` ou `expectedBytes`.
+2. Refuser ou basculer si `bytes + reserveBytes > seuil`.
+3. Utiliser un seuil operationnel plus bas que 5 Go, par exemple 4.2-4.3 Go.
+4. Ecrire une reservation optimiste avant upload si possible.
+5. Reconciler le compteur apres commit.
+6. Ajouter retry/backoff si GitHub renvoie rate limit ou secondary rate limit.
+
+### 7.3 Taille de chunk
+
+Vercel a des limites de payload de fonction. Les chunks base64 doivent rester conservateurs. Recommandation:
+
+- chunk brut cible: 2 a 2.5 MiB;
+- jamais supposer qu'un bodyParser `8mb` suffit;
+- afficher une erreur 413 lisible;
+- prevoir reprise/retry.
+
+### 7.4 GitHub rate limits
+
+Ref peut generer beaucoup d'ecritures:
+
+- uploads multi-chunks;
+- saves canvas;
+- index updates;
+- snapshots;
+- thumbnails.
+
+Plan:
+
+- queue globale d'ecriture;
+- concurrence faible pour uploads;
+- debounce canvas;
+- coalescing des saves;
+- backoff exponentiel;
+- pas de reindex global a chaque move;
+- pas de scan recursive tree pour 100k assets.
+
+Sources limites:
+
+- Vercel Functions limits: https://vercel.com/docs/functions/limitations
+- GitHub REST rate limits: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+- GitHub repository limits: https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/repository-limits
+- GitHub Git trees API: https://docs.github.com/en/rest/git/trees
+- GitHub large files: https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github
+
+## 8. UI cible
+
+### 8.1 Layout desktop
+
+- Header discret avec projet/board, statut save, search.
+- Toolbar gauche ou haut: select, pan, text, frame, arrow, shape, align, export.
+- Canvas full-bleed, pas dans une card decorative.
+- Inspector droit contextuel.
+- Asset tray optionnel en bas/gauche pour assets du projet.
+- Minimap V1 si board depasse un certain seuil.
+
+### 8.2 Inspector
+
+Board selection:
+
+- title;
+- background;
+- grid;
+- snap;
+- stats: items, assets, missing refs;
+- export.
+
+Image/audio/media/embed item:
+
+- title;
+- source path;
+- reveal in Create;
+- open original;
+- tags;
+- rating;
+- caption;
+- notes;
+- dimensions;
+- used in;
+- replace source;
+- unlink.
+
+Text/sticky:
+
+- content;
+- font size;
+- color;
+- background;
+- link.
+
+Frame:
+
+- title;
+- color;
+- export;
+- present;
+- copy link.
+
+### 8.3 Mobile
+
+Mobile V1 peut etre lecture + Quick Look + frame navigation.
+
+Edition complete desktop-first:
+
+- pan/zoom;
+- selection;
+- open item;
+- presenter frames;
+- pas besoin de tous les outils de layout sur mobile V1.
+
+## 9. Performance
+
+Objectifs:
+
+- 100 items: fluide.
+- 500 items: fluide avec thumbnails.
+- 2 000 items: utilisable avec culling/LOD.
+- 10 000 items: board charge avec LOD, search et minimap; edition fluide sur viewport visible seulement.
+
+Regles:
+
+- Thumbnails obligatoires dans le canvas.
+- Full-res seulement Quick Look / zoom eleve / explicit open.
+- Culling viewport.
+- DPR cap sur canvas.
+- Pas de 100 iframes YouTube montees.
+- Pas de 100 audio elements actifs.
+- Pas de real video dans grid/canvas tant que l'utilisateur n'ouvre pas la card.
+- Board JSON segmente si tres gros: `Board.canvas.json` + `Board.items.<chunk>.json` peut etre V2 si besoin.
+
+## 10. Securite
+
+Garde-fous:
+
+- Auth ou protection claire sur endpoints d'upload si l'app est publique.
+- Rate limit minimal sur upload/unfurl.
+- Provider allowlist pour embeds.
+- SSRF protection dans `api/unfurl.js`.
+- Refuser IP privees, localhost, metadata cloud, schemas non http/https.
+- Canonicaliser YouTube.
+- Iframe sandbox + referrer policy.
+- Ne jamais persister HTML brut.
+- Ne jamais executer script externe dans board.
+- Valider `pages/` path comme dans `api/page.js`.
+
+## 11. Fichiers et modules proposes
+
+Nouveaux modules possibles:
+
+- `src/ref/RefApp.jsx`
+- `src/ref/RefBoard.jsx`
+- `src/ref/schema.js`
+- `src/ref/resolveRef.js`
+- `src/ref/useRefAutosave.js`
+- `src/ref/useRefDragDrop.js`
+- `src/ref/useRefShortcuts.js`
+- `src/ref/layout.js`
+- `src/ref/mergeCanvas.js`
+- `src/ref/embed.js`
+- `src/ref/components/RefToolbar.jsx`
+- `src/ref/components/RefInspector.jsx`
+- `src/ref/components/RefAssetCard.jsx`
+- `src/ref/components/RefAudioCard.jsx`
+- `src/ref/components/RefEmbedCard.jsx`
+- `src/ref/components/RefFrameNavigator.jsx`
+- `src/components/CanvasNodeViewer.jsx`
+- `src/components/EmbedNodeViewer.jsx`
+
+Fichiers existants a modifier:
+
+- `src/App.jsx`: navigation, dispatch, open node.
+- `src/create/node.js`: verifier type support.
+- `src/create/buildNodes.js`: verifier affichage.
+- `api/page.js`: move/save/delete guards canvas/embed.
+- `api/upload-shard.js`: reservation rollover.
+- `src/capture/universalCapture.js`: options dossier cible + expected bytes.
+- `src/components/Gallery.jsx`: drag payload enrichi.
+- `src/components/EagleInspector.jsx`: reveal used-in Ref.
+- `src/audio/PlayerContext.jsx`: integration cards audio.
+- `api/unfurl.js`: provider allowlist et securite.
+
+## 12. Tests et verification
+
+Le repo a peu ou pas de tests automatises. Claude doit ajouter au minimum une couche de tests ou scripts de verification.
+
+Tests P0:
+
+- Ouvrir `.canvas.json` n'ouvre jamais `PageEditorBN`.
+- Ouvrir `.embed.json` n'ouvre jamais `PageEditorBN`.
+- Move `.canvas.json` fonctionne.
+- Supprimer un item canvas ne supprime pas l'asset source.
+- Save conflict: deux onglets modifient deux items differents, les deux changements restent.
+- Shard rollover: upload simule avec `reserveBytes` cree le prochain repo au seuil.
+- Chunk trop gros: erreur lisible, pas de corruption.
+- URL YouTube malicieuse rejetee.
+- URL localhost/private dans unfurl rejetee.
+- Drop interne Create ne re-upload pas.
+- Drop externe Finder upload puis cree item.
+
+Tests UX:
+
+- Creer projet + board.
+- Drop 10 images.
+- Drop 50 images.
+- Drag asset existant depuis Gallery.
+- Ajouter texte.
+- Ajouter overlay texte sur image.
+- Align/distribute.
+- Group/ungroup.
+- Quick Look.
+- Reload.
+- Export frame.
+- Audio card play/pause.
+- YouTube card click-to-load.
+
+Tests perf:
+
+- Board 100 items.
+- Board 500 items.
+- Board 2 000 items.
+- Board 10 000 items synthetiques.
+- Mesurer FPS pendant pan/zoom.
+- Verifier nombre d'images full-res chargees.
+- Verifier nombre d'iframes montees.
+- Verifier taille JSON board.
+
+## 13. Revue adversariale
+
+### P0 - `.canvas.json` existe mais n'est pas une feature fiable
+
+Risque:
+
+Le repo reconnait `canvas/embed`, mais l'ouverture, le move et l'edition ne sont pas coherents. Un board pourrait etre traite comme une page Markdown ou un props sidecar.
+
+Mitigation:
+
+- Renderer explicite avant tout.
+- Type guard strict.
+- Test "canvas never opens PageEditorBN".
+
+### P0 - LocalStorage est un faux ami
+
+Risque:
+
+Le canvas dashboard existant donne l'impression d'une base, mais il n'est ni permanent, ni versionne, ni partageable, ni mergeable.
+
+Mitigation:
+
+- Ref doit etre GitHub-backed via `.canvas.json`.
+- LocalStorage uniquement pour viewport local, cache, draft recuperable.
+
+### P0 - Suppression destructive des medias
+
+Risque:
+
+Le delete actuel peut purger des chunks media. Dans Ref, supprimer un item canvas doit seulement supprimer le lien visuel.
+
+Mitigation:
+
+- Soft trash obligatoire.
+- Purge binaire separee et explicite.
+- Reference count/backlinks avant purge.
+
+### P0 - Rollover shards non reserve
+
+Risque:
+
+Deux gros imports Finder peuvent depasser la limite d'un repo shard.
+
+Mitigation:
+
+- `active-shard(expectedBytes/reserveBytes)`.
+- seuil operationnel 4.2-4.3 Go.
+- reservation + reconciliation.
+- test concurrent.
+
+### P0 - App publique + upload endpoints
+
+Risque:
+
+Si l'app est publique, des endpoints d'upload non proteges peuvent remplir les repos, consommer les quotas ou exposer les tokens indirectement.
+
+Mitigation:
+
+- Auth ou gate strict.
+- Rate limit.
+- Taille max par fichier/type.
+- Logs auditables.
+
+### P1 - Vercel payload limits
+
+Risque:
+
+Les chunks base64 trop gros cassent en prod meme si cela passe localement.
+
+Mitigation:
+
+- chunk 2-2.5 MiB.
+- 413 UX.
+- retry/resume.
+
+### P1 - GitHub rate limits et write amplification
+
+Risque:
+
+Ref peut sauver trop souvent: drag, autosave, thumbnails, index. GitHub peut limiter ou produire des conflits.
+
+Mitigation:
+
+- Debounce.
+- Save sur pointerup.
+- Queue globale.
+- Backoff.
+- Coalescing.
+- Index reconstruisible.
+
+### P1 - Board JSON trop gros
+
+Risque:
+
+Un board de milliers d'items devient lent a lire/ecrire/merge.
+
+Mitigation:
+
+- Object map par id.
+- Compacter styles.
+- Snapshots limites.
+- Segmentation V2 si necessaire.
+
+### P1 - Full-res et iframes tuent la performance
+
+Risque:
+
+Canvas inutilisable si toutes les images/video/YouTube chargent en meme temps.
+
+Mitigation:
+
+- thumbnails only.
+- lazy full-res.
+- culling viewport.
+- max iframes actives.
+- video/audio montes seulement sur interaction.
+
+### P1 - Drag interne re-upload au lieu de referencer
+
+Risque:
+
+Dragging un asset Create dans Ref duplique les fichiers, explose les shards, casse la memoire source.
+
+Mitigation:
+
+- MIME interne `application/zenray-node+json`.
+- Drop interne = item ref.
+- Drop externe = capture/upload.
+
+### P1 - Embeds XSS/SSRF
+
+Risque:
+
+Un embed libre peut charger du contenu dangereux ou forcer le serveur a fetch des URLs internes.
+
+Mitigation:
+
+- Provider allowlist.
+- No raw HTML.
+- SSRF protection.
+- iframe sandbox.
+
+### P1 - Audio/SFX a deux pipelines
+
+Risque:
+
+Le SFX actuel et le pipeline media shard divergent. Ref risque d'avoir des fichiers audio illisibles ou non metadata.
+
+Mitigation:
+
+- Unifier Ref audio sur `.media.json`.
+- Ajouter duration/peaks.
+- PlayerContext unique.
+
+### P2 - UX des raccourcis dangereuse
+
+Risque:
+
+Delete/Space/Cmd+A peuvent agir sur le board pendant que l'utilisateur edite du texte.
+
+Mitigation:
+
+- Respect strict input/contentEditable.
+- Mode tools clair.
+- Tests manuels de focus.
+
+### P2 - References cassees apres move
+
+Risque:
+
+Si un asset source est move, le board pointe vers un ancien path.
+
+Mitigation:
+
+- Ajouter ids stables aux manifests/pages.
+- Maintenir un index path -> id.
+- Resoudre par id quand possible, path en fallback.
+- Detecter missing refs dans inspector.
+
+## 14. Definition of Done
+
+La feature Ref est consideree livree quand:
+
+- L'utilisateur peut ouvrir `Ref` depuis la navigation.
+- Il peut creer un projet Ref.
+- Il peut creer un board Ref.
+- Le board est stocke en `.canvas.json`, pas en localStorage.
+- Il peut drag/drop une image depuis macOS Finder.
+- L'image est uploadee dans un shard `zenray-media-NN`.
+- Si le shard approche la limite, un nouveau shard est cree automatiquement.
+- Il peut drag/drop un asset deja existant depuis Create/Gallery sans re-upload.
+- Il peut ajouter du texte sur une image.
+- Il peut deplacer, redimensionner, organiser, aligner et grouper des items.
+- Il peut creer des frames.
+- Il peut ajouter une URL YouTube qui devient une carte embed lazy.
+- Il peut ajouter un audio/SFX qui devient une card audio jouable.
+- Il peut sauvegarder, fermer, reouvrir et retrouver le board intact.
+- Deux onglets ne se detruisent pas mutuellement sur un cas simple de modifications paralleles.
+- Supprimer un item ne supprime pas l'asset source.
+- Quick Look utilise la full-res uniquement sur demande.
+- Le board reste utilisable avec 500 items.
+- Les erreurs upload/conflit/rate limit sont visibles et recuperables.
+- Les tests P0 sont passes.
+
+## 15. Ordre conseille des PRs
+
+PR 1: garde-fous types et persistence
+
+- Renderer `canvas/embed`.
+- Move support.
+- `saveJsonWithRetry`.
+- Tests P0 ouverture/move/conflit.
+
+PR 2: app Ref minimale
+
+- Navigation `Ref`.
+- Projets/boards.
+- Creation `.canvas.json`.
+- Board viewer avec pan/zoom/select/drag/save.
+
+PR 3: imports
+
+- Drop Finder via `captureFiles`.
+- DnD interne Create/Gallery.
+- Asset resolver.
+- Upload queue.
+
+PR 4: features composition
+
+- Texte.
+- Frames.
+- Align/distribute.
+- Group/ungroup.
+- Inspector.
+- Quick Look.
+
+PR 5: media riches
+
+- Audio/SFX unifie.
+- YouTube `.embed.json`.
+- Cards media.
+- Security embed/unfurl.
+
+PR 6: performance et export
+
+- Culling/LOD.
+- Minimap.
+- Export frame/board.
+- Perf tests.
+
+PR 7: backlinks et memoire
+
+- Used-in.
+- Search Ref.
+- Snapshots.
+- Index reconstruisible.
+
+## 16. Non-objectifs V1
+
+- Collaboration temps reel type Miro multi-cursors.
+- Upload massif video depuis Ref.
+- Edition mobile complete.
+- Import Eagle 110k complet.
+- AI organize.
+- OCR/similarity search.
+- Timeline video/audio avancee.
+- Systeme de permissions granulaire par board.
+
+Ces sujets sont V2/V3, pas des prealables au lancement utile de Ref.

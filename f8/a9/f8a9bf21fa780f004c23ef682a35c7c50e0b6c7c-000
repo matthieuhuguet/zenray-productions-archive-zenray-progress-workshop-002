@@ -1,0 +1,91 @@
+# Suivi des 28 constats de l audit Create et Eagle
+
+Etat au 2026-08-31. L audit multi-agents du 30 aout a rendu 28 constats, mais
+sa phase de verification a entierement echoue sur la limite d usage de cinq heures. Les constats ne
+vivaient donc plus que dans les transcripts des agents. Ils sont ici, avec leur etat reel.
+
+**Source :** `/Users/zenray/Create/Share/tmp-audit-create-eagle/constats.json`, extraits des sorties
+structurees des quatre agents de revue aboutis (workflow `wf_0b9d3a3e-553`).
+
+## Ou l on en est
+
+| | |
+|---|---|
+| constats | 28 |
+| traites | 17 |
+| restants | 11 dont 0 critiques |
+
+**Les cinq critiques sont tous traites.** Ce qui reste est majeur ou mineur.
+
+## Ce qui reste
+
+| # | gravite | fichier | le defaut |
+|---|---|---|---|
+| 3 | majeur | `ImageNodeViewer.jsx` | Un échec passager de lecture de manifeste est mémorisé comme « image absente » pour toute la |
+| 5 | majeur | `ImageNodeViewer.jsx` | Le préchargement plein format inscrit le manifeste du LIEN sous le chemin du raccourci |
+| 6 | majeur | `App.jsx` | Le préchargement au survol écrit un listing vide en cache quand le serveur a échoué |
+| 7 | majeur | `ImageNodeViewer.jsx` | L'aperçu plein écran d'une image reste vide sans un mot quand la lecture du manifeste lève |
+| 8 | majeur | `page.js` | La purge des morceaux d'un média chunké dépasse le budget de sous-requêtes et n'est jamais v |
+| 18 | majeur | `page.js` | "Reindexer depuis le dossier source" sur un gros dossier envoie 200 lectures de vignettes en |
+| 19 | majeur | `page.js` | Supprimer une video decoupee envoie une requete DELETE par part de 3 Mo |
+| 20 | majeur | `page.js` | move-batch : la garde a 12 dossiers ne protege rien quand les dossiers ne partagent pas d'an |
+| 21 | majeur | `page.js` | move-tree : le parcours en largeur peut faire jusqu'a 5000 listings de dossier dans une seul |
+| 25 | majeur | `dossiersDeTri.js` | La regle « ce qui peut recevoir un lien Eagle » existe en cinq copies cote client et une cot |
+| 26 | majeur | `page.js` | La detection de collision du lot de liens recopie stripLeafExt a la main et ignore .plan.jso |
+
+## Ce qui est fait, avec sa preuve
+
+| # | fichier | correctif | commit |
+|---|---|---|---|
+| 1 | `App.jsx` | la corbeille ne supprime plus quand la copie a echoue | `ad9e71e` |
+| 2 | `App.jsx` | la purge compte les echecs et dit la verite | `8f10845` |
+| 4 | `eagleLink.js` | un echec passager n est plus cache pour la session | `666744b` |
+| 9 | `SharedFolderPage.jsx` | la galerie partagee lit hors quota | `2acb903` |
+| 10 | `App.jsx` | tuiles, cartes video et skills lisent hors quota | `66baea9` |
+| 11 | `DownloadsView.jsx` | lecture hors quota | `f133318` |
+| 12 | `meta.js` | index Eagle hors quota, edition separee | `66baea9` |
+| 13 | `folderVisibility.js` | lecture hors quota | `f133318` |
+| 14 | `VideoPlayer2.jsx` | lecture hors quota | `f133318` |
+| 15 | `bulkZip.js` | lecture hors quota | `f133318` |
+| 16 | `page.js` | un dossier trop gros se refuse au lieu de mourir en silence | `2bd0fe0` |
+| 17 | `page.js` | le chemin de SUCCES est mesure ; sondes d ancetres memoisees | `bd48be1` |
+| 22 | `nodeTreeFilter.js` | server/extensionsNoeuds.js, source unique | `(nuit)` |
+| 23 | `build-search-index.mjs` | server/extensionsNoeuds.js, source unique | `(nuit)` |
+| 24 | `page.js` | cinq copies dans page.js, toutes branchees sur la source unique | `c07ee5c` |
+| 27 | `buildNodes.js` | buildNodes reconnait .zrmusic.json | `38b9605` |
+| 28 | `SpotlightSearch.jsx` | le retrait d extension passe par la source unique | `38b9605` |
+
+## Corrections hors audit, trouvees en chemin
+
+Elles ne figuraient dans aucun constat, et plusieurs etaient plus graves que la moyenne de la liste.
+C est la raison pour laquelle on lit le code plutot que la seule sortie des agents.
+
+| quoi | pourquoi c etait grave | commit |
+|---|---|---|
+| L apercu s ouvrait en 215 ms | la vignette etait deja en memoire, personne ne la demandait | `0fb44d4` |
+| Le depot ne compilait plus | un export manquait ; la production tournait, un clone frais echouait | `(matin)` |
+| Un lien partage rendait « Empty folder » | le renommage sans accent a casse tous les jetons emis avant, visible par un tiers | `8f10845` |
+| Les vignettes du lien partage restaient vides | le repli sans accent manquait a la LECTURE, pas seulement au listing | `2acb903` |
+| Le titre d onglet portait un tiret cadratin | priorite 0 du projet, et tous les onglets se ressemblaient | `dbe41f8` |
+| La cause d un echec etait effacee | ma propre regression : `.catch(() => null)` avalait ce qu apiPost levait desormais | `38b9605` |
+| Les dossiers crees « disparaissaient » | ma propre regression : la memoire de resolution survivait entre deux requetes | `1058c86` |
+
+## Les trois gestes qui gouvernent la suite
+
+Ecrits par Matthieu le 2026-08-31, verbatim dans `docs/DEMANDES-MATTHIEU.md` :
+
+1. consulter ses images tres vite,
+2. creer un dossier qui tient vraiment,
+3. y deplacer des images sans douleur.
+
+Et la regle qu il ecrit en majuscules : **stabilite avant vitesse, toujours**. Un geste rapide qui
+echoue une fois sur cinq est pire qu un geste lent qui marche a tous les coups, parce que la douleur
+ne vient pas de l attente mais de devoir verifier.
+
+## Deux decisions qui attendent Matthieu
+
+**Les 21 dossiers a macrons japonais**, hors `pages/Photos`. Retirer un macron CHANGE le mot ; ce n est
+pas un accent decoratif. Personne ne tranche cela a sa place.
+
+**Les 222 autres dossiers accentues.** Le repli sans accent les protege desormais, donc le renommage
+n est plus urgent.

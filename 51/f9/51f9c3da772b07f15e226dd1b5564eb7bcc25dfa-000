@@ -1,0 +1,32 @@
+# Sidebar éditoriale et ZenRay Assets, suivi de tâches
+
+Demande du 2026-09-05. Direction retenue : 02 Galerie, éditorial et épuré.
+
+## Ce qui NE change pas, consigne explicite de Matthieu
+
+- Le drawer de gauche reste un panneau **isolé et flottant** (`position: sticky`, `margin: 70px 0 12px 12px`).
+- Le **rectangle arrondi** reste : `borderRadius: 30` sur le drawer, `11` sur les items.
+- Le **Liquid Glass** reste : la classe `zr-liquid` sur l'aside, jamais retirée.
+- La zone **Create à droite** garde sa segmentation actuelle : on n'y touche pas.
+- La largeur 232 et l'absence totale de scrollbar dans le drawer restent.
+- Les **rubriques** gardent leur style sans en petites capitales. Le serif y a déjà été
+  essayé puis abandonné (commentaire de `fonts.css` ligne 638) : on ne le rejoue pas.
+
+## Les feuilles, dans l'ordre des dépendances
+
+| # | Tâche | Preuve attendue | État |
+|---|---|---|---|
+| F1 | Lire Sidebar.jsx, fonts.css, la NAV réelle | structure et contraintes connues | fait |
+| F2 | Clé i18n `nav.assets` dans les langues servies | la clé rend un libellé, jamais la clé nue | |
+| F3 | Entrée `assets` dans NAV, juste après Create, plus le champ de sous-groupe | l'entrée apparaît au bon rang | |
+| F4 | Sidebar.jsx rend les intertitres de sous-groupe | les trois intertitres s'affichent sous Create | |
+| F5 | Style `.zr-ws-subheading`, discret, sans toucher aux rubriques | mesuré dans le navigateur | |
+| F6 | `AssetsView.jsx`, la vue éditoriale | la vue rend ses familles et son détail | |
+| F7 | Routage de la vue `assets` dans App.jsx | cliquer Assets ouvre la vue | |
+| F8 | Build, hauteur du drawer mesurée, aucune scrollbar | build vert et mesure relevée | |
+
+## Le risque à surveiller
+
+Le drawer n'a **aucun scroll** et fait la hauteur de son contenu. Trois intertitres ajoutent
+de la hauteur. La hauteur totale se mesure après coup ; si elle dépasse la fenêtre, on réduit
+l'intertitre plutôt que de remettre un scroll, qui est explicitement proscrit.

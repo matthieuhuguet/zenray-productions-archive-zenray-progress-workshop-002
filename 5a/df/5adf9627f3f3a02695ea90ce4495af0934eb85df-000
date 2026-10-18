@@ -1,0 +1,232 @@
+# Audit ZenRay Progress — Backlog de propositions
+
+_Genere par workflow audit (7 agents). Lecture seule. Valider au compte-goutte._
+
+## Resume
+Deux produits audités : l'app ZenRayProgress (un Finder + Notion maison) et la page reels/landing du site (qui collecte des prospects). Le socle est déjà solide : UI optimiste, notifications frosted, corbeille undo, Quick Look. Les vrais gains restent concentrés en 4 couches, dans l'ordre imposé. PERF d'abord : aujourd'hui les uploads et les déplacements se font en file indienne (un fichier à la fois, un chunk de 3 Mo à la fois) et chaque petite action redéclenche un rechargement complet du dossier ; paralléliser ces boucles (4-6 en vol) et mémoïser les listes/tuiles divise les temps perçus et tue les saccades. FEEDBACK ensuite : le transcodage vidéo (l'étape la plus longue, plusieurs minutes) est aujourd'hui muet, une alerte navigateur brute casse la charte, et il manque squelettes de chargement + anneau de focus clavier partout ; l'infra de barre de progression existe déjà, c'est surtout du câblage. DÉCLUTTER ensuite : la barre Create aligne ~13 contrôles sur une rangée ; on en cache la moitié (tri, zoom, réindexer, visibilité, split, inspecteur, Repo Commands, worker) dans deux menus « Affichage » et « Outils », et on fond les zones Apps+Système de la sidebar. EASING en dernier : micro-transitions Notion-grade (hover 120ms, collapse 180ms, menus scale+fade) posées seulement une fois le reste stable, pour ne jamais regater une interaction derrière une animation. Côté reels, un bug réel casse le focus clavier (variable de thème inexistante), aucune police n'est préchargée (le titre saute), et le widget de conversion mérite spinner, validation inline et réassurance. Tout est atomique : chaque proposition se livre seule, sans dépendre des suivantes.
+
+## Ce qui manque (gaps)
+- Aucun squelette / shimmer de chargement nulle part (app + reels) : à froid l'écran reste vide puis tout surgit d'un coup, alors que Notion/Finder posent toujours une structure fantôme. Pas un seul @keyframes skeleton/pulse dans index.html.
+- Aucun anneau :focus-visible global (app + reels) : la navigation clavier (Tab) est invisible sur toutes les tuiles, boutons de notif, nav-items, QuickLook, DataView. Sur reels c'est même un bug (variable accentStart inexistante rend la règle invalide).
+- Aucune palette de commandes Cmd+K unifiée (pages + fichiers + médias) : pattern Notion/Finder priorité 5, totalement absent. Pas de saut rapide vers n'importe quel élément, pas de type-ahead (taper pour sélectionner dans la vue courante).
+- Pas de progression dédiée sur le transcodage vidéo HLS/ffmpeg.wasm : l'étape la plus longue de l'app n'expose ni %, ni étape, ni logs ffmpeg, alors que notifyProgress (barre+logs) est conçu exactement pour ça et inutilisé sur ce chemin.
+- Pas de vue colonnes (Miller columns) pour drill-down progressif : pattern Finder priorité 4 absent ; seul un arbre sidebar existe.
+- Bases de données à vues commutables (table/galerie/board) où les lignes SONT des fichiers : le différenciateur Notion+Finder le plus fort, non construit (DatabaseTable existe mais pas le modèle ligne=fichier multi-vues).
+- Spring-loaded folders en drag (survol ~700ms ouvre le dossier visé) : absent ; on ne peut pas traverser la hiérarchie en plein drag.
+- Empty states actionnables (icône + titre + CTA) : tous les états vides sont du texte gris plat sans bouton ni illustration, des deux côtés.
+- Parallélisme des écritures : tout le pipeline d'import (fichiers, chunks, encodage vignette) est strictement séquentiel, à contre-courant de la règle parallélisme du repo (M5 Max 18 cores sous-utilisé).
+- Reels : aucune police préchargée (FOUT sur le titre serif), aucun prefers-reduced-motion, JSON d'article en no-store (re-fetch à chaque visite de retour), pas de dédoublonnage prospect ni garde anti-double-soumission.
+
+## Propositions
+
+### P1 — Paralléliser l'upload binaire chunké (4-6 PUT en vol)  `[perf]` `app` impact:5/5 effort:M risk:med
+- **Problème** : uploadBinaryChunks et sa variante chiffrée poussent les chunks de 3 Mo en série : un PUT GitHub à la fois. Une vidéo/audio/PDF de 300 Mo = 100 allers-retours en file indienne, réseau sous-utilisé, progression qui rampe.
+- **Proposition** : Remplacer la boucle for séquentielle de uploadBinaryChunks/uploadBinaryChunksEncrypted par un pool borné à 4-6 PUT concurrents (même motif worker que loadChunked qui LIT déjà à concurrency 4 dans chunked.js). Pré-calculer sha256 et AES de chaque chunk en avance de phase. onProgress agrège les chunks terminés (compteur atomique) au lieu d'un ratio par chunk. Ordre des parts garanti par index, pas par ordre d'arrivée.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/capture/universalCapture.js, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/media/chunked.js
+- **Séquence** : Indépendant. Premier de la couche perf. Attention à l'ordre des parts (index) et aux quotas GitHub : borne dure 6 max.
+
+### P2 — Paralléliser captureFiles (pool de 3-4 fichiers déposés)  `[perf]` `app` impact:5/5 effort:M risk:med
+- **Problème** : captureFiles fait for (const file of list) await routeFile : déposer 20 images = 20 captures strictement séquentielles (hash, chiffrement, putBlob, commit, writeNode chacune). Aucun parallelisme inter-fichiers, et onProgress global est écrasé fichier par fichier (le ratio saute).
+- **Proposition** : Introduire un pool de 3-4 fichiers traités en parallèle dans captureFiles (universalCapture.js L673), via p-queue (déjà dispo) ou un worker-pool maison. onProgress devient agrégé : compteur N/total + ratio global lisible, plus de saut. Garder l'ordre des résultats par index pour l'insertion optimiste. Borne configurable pour ne pas saturer l'API GitHub si P1 parallélise déjà les chunks d'un même fichier (limiter le produit fichiers×chunks).
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/capture/universalCapture.js
+- **Séquence** : Indépendant de P1 mais à coordonner : si P1+P2 actifs, plafonner la concurrence totale (ex. 6 PUT cumulés) pour ne pas exploser le quota GitHub.
+
+### P3 — Mémoïser shownEntries (useMemo) au lieu de re-trier à chaque render  `[perf]` `app` impact:4/5 effort:S risk:low
+- **Problème** : shownEntries = keepRelevanceOrder ? shownRaw : [...shownRaw].sort(sortFn) (App.jsx L1634) re-trie et recopie le tableau à CHAQUE render de Pages : à chaque setStatus, chaque tick d'uploadProgress, chaque mousemove pendant un marquee, chaque poll de quota. Sur des milliers d'entrées, ce sort+copie se rejoue inutilement.
+- **Proposition** : Envelopper shownEntries dans un useMemo dépendant uniquement de [shownRaw, keepRelevanceOrder, sort.key, sort.dir]. Le tri ne se recalcule que quand la source ou le critère change, plus à chaque frame d'interaction non liée.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Indépendant, isolé sur une ligne. Quick win. Idéalement avant P5 (les tuiles consomment shownEntries).
+
+### P4 — React.memo sur les tuiles (couper les re-renders pendant le marquee)  `[perf]` `app` impact:4/5 effort:M risk:med
+- **Problème** : renderIconTile (App.jsx L1852) est rejoué en map à chaque render. setStatus, uploadProgress et surtout setMarquee (à CHAQUE mousemove pendant un rubber-band) re-rendent TOUTES les tuiles montées. La virtualisation borne le nombre mais pas le coût par frame.
+- **Proposition** : Extraire la tuile en composant React.memo avec un comparateur ciblé sur les props qui changent vraiment son rendu : dir, selOn, dropOn, thumbUrl, name, view, zoom. Passer marquee/status par un mécanisme qui ne re-render pas chaque tuile (sélection dérivée booléenne calculée hors tuile). Résultat : déplacer la souris pendant une sélection rectangle ne re-rend plus les milliers de tuiles, seulement celles dont selOn bascule.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Dépend logiquement de P3 (mémoïsation amont) pour un bénéfice complet. À faire après P3.
+
+### P5 — Débouncer la revalidation loadTree après mutations optimistes  `[perf]` `app` impact:4/5 effort:M risk:med
+- **Problème** : create, rename, move, capture et delete appellent tous loadTree() (loadDir children + loadPaths) APRÈS avoir déjà appliqué l'état optimiste. loadDir refait un fetch children complet à chaque fois ; sur une rafale, N fetchs children s'empilent. L'index global est déjà debouncé, pas la revalidation du dossier courant.
+- **Proposition** : Débouncer la partie loadDir(children) du dossier courant (~300-500ms, comme loadPaths l'est déjà pour l'arbre global, App.jsx L1042/L1077). Les mutations optimistes restent instantanées ; la revalidation réseau se coalesce en un seul fetch après la rafale au lieu d'un par opération. Garder un flush immédiat si l'utilisateur change de dossier.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Indépendant. Bien tester le rollback sur échec (l'état optimiste doit survivre au debounce). Cohérent avec la mémoire repo no_blank_screen (garder le dernier état valide).
+
+### P6 — Move de feuille : supprimer la sonde children bloquante sur le chemin critique  `[perf]` `app` impact:3/5 effort:M risk:med
+- **Problème** : Chaque déplacement de feuille fait d'abord un GET children bloquant (App.jsx L1216) juste pour savoir s'il y a des enfants — un round-trip réseau avant même de bouger un .img.json qui n'a JAMAIS d'enfants. Puis tout succès déclenche loadTree() (refetch complet) alors que l'UI est déjà optimiste. pasteClip mode cut (L2009) enchaîne ces movePage EN SÉRIE.
+- **Proposition** : Court-circuiter la sonde children pour les feuilles connues sans enfants (images, médias, .img.json, .db.json) : déduire hasKids du type local au lieu d'un GET réseau. Ne sonder que pour les vrais nœuds-dossiers ambigus. Pour pasteClip cut multi-éléments, paralléliser les movePage (pool 3-4) au lieu de la file indienne. Laisser P5 couvrir le refetch redondant.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Complémentaire de P5. Le volet 'paralléliser pasteClip' réutilise le pattern pool de P2/P1.
+
+### P7 — Move serveur : lectures de jumeaux en Promise.all  `[perf]` `app` impact:3/5 effort:S risk:low
+- **Problème** : L'action move (server/page.js L342) fait un GET exists sur la cible puis lit chaque source et jumeau EN SÉRIE (L343-350). Pour une page (.md + 3 jumeaux .props.json/.cover/.canvas) cela fait jusqu'à 5 GET séquentiels. Les lectures de jumeaux sont indépendantes.
+- **Proposition** : Passer les lectures de jumeaux en Promise.all (le pattern move-tree applique DÉJÀ ce parallélisme dans le même fichier, à copier). Garder le GET exists de la cible en amont. Réduit la latence serveur d'un déplacement de page d'un facteur ~3-4.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/server/page.js
+- **Séquence** : Indépendant, côté serveur. Quick win, pattern déjà présent dans move-tree du même fichier.
+
+### P8 — Générer les vignettes hors thread principal (OffscreenCanvas + Worker)  `[perf]` `app` impact:3/5 effort:M risk:med
+- **Problème** : makeThumbWebp (thumbnailer.js L4) utilise document.createElement('canvas') puis drawImage et toBlob sur le thread UI. Pendant un import multi-images, chaque décodage+réencodage WebP gèle brièvement le rendu (scroll et clics saccadés).
+- **Proposition** : Déplacer le décodage + drawImage + toBlob vers OffscreenCanvas dans un Web Worker (pool de 2-4 workers, gratuit en CPU sur M5 Max 18 cores). Le thread principal n'orchestre que l'envoi des bitmaps et la collecte des blobs WebP. Supprime le jank visible pendant l'import. Fallback main-thread si OffscreenCanvas indisponible.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/capture/thumbnailer.js
+- **Séquence** : Indépendant. Synergie forte avec P2 (import parallèle de fichiers) : le worker-pool de vignettes alimente le pool de captures.
+
+### P9 — Code-splitter le monolithe App.jsx pour alléger le LCP de la landing  `[perf]` `reels` impact:4/5 effort:L risk:med
+- **Problème** : dist/assets/index.js = 520 Ko non gzip. Un prospect arrivant directement sur /reels/zenrayprogress télécharge TOUT App.jsx (477 Ko source : portfolio entier, Calendly, ImageViewer, ReelSection, NewsPage, CVPage) avant de voir la landing. ArticleRenderer et ProspectWidget sont bien lazy, mais le monolithe pèse sur la seule page censée convertir.
+- **Proposition** : Extraire les vues lourdes non nécessaires à la landing (portfolio works, Calendly, ImageViewer, NewsPage, CVPage) en imports lazy/Suspense séparés, comme le sont déjà ArticleRenderer/ProspectWidget. Le bundle d'entrée ne charge alors que le routeur + la landing. Vérifier les chunks générés (vite build) : viser un index d'entrée < 150 Ko pour la route reels.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/App.jsx
+- **Séquence** : Indépendant mais effort L (découpe d'un fichier de 477 Ko, risque de casser des imports). À tester build + navigation sur toutes les routes existantes.
+
+### P10 — Cache navigateur du JSON d'article (au lieu de no-store)  `[perf]` `reels` impact:2/5 effort:S risk:low
+- **Problème** : loadArticle.js force cache:'no-store' sur /articles/{slug}.json. Le contenu de la landing change rarement, mais chaque visite de retour d'un prospect (qui revient voir si la démo est sortie) refait un fetch réseau complet.
+- **Proposition** : Retirer no-store sur le fetch de l'article lui-même (laisser le cache HTTP par défaut, ou un cache court type max-age). Garder no-store UNIQUEMENT sur index.json (la liste, qui doit rester fraîche). Le navigateur sert alors la landing instantanément en visite répétée. Gain perf direct sur les retours.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/articles/loadArticle.js
+- **Séquence** : Indépendant. Quick win. Vérifier que le déploiement invalide bien le cache quand le JSON change (ETag ou hash de fichier).
+
+### P12 — Câbler notifyProgress sur le transcodage vidéo HLS/ffmpeg.wasm  `[ux-feedback]` `app` impact:5/5 effort:M risk:low
+- **Problème** : Le transcodage HLS chiffré dans le navigateur (étape la plus longue, plusieurs minutes) est MUET : runCapture pousse seulement uploadProgress (ratio brut d'upload) puis un toast texte. Ni étape (decode/encode/segment), ni % de transcodage, ni logs ffmpeg. L'utilisateur ne sait pas si ça avance ou si c'est figé. L'infra notifyProgress (barre + logs live + %) existe et est conçue exactement pour ça.
+- **Proposition** : Dans le pipeline vidéo (hlsTranscoder.js → runCapture), ouvrir un handle notifyProgress({kind:'video', title:'Transcodage', label:'HLS · navigateur'}). Le piloter : h.set({progress, body:'Segment 12/40'}) sur la progression ffmpeg.wasm, h.log(ligne ffmpeg) pour les logs live (déjà supportés par la carte, 120 lignes), h.done({title:'Vidéo prête'}) / h.fail() en gardant la source (déjà garanti serveur). Transforme l'étape la plus opaque en feedback Finder-grade.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/media/hlsTranscoder.js, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Notifications.jsx
+- **Séquence** : Indépendant. Première de la couche feedback. Surtout du câblage, l'infra notifyProgress est complète. Fort impact perçu.
+
+### P13 — Supprimer window.alert sur le chemin média chunké, tout passer en notif frosted  `[ux-feedback]` `app` impact:4/5 effort:S risk:low
+- **Problème** : Le chemin média chunké (App.jsx L1791) fait window.alert('Upload média échoué : ' + err.message) : une alerte navigateur bloquante, hors charte frosted macOS, qui casse le flux. Incohérent avec le reste. Idem plusieurs erreurs ('erreur move dossier', 'conflit — recharge') ne vivent QUE dans le statut mono discret en bas, faciles à rater.
+- **Proposition** : Remplacer le window.alert L1791 par notify({kind:'error', ...}) ou un h.fail() de notifyProgress. Doubler les erreurs qui ne vivent qu'en statut mono d'une notif visible avec action 'Réessayer'. Une seule grammaire d'erreur : lisible, thémée, jamais bloquante. (Note : les window.alert des menus 'Obtenir les infos' L2439/L2476 sont volontaires/informatifs, hors scope — ne traiter que les erreurs.)
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Indépendant. Quick win. Réutilise notify() existant. Ne pas toucher aux alert() informatifs (infos fichier).
+
+### P14 — Skeletons de grille frosted au lieu de « chargement… »  `[ux-feedback]` `app` impact:4/5 effort:M risk:low
+- **Problème** : Tous les états de chargement affichent un simple « chargement… » gris (Finder grille/liste, Gallery, vues lazy Suspense). Aucun squelette ni shimmer (vérifié : 0 @keyframes skeleton/pulse dans index.html). À froid, l'écran reste vide puis tout surgit d'un coup. Notion et Finder posent toujours une structure fantôme.
+- **Proposition** : Composant SkeletonGrid : N tuiles grises au ratio des vraies (aspect 16/10 icônes, hauteur masonry pour Gallery) avec un shimmer doux (@keyframes gradient qui balaie, 1.2s ease-in-out infinite) défini UNE fois dans index.html. L'afficher quand dirEntries===null / images===null / Suspense fallback, dimensionné au zoom courant. Bonus : garder le dernier listing en fond pendant la revalidation (SWR déjà en place) plutôt qu'un flash.
+- **Inspiration** : both
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/index.html, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Gallery.jsx
+- **Séquence** : Indépendant. Le keyframe shimmer est une animation : la POSER ici (structurelle) mais réserver le réglage fin du timing à la couche easing finale.
+
+### P15 — Barre de progression par-fichier sur l'import Gallery (notifyProgress + pool)  `[ux-feedback]` `app` impact:3/5 effort:M risk:low
+- **Problème** : Gallery.jsx addFiles (L55-74) encode et POST les images EN SÉRIE dans une boucle for (await fileToWebp puis POST /api/img), avec seulement setStatus('upload N…') figé puis 'N ajoutée(s)'. Aucune barre, aucun compteur live (3/12), aucun parallélisme. Sur un gros lot, l'utilisateur voit un statut figé sans savoir où ça en est.
+- **Proposition** : addFiles utilise notifyProgress : barre + body '5/12 importées', h.done à la fin. Paralléliser l'encodage+upload en pool (4 en vol, cohérent règle parallélisme repo). Met à jour progress sur chaque image terminée. Garde l'insertion optimiste du manifest déjà présente.
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Gallery.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Notifications.jsx
+- **Séquence** : Indépendant. Combine feedback + un mini-gain perf (pool). Réutilise notifyProgress et le pattern pool de P2.
+
+### P16 — Surligner la tuile-dossier cible pendant le drag en vue icônes/galerie  `[ux-feedback]` `app` impact:3/5 effort:M risk:low
+- **Problème** : En vue LISTE, survoler un dossier pendant un drag le surligne (dropDir → primarySoft + outline dashed, App.jsx ~L2297). En vue ICÔNES/GALLERY (renderIconTile L1852 + DataView gallery), le drop sur un sous-dossier n'a pas ce surlignage : on s'appuie sur l'overlay global 'Déposer ici' qui cible le DOSSIER COURANT, pas le sous-dossier précis sous le curseur. Affordance manquante : où ça tombe ?
+- **Proposition** : Étendre la logique dropDir (déjà écrite pour la vue liste) à renderIconTile et à la branche DataView gallery : au survol d'une tuile-dossier avec un drag (Files ou zenray-page), poser sur CETTE tuile un ring dashed primary + léger scale (façon Finder qui éclaire le dossier visé). Donne la réponse 'ça va tomber ICI' au pixel près.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Views.jsx
+- **Séquence** : Indépendant. Réutilise la logique dropDir de la vue liste. Le 'léger scale' est une micro-anim : poser l'affordance ici, peaufiner le scale en couche easing.
+
+### P17 — Anneau :focus-visible global cohérent avec la sélection  `[ux-feedback]` `app` impact:3/5 effort:S risk:low
+- **Problème** : La CSS globale (index.html) ne définit AUCUN :focus-visible sur boutons/tuiles/items (seul .zr-input:focus a un ring). Toutes les tuiles Finder, boutons de notif, nav-items, boutons QuickLook et DataView sont des <button> sans focus visible ; plusieurs posent même outline:'none' explicite. Un utilisateur clavier (Tab) ne voit jamais où il est.
+- **Proposition** : Une règle CSS globale dans index.html : :where(button,a,[tabindex]):focus-visible{outline:none;box-shadow:0 0 0 3px var(--zr-selection)} (réutilise la variable de sélection déjà définie pour .zr-input). Rend la navigation clavier visible partout sans toucher chaque inline-style. Aligne sur le niveau de finition macOS.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/index.html
+- **Séquence** : Indépendant. Quick win, une règle CSS. Pendant clavier seul, pas au clic (:focus-visible le gère nativement).
+
+### P18 — Toast de collage thémé (zr-glass) + vraie icône checkmark  `[ux-feedback]` `app` impact:2/5 effort:S risk:low
+- **Problème** : ClipboardProvider.jsx construit 'N fichier(s) collé(s) ✓' avec un caractère ✓ littéral concaténé, et rend un toast au style inline (#1f1f1f fixe, ne suit PAS le thème clair/sombre, pas de classe zr-glass). Sur thème clair l'app est frosted ; ce toast reste un rectangle noir opaque. Incohérent avec les notifs macOS frosted.
+- **Proposition** : Passer le toast ClipboardProvider en classe zr-glass thémée (suit clair/sombre). Remplacer le caractère ✓ par une vraie icône checkmark SF Symbol (composant Icon déjà dispo). Cohérence visuelle totale avec le système de notif.
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/clipboard/ClipboardProvider.jsx
+- **Séquence** : Indépendant. Quick win cosmétique.
+
+### P19 — Brancher la Gallery sur QuickLookOverlay (aperçu unifié)  `[ux-feedback]` `app` impact:3/5 effort:M risk:low
+- **Problème** : Gallery.jsx a son propre lightbox 'box' (clic tuile → <img> plein écran simple, fond noir, L125-127) qui n'utilise PAS QuickLookOverlay : pas de navigation flèches, pas de hint clavier, pas de bouton Télécharger/Ouvrir, pas de prev/next. Deux aperçus différents coexistent dans l'app (incohérence UX), expérience dégradée dans la galerie.
+- **Proposition** : Remplacer le lightbox 'box' maison par QuickLookOverlay (déjà : navigation flèches, hint clavier, Télécharger/Ouvrir, prefetch hover). Passer la liste d'images comme source de navigation prev/next. Une seule expérience Quick Look cohérente Finder + galerie. Supprime du code dupliqué.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Gallery.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/QuickLookOverlay.jsx
+- **Séquence** : Indépendant. QuickLookOverlay existe déjà et est complet ; surtout du branchement + passage de la liste.
+
+### P20 — Empty states actionnables (icône + titre + CTA) au lieu de texte plat  `[ux-feedback]` `app` impact:3/5 effort:M risk:low
+- **Problème** : 'Dossier vide.', 'Aucun résultat.', 'Cette page n'a pas de sous-pages.', empty hints Gallery = texte gris simple, sans bouton d'action, sans icône/illustration. Le drop reste possible mais rien n'invite à l'action depuis l'écran vide. Notion et Finder offrent des empty states guidants.
+- **Proposition** : Transformer les états vides en blocs centrés : icône (folder/photo), une ligne titre, une ligne d'aide, 1-2 boutons contextuels ('Déposer des fichiers ici', 'Nouvelle page', 'Coller ⌘V'). Dossier vide → inviter au drop/création ; recherche vide → bouton 'Effacer le filtre'. Réutilise icônes et boutons existants. Bien distinguer dossier vide (invitation) du vrai échec réseau (déjà géré par dirError tri-valué, ne pas le casser).
+- **Inspiration** : both
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/components/Gallery.jsx
+- **Séquence** : Indépendant. Ne PAS toucher la logique dirError (échec réseau vs vide réel, déjà correcte).
+
+### P21 — Corriger le bug focus-visible (accentStart inexistant) sur la landing  `[ux-feedback]` `reels` impact:4/5 effort:S risk:low
+- **Problème** : App.jsx L8742-8744 : button/a:focus-visible outline 2px solid colors.accentStart. Le thème (theme.js) n'expose PAS accentStart (il a accent, accentSoft, accent2 ; PALETTE a primary/gradientFrom). colors.accentStart = undefined → la déclaration devient 'outline: 2px solid undefined', invalide, ignorée. Plus AUCUN outline clavier sur tous les boutons/liens, dont le CTA du widget. Bug a11y réel et silencieux.
+- **Proposition** : Remplacer colors.accentStart par colors.accent (ou PALETTE.primary) à la ligne 8743. Rétablit immédiatement l'anneau de focus clavier sur toute la page. Une ligne, gain a11y direct.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/theme.js
+- **Séquence** : Indépendant. Bug confirmé code en main. Quick win prioritaire côté reels.
+
+### P22 — Précharger la police serif above-the-fold (tuer le FOUT du titre)  `[ux-feedback]` `reels` impact:3/5 effort:S risk:low
+- **Problème** : fonts.css déclare AnthropicSerif/Sans/Mono en font-display:swap (bon) mais AUCUNE n'est préchargée (pas de link rel=preload dans index.html, vérifié : 0 occurrence). Le gros titre serif (clamp 30-46px) et les pills s'affichent d'abord en Georgia/système puis sautent vers Anthropic à l'arrivée du woff2. Sur une vitrine, ce saut nuit au soin perçu.
+- **Proposition** : Ajouter dans index.html un <link rel=preload as=font type=font/woff2 crossorigin href=/fonts/AnthropicSerif-Romans.woff2> (le poids exact du titre above-the-fold). Le navigateur charge la serif en priorité, le titre s'affiche directement dans la bonne police. Coût quasi nul.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/index.html, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/fonts.css
+- **Séquence** : Indépendant. Quick win. Vérifier le chemin réel du woff2 servi (déclaré dans fonts.css).
+
+### P23 — Erreurs serveur prospect : renvoyer un vrai 500, pas un 200 déguisé  `[ux-feedback]` `reels` impact:3/5 effort:S risk:low
+- **Problème** : api/prospect.js catch global (L107-108) renvoie json(res, 200, {error:'server', detail}) : statut HTTP 200 avec un champ error. Le widget gère ce cas (il lit r.ok du body), MAIS tout monitoring HTTP/proxy verra 200=succès alors que l'écriture GitHub a échoué (token expiré, repo indispo). Un prospect peut être perdu sans alerte infra. Les 400 métier sont corrects ; c'est le 500 déguisé qui pose problème.
+- **Proposition** : Dans le catch global, renvoyer un vrai statut 500 (json(res, 500, {error:'server', detail})). Adapter le widget pour traiter à la fois !r.ok HTTP et le champ error du body (déjà tolérant). Le monitoring infra voit alors les vrais échecs. Garder les 400 métier (name/email) tels quels.
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/api/prospect.js, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/components/ProspectWidget.jsx
+- **Séquence** : Indépendant. Vérifier que le widget gère bien r.ok===false HTTP (il lit déjà le body, ajouter le cas statut).
+
+### P24 — Renforcer la conversion du widget (validation inline + réassurance + preuve sociale)  `[ux-feedback]` `reels` impact:4/5 effort:M risk:low
+- **Problème** : Le widget demande un prix sans contexte de valeur ni réassurance forte, et ne signale une erreur email qu'À LA soumission. Les pills (role=button, L74/79) n'ont pas d'aria-pressed pour l'état sélectionné et ne réagissent qu'à Enter (pas Espace, attendue sur role=button). Les inputs Nom/Email n'ont que placeholder, aucun label/aria-label (lecteur d'écran : champ sans nom stable).
+- **Proposition** : Trois leviers : (1) validation inline verte (coche) quand l'email devient valide, au lieu d'attendre la soumission ; (2) ligne de réassurance vie privée ('Pas de spam, désinscription en 1 clic') en étoffant le 'No charge now' existant ; (3) compteur de prospects ('Rejoignez 47 personnes qui attendent') — l'api écrit déjà db.json, exposer un count en lecture. Bonus a11y : aria-pressed sur les pills, gérer Espace en plus d'Enter, aria-label sur les inputs.
+- **Inspiration** : both
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/components/ProspectWidget.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/api/prospect.js
+- **Séquence** : Indépendant. Le compteur prospects nécessite un endpoint lecture count (petit ajout api). Fort levier conversion.
+
+### P25 — Skeleton de chargement de la landing (au lieu de Suspense null + point)  `[ux-feedback]` `reels` impact:3/5 effort:M risk:low
+- **Problème** : Double latence sans retour riche : App.jsx L8798 monte ArticleRenderer avec Suspense fallback null (rien pendant le download du chunk), puis ArticleRenderer L88 affiche juste un point centré pendant le fetch JSON. Sur connexion lente, le prospect voit un blanc puis trois points. Pas de skeleton rassurant sur une page censée convertir.
+- **Proposition** : Remplacer le fallback null (L8798) et le point (ArticleRenderer L88) par un skeleton léger : rectangle 16:9 à l'emplacement du placeholder vidéo + 2-3 barres grises pour le texte, shimmer doux réutilisant le dégradé coral/rose en très faible opacité (reste dans la DA). Le prospect perçoit que ça charge au lieu d'un blanc anxiogène.
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/articles/ArticleRenderer.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/App.jsx
+- **Séquence** : Indépendant. Le shimmer est une animation : poser la structure ici, régler le timing en couche easing. Cohérent avec P14 (même idiome skeleton, app).
+
+### P26 — Menu « Affichage » : regrouper tri + ordre + zoom + réindexer  `[ui-declutter]` `app` impact:4/5 effort:M risk:low
+- **Problème** : La barre Create aligne sans regroupement 4 contrôles d'affichage consécutifs AVANT les actions : select Trier par 4 options (L2164), bouton ordre asc/desc (L2167), slider Zoom (L2169), bouton réindexer images (L2170). Ce sont des réglages, pas des actions quotidiennes ; ils noient Rechercher et New.
+- **Proposition** : Un seul bouton-menu 'Affichage' (icône slider/ellipsis) dans la barre, contenant : select Trier par, bouton ordre asc/desc, slider Zoom, bouton réindexer. Garder visibles dans la barre uniquement Crumbs, Rechercher, ViewSwitch, New. Dégraisse la rangée de 4 widgets d'un coup. Modèle Finder (menu Présentation / réglages de vue). Le menu New (dropdown ancré via newBtnRef + createPortal, L2183) sert de patron technique exact.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Indépendant. Réutilise le pattern dropdown du bouton New. Garder le state (sort/zoom) inchangé, juste déplacer les contrôles dans le menu.
+
+### P27 — Menu « Outils » : regrouper visibilité, split, inspecteur, Repo Commands  `[ui-declutter]` `app` impact:4/5 effort:M risk:low
+- **Problème** : Cinq boutons-icônes rares occupent une place permanente dans la barre : réindexer (déplacé par P26), visibilité dossier cadenas/globe (L2174), mode split (L2175), inspecteur eagleInsp (L2176), Repo Commands (L2178). Aucun n'est quotidien : visibilité se règle une fois par dossier, split/inspecteur sont des préférences, Repo Commands est un journal de debug. Ils noient les 2 actions vraiment quotidiennes (Rechercher, New).
+- **Proposition** : Un unique bouton-menu 'Outils' (icône ellipsis/engrenage) regroupant : visibilité dossier (L2174), mode split (L2175), inspecteur (L2176), Repo Commands (L2178). Le menu New (déjà dropdown ancré, L2183) est le patron technique. Après P26+P27, la barre ne garde que : remonter, Crumbs, Rechercher, ViewSwitch, bouton Affichage, bouton Outils, New → de ~13 contrôles à ~6 visibles.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Indépendant de P26 mais complémentaire (les deux dégraissent la même barre). Même pattern dropdown.
+
+### P28 — Sortir le Worker auto-upload du menu New vers le menu Outils/Avancé  `[ui-declutter]` `app` impact:2/5 effort:S risk:low
+- **Problème** : Le menu New (L2189-2195) regroupe bien Page/Dossier/Table/Upload vidéo (création/import directs), mais y ajoute l'entrée 'Worker auto-upload Downloads' (L2195) : installation d'un programme macOS avec une grosse notice d'instructions. Mélanger l'installation d'un worker à l'action la plus fréquente (créer) alourdit le menu de création rapide.
+- **Proposition** : Déplacer l'entrée Worker auto-upload (L2195, le bloc download + notify d'instructions) du menu New vers le futur menu 'Outils' (P27) ou un sous-menu 'Avancé'. Le menu New reste court : Page, Dossier, Table, Upload vidéo. Focalisé sur le quotidien.
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Dépend de P27 (a besoin du menu Outils comme destination). À faire après ou avec P27.
+
+### P29 — Sidebar : fondre Apps+Système et pousser Drive/Trash en overflow  `[ui-declutter]` `app` impact:3/5 effort:M risk:low
+- **Problème** : La sidebar montre 3 labels de zone (Create, Apps, Système, App.jsx L259-271) pour 11 entrées. 'Système' ne contient que 2 entrées rares (Drive L269, Trash L270), 'Apps' en a 5. Trois en-têtes de section pour si peu alourdit la colonne ; Drive et Trash n'ont pas besoin d'un label de zone dédié permanent.
+- **Proposition** : Dans le tableau NAV : garder le label CREATE pour Create/Dashboard/Projects/Freelance. Fusionner Apps et Système sous un seul label APPS (Ref, Audio, Articles, Documents, Roadmap). Sortir Drive (L269) et Trash (L270) de la liste plate : les placer dans un menu overflow en bas de sidebar (icône trois points près du pied L305), destinations rares de maintenance. Le rendu boucle déjà sur 'zone' (L287-292) : changer les valeurs 'zone' + ajouter une liste secondaire. Résultat : 2 labels au lieu de 3, 2 entrées rares masquées par défaut.
+- **Inspiration** : finder
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : Indépendant. Le rendu itère déjà sur 'zone', changement local. Vérifier que Drive/Trash restent accessibles (overflow toujours atteignable).
+
+### P11 — Palette de commandes Cmd+K unifiée (pages + fichiers + médias)  `[feature-gap]` `app` impact:5/5 effort:L risk:med
+- **Problème** : Aucune palette de commandes globale n'existe. Pattern priorité 5 chez Notion ET Finder : un seul raccourci pour sauter vers n'importe quelle page, n'importe quel fichier, n'importe quel média, ou insérer un lien interne. Aujourd'hui il faut naviguer l'arbre à la main.
+- **Proposition** : Ajouter un overlay Cmd+K qui recherche dans l'index global déjà chargé (loadPaths/l'arbre + index médias). Recherche fuzzy, flèches pour naviguer, Enter pour ouvrir/sauter, Esc pour fermer. Première correspondance présélectionnée (Enter instantané). C'est là que le hybride Finder+Notion brille : une seule porte vers tout. Réutiliser le composant search déjà présent (src/search/).
+- **Inspiration** : both
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/search
+- **Séquence** : Feature-gap majeure mais indépendante. Effort L. L'index existe déjà (loadPaths), c'est surtout l'UI overlay + le fuzzy. À placer après les quick wins perf si le temps manque.
+
+### P30 — Standardiser une échelle de motion (hover 120ms, collapse 180ms, menus 150ms scale+fade)  `[easing]` `app` impact:3/5 effort:M risk:low
+- **Problème** : Les transitions existent par endroits (boutons .12s, slide-in sidebar, fade notif) mais sans échelle cohérente. Notion doit son feeling 'vivant' à un système de motion réglé : hover-reveal ~120ms, collapse/reflow ~180ms ease-out, menus scale+fade ~150ms — toujours court + eased, jamais linéaire ni assez long pour ralentir.
+- **Proposition** : Définir une échelle de motion unique (variables CSS / tokens) : ~120ms pour les hover-reveals (handles, icônes de ligne, overlay média), ~180ms ease-out pour collapse/expand de l'arbre Finder et insert/remove de lignes, ~150ms scale+fade pour les menus (Affichage/Outils/New de P26-P27, palette Cmd+K de P11, bubble). Appliquer le MÊME easing à l'arbre, aux menus, aux tuiles pour que tout se sente comme un seul système. RÈGLE DURE : les transitions décorent un état DÉJÀ changé en state, jamais ne gatent la mise à jour (sinon on réintroduit la latence tuée en couche perf).
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/index.html, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx
+- **Séquence** : DERNIER (couche easing). Dépend que P26/P27/P11/P14/P16 soient posés (les menus, skeletons, surlignages à animer existent alors). Ne jamais gater une interaction derrière l'animation.
+
+### P31 — Micro-affordances de hover sur les tuiles (élévation + actions rapides)  `[easing]` `app` impact:2/5 effort:M risk:low
+- **Problème** : Au survol d'une tuile Finder en vue icônes, rien ne bouge : pas d'élévation, pas d'actions rapides révélées. La classe zr-hover-action existe déjà (et est forcée visible sur tactile) mais n'est généralisée qu'à l'arbre, pas aux tuiles. Notion (handles au survol) / Finder (Quick Actions) rendent l'interface vivante.
+- **Proposition** : Au survol d'une tuile icône : légère élévation (translateY -1px + shadow) et révéler des actions rapides en coin (ouvrir, tag, corbeille) via zr-hover-action déjà prévue. Réutilise le hook hover/visibility de l'arbre, généralisé aux tuiles. Timing aligné sur l'échelle motion de P30 (~120ms).
+- **Inspiration** : notion
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/src/App.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/index.html
+- **Séquence** : DERNIER (easing). Dépend de P30 (échelle de motion) et bénéficie de P4 (tuiles mémoïsées, sinon le hover re-render tout). À faire après P4 et P30.
+
+### P32 — Spinner réel + micro-récompense sur succès du widget prospect  `[easing]` `reels` impact:3/5 effort:M risk:low
+- **Problème** : À la soumission, le bouton passe juste à 'Sending…' (texte, opacity 0.7) et l'écran 'done' apparaît sec. Les pills ont transition all .15s mais aucun effet hover/press défini ; l'état sélectionné se limite à fond soft + inset shadow. La soumission est l'instant de conversion, il mérite mieux. Aucun prefers-reduced-motion sur .page-enter non plus.
+- **Proposition** : (1) Vrai spinner SVG animé dans le bouton pendant sending ; (2) transition d'entrée sur la carte 'done' (fade+scale léger, cohérent page-enter) ; (3) micro-validation (coche tracée ou confetti coral discret). Bonus pills : élévation hover (translateY -1px), scale 0.97 au press, transition fluide du badge 'most common' ; CTA gradient : shift de gradient + ombre coral au hover. Ajouter une media-query prefers-reduced-motion qui neutralise toutes ces animations (et .page-enter, absente aujourd'hui).
+- **Inspiration** : both
+- **Fichiers** : /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/components/ProspectWidget.jsx, /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayWebsite/src/App.jsx
+- **Séquence** : DERNIER (easing), côté reels. Inclut le prefers-reduced-motion manquant (à appliquer aussi à .page-enter App.jsx L8737). Indépendant des easing app.

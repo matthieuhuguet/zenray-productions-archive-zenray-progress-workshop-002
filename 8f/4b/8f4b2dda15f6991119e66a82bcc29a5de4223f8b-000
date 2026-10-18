@@ -1,0 +1,72 @@
+# Plan — Shelf + Drive core + Déchiffrage site (proto)
+
+Référence durable. Refs visuelles : `docs/shelf-refs/ref1-apple-tv-ui-shelf.png` (Top 10 Apple TV), `ref2-apple-tv-ui-shelf.png` (Nouveautés / Apple Originals). À relire AU PIXEL pendant le dev de l'UI.
+
+---
+
+## 0. État des lieux (données réelles, analysées le 2026-06-05)
+
+Les 3 zips sont des **exports Notion** (zip dans zip). Les œuvres sont des **lignes CSV** (utiliser les `_all.csv`, schéma complet). **Aucune image dans les exports** (les covers Notion ne sont pas exportées).
+
+| Catégorie | Œuvres | Colonnes (`_all.csv`) |
+|---|---|---|
+| Games | 344 (+2 « Untitled ») | Name, Score, Status, Studio, Director, Year, Exclusivity, Critic Elements |
+| Anime Manga | 200 | Name, Score, Status, Tags |
+| Movies Series Documentaries | 193 | Name, Realisator, Score, Status |
+
+**Total ≈ 739 œuvres. N'EN PERDRE AUCUNE.** Status réels vus : `Done`, `Backlog`, `In progress` (+ `Dropped`). Score = 0–100 (souvent vide). Normaliser le status vers l'ordre voulu : **In Progress → Backlog → Done → Dropped**.
+
+## 1. Décisions d'architecture (recommandations)
+
+- **Stockage Shelf** : tout passe par le repo content GitHub + jsDelivr (comme le reste). Un manifeste JSON par catégorie : `shelf/games.json`, `shelf/anime-manga.json`, `shelf/movies.json`. Notes par œuvre = un markdown dédié `shelf/<cat>/<id>.md` (réutilise le système de pages BlockNote existant). Images = pipeline image existant (shard public → jsDelivr).
+- **Posters (le « browser Google Image »)** : RECOMMANDÉ = APIs de métadonnées par catégorie plutôt qu'un scrape Google (fragile + hors ToS, non iframable). **TMDB** (films/séries/docs), **AniList** (anime/manga), **RAWG/IGDB** (jeux) → renvoient le poster officiel par titre, **peuvent auto-remplir les 739 posters en batch**, et offrent un picker manuel (cherche → choisis). Clés gratuites. → meilleur que Google sur tous les plans.
+- **Export** CSV / Markdown / JSON : reconstruction client depuis le manifeste, bouton « Download » par catégorie. Toujours dispo.
+- **Déchiffrage site (mot de passe 4869)** : ⚠️ **VÉRITÉ** — 4869 est trivialement devinable et les blobs chiffrés + la dérivation de clé vivent sur un CDN public → c'est un **gate mou / obfuscation, PAS de la sécurité**. N'importe qui de motivé peut déchiffrer. OK pour un proto SI aucun fichier vraiment sensible n'est derrière. Technique : password → dérive (ou déverrouille) la clé AES → déchiffre les chunks côté client → route vers le bon lecteur (HLS / image / audio / PDF / download). Le workflow CARTOGRAPHIE d'abord le crypto actuel (`server/media-key.js`, `hls-key.js`, schéma AES) avant de toucher.
+
+## 2. Modèle de données Shelf
+
+```
+shelf/<cat>.json = { v:1, category, items: [ Item ] }
+Item = {
+  id,                // stable (slug + hash)
+  name,              // titre
+  score,             // 0-100 | null
+  status,            // 'in_progress' | 'backlog' | 'done' | 'dropped'
+  tags: [],
+  extra: {},         // director/realisator, studio, year, exclusivity… (par catégorie)
+  image: { kind:'shard'|'url', ref } | null,   // poster
+  notes: 'shelf/<cat>/<id>.md' | null,         // markdown Notion-like
+  createdAt, updatedAt
+}
+```
+
+## 3. UI Shelf — spec (Apple TV, d'après ref1/ref2)
+
+- **Entrée latérale « Shelf »** (zone Système, sous l'UI Finder), PAS dans Create. 3 sections/onglets : Games · Anime Manga · Movies/Series/Docs.
+- **Grille** auto-fill, cartes **portrait ~2:3**, coins ~12px, gap ~18px, beaucoup d'air, **hover = léger zoom** (signature Apple TV).
+- **Carte** : poster plein cadre + **vignette dégradée sombre en bas** ; **score en haut-gauche** (chiffre gras, pastille discrète) ; **titre en bas-centre** en **serif** (AnthropicSerif) sur la vignette ; **status** = petite pastille couleur (In Progress / Backlog / Done / Dropped). Sans poster → carte dégradé élégante avec le titre (jusqu'à ce qu'une image soit attachée).
+- **Tri** : bascule **Score** / **Status**. Par status = sections groupées dans l'ordre **In Progress → Backlog → Done → Dropped**.
+- **+ Ajouter** (dans la catégorie voulue) : modale titre + status + score + **picker poster** (recherche API → choisis).
+- **Clic sur une œuvre** : panneau détail Notion-like (métadonnées + **éditeur markdown** de notes/commentaires).
+- **Export** : boutons CSV / MD / JSON par catégorie.
+- Polices : **serif pour les titres**, sans pour la meta. Analyser ref1/ref2 au pixel à plusieurs moments du dev.
+
+## 4. Plan séquencé (phases)
+
+- **A — Plan 1 (drive core app)** : vrai type « fichier » (icône extension + taille, plus « Média »), download 1 clic (bouton + double-clic), SFX fluide (upload chunké + éditeur de tags + preview survol/espace + durée).
+- **B — Shelf data + import** : modèle de données + import des 739 œuvres depuis les `_all.csv` → 3 manifestes commités sur GitHub (status normalisé, dédupe, `extra` par catégorie). Sans images d'abord.
+- **C — Shelf UI Apple TV** : grille + carte (spec §3) + tri score/status + panneau détail + notes markdown + export CSV/MD/JSON.
+- **D — Add-card + posters** : modale d'ajout + recherche poster via API métadonnées (+ auto-remplissage batch optionnel des 739).
+- **E — Vues Notion** : organiser Databases/Gallery + DB pouvant contenir du markdown.
+- **F — Déchiffrage site (4869)** : map crypto → gate mot de passe → lecteurs déchiffrés par type (HLS/img/audio/pdf/download). Passe DÉDIÉE (sécurité).
+- **G — Extensible** : relier les catégories (plus tard).
+
+## 5. Points d'alignement à valider (avant workflow)
+
+1. **Posters** : OK pour APIs métadonnées (TMDB/AniList/RAWG, clés gratuites, auto-fill batch + picker) au lieu d'un scrape Google littéral ?
+2. **4869 = gate mou, pas sécurité** : confirmé que tu l'assumes (déchiffrable par un motivé) → rien de vraiment sensible derrière pour le proto ?
+3. **Ordre du 1er workflow** : Shelf d'abord (import 739 + UI Apple TV) puis Plan 1 puis déchiffrage ? ou autre ?
+
+## 6. Le workflow
+
+Le workflow AUDITE/CONSTRUIT par phases, build vert + commit à chaque étape, refs relues au pixel. Phase F (déchiffrage) = passe séparée vu la sensibilité. On reste aligné entre les phases.

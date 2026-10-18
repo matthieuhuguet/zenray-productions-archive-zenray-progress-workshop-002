@@ -1,0 +1,32 @@
+# Phase C — Output (re-téléchargement de l'original)
+
+Statut : livré (images). Build vert. Voir docs/media-public-encrypted-design.md §6.3.
+
+## En clair
+
+L'utilisateur doit pouvoir récupérer son fichier d'origine. Pour une image chiffrée, télécharger le lien
+jsDelivr brut donnerait du charabia chiffré. Le bon chemin : prendre l'image DÉJÀ déchiffrée à l'écran
+(objectURL du clair), la lire en Blob, et déclencher un téléchargement navigateur avec le vrai nom + extension.
+
+Une image = un seul morceau, donc « réassembler » revient à prendre le blob tel quel. (La vidéo HLS, découpée
+en segments, a déjà son propre chemin de téléchargement, hors de ce composant.)
+
+## Fichier touché
+
+- `src/components/ImageNodeViewer.jsx` :
+  - `downloadOriginal(displayUrl, m, title)` : fetch de l'URL affichable → Blob → `<a download>` avec
+    `m.name` (+ `.ext` si absent). Pour une image chiffrée, `displayUrl` est déjà l'objectURL du clair
+    (résolu par `useResolvedFull`), donc le blob est l'image en clair. Pour une non chiffrée, c'est l'URL
+    CDN/proxy lue en blob (force le download même cross-origin, jsDelivr autorise CORS).
+  - Bouton « télécharger » ajouté dans la barre méta du viewer plein écran, à côté de « ouvrir ».
+
+## Note (refinement éventuel, hors scope strict)
+
+Le panneau de liens bruts de `DriveDashboard` (jsDelivr/curl) pointe, pour un repo public CHIFFRÉ, vers du
+ciphertext : utile pour un transfert technique, pas pour un humain. À terme, signaler « chiffré » sur ces liens
+ou proposer un export déchiffré groupé. Le chemin in-app (bouton « télécharger ») couvre le besoin utilisateur.
+
+## Vérification (phase F)
+
+- Image chiffrée : « télécharger » rend le fichier d'origine identique (octet pour octet), bon nom, bon type.
+- Image legacy/clair : « télécharger » fonctionne comme avant.

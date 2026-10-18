@@ -1,0 +1,79 @@
+# ZenRayGallery — galeries-pointeur (Design / Characters / Environments)
+
+Index de la fonctionnalité, pour retrouver rapidement le code et l'historique des retours de Matthieu
+qui l'ont façonnée. Créé le 2026-08-11, le jour même de sa construction, sur sa demande explicite
+(« l'index de la documentation par rapport à tout mes feedbacks précédents »).
+
+## Ce que c'est
+
+Une galerie-pointeur : pas une page à lire, une grille à scanner. Chaque galerie réunit des images ou
+des dossiers de Create jugés intéressants pour un usage précis — composer vite une interface (Design),
+retrouver un personnage de référence (Characters), un environnement (Environments). Alimentée
+exclusivement par clic droit sur une image ou un dossier dans Create → « Ajouter à… », même logique
+que « Envoyer vers Goals » sur une sélection de texte Markdown.
+
+## Une seule vue, un seul registre — jamais de duplication
+
+**Les trois galeries partagent EXACTEMENT le même code.** C'est une exigence explicite de Matthieu, pas
+un choix d'architecte : « les trois fonctions partagent le même code... faut bien que ce soit indexé
+dans le code ». Concrètement :
+
+- **`src/config/pointerGalleries.js`** — la SEULE source éditable. Un tableau `POINTER_GALLERIES`,
+  une entrée `{ key, label, path }` par galerie. Ajouter une quatrième galerie = ajouter une ligne ici,
+  ne JAMAIS dupliquer un composant.
+- **`src/components/GalleryView.jsx`** — la vue, paramétrée par `galleryKey` (résolu contre le registre
+  via `galleryByKey`). Rendu de la grille, lightbox, ajout/retrait — un seul fichier pour les trois.
+- **`src/components/Sidebar.jsx`** — génère les 3 entrées du drawer par `POINTER_GALLERIES.map(...)`,
+  aucune entrée codée en dur par galerie.
+- **`src/App.jsx`** — un seul `LazyGalleryView`, un seul point de rendu
+  (`POINTER_GALLERIES.some((g) => g.key === view)`), et le sous-menu clic droit « Ajouter à… » dont les
+  enfants viennent du même registre (`POINTER_GALLERIES.map(...)`).
+- **`src/i18n/dict.js`** — seule chose légitimement répétée trois fois (une traduction par langue,
+  fr/en/ja), jamais de la logique.
+
+Preuve par grep, à rejouer après toute modification :
+
+```bash
+grep -rn "'Design'\|'Characters'\|'Environments'" src --include="*.jsx" --include="*.js" \
+  | grep -v src/config/pointerGalleries.js | grep -v src/i18n/dict.js
+# doit ne rien renvoyer -- aucune référence en dur au nom d'une galerie hors du registre et des traductions
+```
+
+## Historique des retours de Matthieu
+
+Ordre chronologique, 2026-08-11. Chaque ligne est la décision prise, jamais reformulée après coup
+(append-only, comme PROGRESS.md).
+
+1. **Création (Design seul)** — référence visuelle : grille Explore Instagram (collage
+   `IMG_5065-5067_collage.png`). Positionnée juste sous Plan dans le drawer.
+2. **Vignettes cassées** — `MediaThumb` (réutilisé de `Views.jsx`) pointait l'`<img>` directement sur
+   l'URL jsDelivr de l'objet CHIFFRÉ (nos images publiques restent chiffrées AES-GCM). Corrigé avec
+   `resolveThumbUrl`/`resolveFullUrl` (`ImageNodeViewer.jsx`), les résolveurs async prévus pour un
+   usage hors-hook.
+3. **Minimalisme** — texte de présentation retiré, titre réduit à 16px/medium/gris (gabarit de l'onglet
+   inactif « Not personalized » de la référence Instagram).
+4. **Masonry → grille stricte** — « 4 img max avant retour à la ligne » : `columns` (masonry CSS, qui
+   équilibre la hauteur des colonnes) remplacé par `grid-template-columns: repeat(4, 1fr)` (vraie
+   grille, 4 par rangée en ordre de lecture).
+5. **Images 16:9 sur 2 colonnes** — décidé via `plan-then-execute` : `w/h >= 1.3` → `gridColumn: span 2`,
+   sans `grid-auto-flow: dense` (une image qui ne tient pas dans la rangée redescend nativement à la
+   ligne suivante, jamais de réordonnancement pour combler un trou).
+6. **Lightbox décalé du clic** — même bug déjà réglé sur le QuickLook de Create et la galerie de
+   partage de dossiers : `position: fixed` monté sous le conteneur défilant de la page casse dès qu'un
+   ancêtre gagne un `transform`/`filter`/`contain`. Corrigé par `createPortal` vers `document.body`.
+7. **Généralisation** — Design, Characters, Environments. Un seul registre, un seul composant (voir
+   section précédente). Les trois regroupées dans leur propre toggler « Gallery » du drawer (même
+   mécanisme que les zones Apps/Système déjà existantes), après une première version où elles
+   vivaient à plat dans la zone Create.
+
+## Fichiers
+
+| Fichier | Rôle |
+|---|---|
+| `src/config/pointerGalleries.js` | Registre unique (nom, chemin du store JSON) |
+| `src/components/GalleryView.jsx` | Vue générique (grille, lightbox, ajout/retrait) |
+| `src/components/Sidebar.jsx` | Entrées de drawer générées depuis le registre |
+| `src/App.jsx` | Rendu de vue + sous-menu clic droit « Ajouter à… » |
+| `pages/Design/design.json` | Store Design |
+| `pages/Characters/characters.json` | Store Characters |
+| `pages/Environments/environments.json` | Store Environments |

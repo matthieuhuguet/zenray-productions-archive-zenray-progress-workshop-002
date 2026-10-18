@@ -1,0 +1,81 @@
+# Parallélisation upload vidéo brute (2026-07-01)
+
+## Contexte
+
+`Scripts/upload-vidraw-all.mjs` uploadait les vidéos UNE PAR UNE (boucle `for` séquentielle, un seul shard partagé). Sur ~120 vidéos DJI (192 Go), plusieurs jours en tournant en fond. Bande passante mesurée : 149.9 Mbps de capacité uplink réelle, un seul flux séquentiel n'en utilisait que ~60 Mbps → marge réelle pour paralléliser.
+
+## Ce qui a changé
+
+### `Scripts/upload-vidraw-all.mjs`
+Remplacement de la boucle séquentielle par un pool de N workers (aucune dépendance npm ajoutée) :
+- File `queue` partagée (candidats triés court → long), chaque worker fait `queue.shift()` en boucle jusqu'à épuisement → distribution naturelle en round-robin sans double traitement.
+- `N = process.env.ZR_PARALLEL || 5`. Justifié en commentaire : 60 Mbps mesurés sur 1 flux vs 150 Mbps de capacité ⇒ 4-6 flux concurrents sature sans gaspiller (plusieurs connexions TCP montent en débit plus vite qu'une seule, donc le gain réel est meilleur que le simple ratio 2.5x).
+- Chaque worker `i` a son **propre dossier WORK** (`~/.zr-archive-work-vidraw-w${i}`) et son **propre workDir temp** (`/tmp/zr_vidraw_run_w${i}`).
+- Chaque worker a sa **propre plage de shards**, disjointe et jamais recoupée : `startShard = baseStartShard + i * 1000`.
+- `baseStartShard` n'est plus codé en dur. **Bug trouvé et corrigé pendant le test** : avec un défaut fixe à 1, le worker 0 retombait sur `zenray-vidraw-01`, un shard de PRODUCTION déjà existant et volumineux → au lieu d'en ouvrir un neuf, `makeVidRawShardCtx` le CLONAIT en entier (plusieurs Go), bloquant tout le run. Fix : découverte dynamique du plus haut numéro de shard `zenray-vidraw-NN` existant sur GitHub via l'API (`GET /users/{owner}/repos`), et démarrage juste après (`maxN + 1`). `ZR_START_SHARD` reste disponible pour forcer une valeur explicite et éviter l'appel réseau.
+- `pushBlobs` (écriture des manifestes `.media.json` sur `zenray-data`) était déjà safe en concurrence : il pousse via l'API Git Data (pas de clone git local), avec retry fast-forward sur la ref en cas de collision entre workers. Aucune modification nécessaire là-dessus.
+- Comportement conservé à l'identique : skip des vidéos déjà en ligne, tri court→long, logs `✓ EN LIGNE` / `✗ ÉCHEC` / `✓✓ BATCH ALL COMPLET`.
+
+### Pourquoi c'est sûr (pas de corruption git)
+Deux processus ne doivent jamais push dans le même clone git en même temps. Ici : N workers = N dossiers WORK totalement séparés = N clones git indépendants, aucun `git add/commit/push` partagé. Le seul point de concurrence réel (l'API `zenray-data`) est déjà géré par un retry fast-forward existant dans `pushBlobs`.
+
+## Test réel (sans toucher DJI)
+
+4 vraies vidéos H.264+AAC générées via `ffmpeg -f lavfi` (tailles distinctes 61-102 Ko, durées 4-7s), uploadées avec :
+
+```
+GITHUB_TOKEN=$(gh auth token) ZR_PARALLEL=4 node Scripts/upload-vidraw-all.mjs /tmp/zrtest-parallel "pages/_test/parallel-upload"
+```
+
+### Preuve de chevauchement temporel (logs réels)
+
+```
+[w0]   >>> shard vidéo brute zenray-vidraw-20 ouvert (nouveau)
+[w1]   >>> shard vidéo brute zenray-vidraw-1020 ouvert (nouveau)
+[w3]   >>> shard vidéo brute zenray-vidraw-3020 ouvert (nouveau)
+[w2]   >>> shard vidéo brute zenray-vidraw-2020 ouvert (nouveau)
+[w0]   faststart : index déplacé au début...
+[w1]   faststart : index déplacé au début...
+[w0] test1 — 0.00 Go, 640x480 h264, 1 parts de 95 Mo
+[w1] test2 — 0.00 Go, 640x480 h264, 1 parts de 95 Mo
+[w3]   faststart : index déplacé au début...
+[w3] test3 — 0.00 Go, 640x480 h264, 1 parts de 95 Mo
+[w2]   faststart : index déplacé au début...
+[w2] test4 — 0.00 Go, 640x480 h264, 1 parts de 95 Mo
+```
+
+Les 4 workers ouvrent leur shard et démarrent le traitement de leur vidéo **entrelacés**, avant qu'aucun n'ait terminé — chevauchement réel confirmé. Corroboré par les timestamps de création des repos GitHub (`gh repo list --json createdAt`) : `zenray-vidraw-20` à 03:46:07Z, `zenray-vidraw-1020` à 03:46:10Z, `zenray-vidraw-3020` à 03:46:14Z (worker 2 juste après), soit 3 repos créés en 7 secondes par 4 processus concurrents.
+
+Résultat final :
+```
+✓ EN LIGNE [w2] [1/4] test4.mp4 · 0:07 · 1 parts · 9s
+✓ EN LIGNE [w1] [2/4] test2.mp4 · 0:05 · 1 parts · 19s
+✓ EN LIGNE [w3] [3/4] test3.mp4 · 0:06 · 1 parts · 20s
+✓ EN LIGNE [w0] [4/4] test1.mp4 · 0:04 · 1 parts · 32s
+
+✓✓ BATCH ALL COMPLET — 4/4 vidéos uploadées (0 échec(s), le reste était déjà en ligne).
+```
+
+### Vérification d'intégrité
+
+- 4 shards GitHub distincts créés : `zenray-vidraw-20`, `zenray-vidraw-1020`, `zenray-vidraw-2020`, `zenray-vidraw-3020`.
+- `git status --porcelain` propre sur les 4 clones locaux, aucun conflit, aucune erreur git.
+- 4 manifestes `.media.json` committés sur `zenray-data` (`pages/_test/parallel-upload/testN.mp4.media.json`), tous valides et pointant vers des shards différents.
+- Chaque part vérifiée en HTTP (`raw.githubusercontent.com`) : statut 200, `content-length` byte-identique à la taille source (61952 / 75651 / 89012 / 102421 octets).
+
+### Nettoyage
+Les 4 repos GitHub de test (`zenray-vidraw-20/1020/2020/3020`) et les 4 manifestes de test sur `zenray-data` ont été supprimés après vérification. Dossiers WORK locaux nettoyés.
+
+## Problème rencontré et résolu
+
+**Bug** : premier test avec `ZR_PARALLEL=4` et `startShard = 1 + i*1000` bloqué indéfiniment. Diagnostic : le worker 0 (`i=0` → `startShard=1`) ouvrait `zenray-vidraw-01`, un shard de production déjà existant, et `makeVidRawShardCtx` le clonait entièrement (comportement normal de la fonction pour un shard déjà peuplé) au lieu d'en créer un neuf vide — plusieurs Go de clone, très lent, ressemblait à un blocage.
+
+**Fix** : découverte dynamique du prochain numéro de shard libre via l'API GitHub avant de lancer les workers, garantissant que même le worker 0 démarre toujours au-delà des shards de production existants.
+
+## Utilisation en production
+
+```
+GITHUB_TOKEN=$(gh auth token) ZR_PARALLEL=5 node Scripts/upload-vidraw-all.mjs "<racine locale>" "<préfixe dest>"
+```
+
+`ZR_PARALLEL` ajustable (5 par défaut). `ZR_START_SHARD` optionnel pour forcer une plage de départ explicite.

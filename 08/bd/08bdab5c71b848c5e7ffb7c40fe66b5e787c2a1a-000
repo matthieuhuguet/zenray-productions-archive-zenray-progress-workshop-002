@@ -1,0 +1,19 @@
+# Pipeline vidéo canonique
+
+Décision de production au 16 juillet 2026 : il n'existe plus de défaut implicite concurrent.
+
+| Cas d'usage | Écriture par défaut | Pourquoi |
+|---|---|---|
+| Archives et imports bulk | `video-raw` via `video-raw-lib.mjs` | Remux faststart lossless, aucune perte, parts privées AES-GCM, coût CPU minimal. |
+| Dépôt vidéo depuis l'UI puis worker local | `mse-av` via `video-mse-lib.mjs` | H.264/AAC inter-navigateurs, pistes audio séparées, index de fragments pour un seek déterministe. |
+| CLI manuel | `video-mse.mjs` → `video-mse-cli.mjs` | Même bibliothèque partagée, chunks hashés et commits Git batchés avec retries. |
+| Anciennes commandes `video-transcode.mjs` | Alias vers MSE | Compatibilité de commande sans réintroduire l'ancien push Git monolithique. |
+| HLS/DASH existants | Lecture et reprise explicite seulement | Les manifestes déjà publiés restent lisibles ; aucune migration destructive. |
+
+Règles anti-régression :
+
+- `video-mse.mjs` et `video-transcode.mjs` ne contiennent aucune logique de transcodage ou de push.
+- Aucun nouveau flux ne choisit HLS/DASH par défaut. Le worker n'accepte DASH qu'avec `--dash-legacy`.
+- Les anciens lecteurs HLS/DASH restent présents tant que des manifestes de ces types existent.
+- Une migration de manifeste ne se fait jamais implicitement et ne supprime jamais les binaires historiques.
+- Les tests et revues doivent refuser toute nouvelle implémentation de `pushBlobs`, `probe`, `fragIndex` ou découpage vidéo hors des bibliothèques partagées.

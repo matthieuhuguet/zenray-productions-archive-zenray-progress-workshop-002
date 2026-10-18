@@ -1,0 +1,246 @@
+# Design A — Architecture cible unifiee (priorite : reutiliser au MAX, diff minimal, zero risque 130 Go)
+
+Branche : `refactor/unified-ingest`. Refactor **additif et retrocompatible**. Aucun push, aucun deploy.
+
+Principe directeur de A : **on ne reecrit rien qui marche.** Les 3 pipelines (img / HLS / media-chunke) et les 3 viewers existants sont conserves tels quels. On ajoute UNE couche de classification partagee et UNE couche de dispatch viewer partagee, par-dessus l'existant. Le `.file.json` v4 reste lu/ecrit a l'identique : il devient simplement le **dernier recours** (vrais binaires non ouvrables), au lieu du defaut.
+
+---
+
+## 0. Diagnostic de divergence (le seul vrai bug)
+
+Il existe DEUX chemins d'ingestion qui ne partagent aucun code de classification :
+
+| | In-app (navigateur) | Bulk (`Scripts/archive-folder.mjs`) |
+|---|---|---|
+| Classifie ? | OUI via `routeFile()` (universalCapture.js:660) | NON : chunke TOUT en `.file.json` |
+| Image | `captureImage` -> `.img.json` (vignette reelle, 0 reassemblage) | chunks 19 Mo opaques |
+| Video | `captureVideoServerHls` -> `.media.json` HLS adaptatif | chunks 19 Mo opaques |
+| Audio/PDF | `captureBinaryMedia` -> `.media.json` chiffre Range | chunks 19 Mo opaques |
+| Binaire vrai | `captureBinaryMedia` famille `doc` | chunks 19 Mo opaques |
+
+Resultat : une image/video passee par le bulk perd son rendu inline et son streaming, et exige un reassemblage tout-RAM (OOM mobile). **Le fix unique : faire converger les deux chemins vers la meme fonction `classify()` ; ne descendre vers `.file.json` que pour les binaires non ouvrables.**
+
+`routeFile()` est deja un quasi-classifieur correct. On en **extrait la table de decision** en module pur, partage par les deux chemins. C'est le diff le plus petit qui resout le probleme.
+
+---
+
+## 1. ROUTEUR D'INGESTION UNIFIE
+
+### 1.1 Nouveau module pur isomorphe : `src/capture/classify.js`
+
+Module **sans I/O, sans dependance navigateur ni Node** (importable par le bundle Vite ET par un script `.mjs`). Sa seule responsabilite : decider la pipeline a partir de metadonnees legeres `{name, mime, size}`. Aucun acces fichier, aucun fetch.
+
+```js
+// src/capture/classify.js  (NOUVEAU, ~80 lignes, pur)
+export const KIND = { IMAGE:'image', VIDEO:'video', AUDIO:'audio', PDF:'pdf', TEXT:'text', BINARY:'binary' }
+
+const IMAGE_EXT = ['png','jpg','jpeg','gif','webp','avif','bmp','tiff','heic']
+const VIDEO_EXT = ['mp4','webm','mkv','avi','mov','m4v','ts','flv','wmv']
+const AUDIO_EXT = ['mp3','m4a','wav','flac','opus','oga','ogg','aac','aiff','aif','wma']
+const TEXT_EXT  = ['md','txt']
+
+export function extOf(name='', mime='') { /* copie de l'extOf existant (universalCapture.js) */ }
+
+// Decision PURE, ordre = celui de routeFile (image > audio-mime > video > text > audio-ext > pdf > binary).
+// Retourne { kind, pipeline } ; pipeline = nom symbolique consomme par chaque appelant.
+export function classify({ name, mime = '', size = 0 }) {
+  const ext = extOf(name, mime)
+  if (mime.startsWith('image/') || IMAGE_EXT.includes(ext)) return { kind: KIND.IMAGE, pipeline: 'img' }
+  if (mime.startsWith('audio/'))                            return { kind: KIND.AUDIO, pipeline: 'media' }
+  if (mime.startsWith('video/') || VIDEO_EXT.includes(ext)) return { kind: KIND.VIDEO, pipeline: 'hls' }
+  if (mime === 'text/markdown' || TEXT_EXT.includes(ext) || mime === 'text/plain') return { kind: KIND.TEXT, pipeline: 'text' }
+  if (AUDIO_EXT.includes(ext))                              return { kind: KIND.AUDIO, pipeline: 'media' }
+  if (mime === 'application/pdf' || ext === 'pdf')          return { kind: KIND.PDF, pipeline: 'media-pdf' }
+  return { kind: KIND.BINARY, pipeline: 'chunk' } // SEUL cas -> .file.json
+}
+```
+
+Pourquoi `size` dans la signature meme inutilise aujourd'hui : porte d'evolution (ex. forcer chunk pour > X Go meme classe ouvrable) sans changer la signature partout. Garde `size` optionnel.
+
+### 1.2 In-app : `routeFile()` delegue a `classify()`
+
+`src/capture/universalCapture.js:660` — **MODIFIER** `routeFile` pour qu'il n'embarque plus la cascade, mais lise le verdict de `classify()`. Le corps de chaque branche (les appels `captureImage` / `captureVideoServerHls` / `captureAudio` / `captureBinaryMedia`) **ne change pas**. On remplace seulement les `if (mime…)` par un `switch (classify(...).pipeline)`.
+
+```js
+import { classify, KIND } from './classify.js'
+
+async function routeFile(file, folder, onProgress, mode, vis) {
+  const { kind, pipeline } = classify({ name: file.name, mime: file.type || '', size: file.size })
+  switch (pipeline) {
+    case 'img':       return captureImage(file, folder, onProgress, vis)
+    case 'hls': {
+      const onLocal = /* garde localhost existante, inchangee */
+      if (onLocal) return captureVideoServerHls(file, folder, onProgress)
+      notify(/* message import video local requis, inchange */)
+      return { ok:false, type:'video-skipped', name:file.name }
+    }
+    case 'media':     return captureAudio(file, folder, AUDIO_MIME_BY_EXT[extOf(file.name,file.type)] || file.type || 'audio/mpeg', onProgress)
+    case 'text':      return captureText(file, folder, onProgress)
+    case 'media-pdf': return captureBinaryMedia(file, folder, 'application/pdf', onProgress, 'pdf')
+    case 'chunk':     return captureBinaryMedia(file, folder, file.type || 'application/octet-stream', onProgress)
+  }
+}
+```
+
+Note : in-app, le binaire vrai reste `captureBinaryMedia` famille `doc` (`.media.json` chiffre, Range streamable) — **PAS** `.file.json`. C'est volontaire et deja optimal pour l'in-app. Le `.file.json` 19 Mo reste produit **uniquement par le bulk**, ou il a un sens (git push direct, gros volumes).
+
+Diff in-app : ~20 lignes remplacees, 1 import ajoute. Comportement strictement identique (meme ordre, memes branches). Verifiable par non-regression sur le drop/paste.
+
+### 1.3 Bulk : `Scripts/archive-folder.mjs` route les ouvrables vers les vraies pipelines
+
+C'est ici que vit le bug. Aujourd'hui la boucle (L256) chunke tout. On insere AVANT le chunk (L270) un branchement sur `classify()`.
+
+Probleme concret : `captureImage` / `captureVideoServerHls` vivent dans le **bundle navigateur** (ils utilisent `crypto.subtle`, workers, `/api/upload-shard`). Le bulk est du **Node pur en git push direct**. On ne peut pas appeler les fonctions navigateur depuis Node sans portage lourd. Deux options chiffrees :
+
+**Option A1 (RETENUE, diff minimal, zero risque) — le bulk delegue les ouvrables a un sidecar Node deja existant.**
+- VIDEO : il existe deja `Scripts/video-hls.mjs` + `Scripts/video-hls-lib.mjs` (`transcodeHls`+`pushHls`), pur Node, qui produit le `.media.json` HLS. Le bulk, pour un fichier `kind===VIDEO`, **appelle ce pipeline** au lieu de chunker, et ecrit un `.media.json` (pas `.file.json`).
+- IMAGE : creer un petit sidecar Node `Scripts/img-ingest.mjs` qui REPLIQUE la logique `captureImage` cote Node (sha256 -> chemin `ab/cd/<sha>.<ext>`, AES-GCM IV deterministe, vignette webp via ffmpeg local x16 deja utilise par `archive-thumbs.mjs`, push shard img public, ecrit `.img.json` v1). Reutilise les primitives crypto Node (`createCipheriv aes-256-gcm`) et le ffmpeg local deja en place. ~150 lignes, isofonctionnel au format `.img.json` (audit-image : schema fige, a respecter au champ pres).
+- AUDIO/PDF : le bulk peut soit chunker (acceptable, deja streamable cote viewer chunk), soit deleguer a un sidecar media. **Defaut A1 : audio/pdf -> sidecar media chiffre si dispo, sinon chunk**. Pour limiter le diff initial, **audio/pdf -> chunk `.file.json` en phase 1**, migration sidecar en phase 2 (le viewer chunk les ouvre deja).
+- BINARY : inchange -> chunks 19 Mo `.file.json` (le coeur actuel d'`archive-folder.mjs`, intact).
+
+Cout A1 : ~150 l (`img-ingest.mjs`) + ~40 l de cablage dans `archive-folder.mjs`. Reutilise `video-hls-lib`, ffmpeg local, primitives shard. **Aucune dependance navigateur portee.**
+
+**Option A2 (rejetee ici) — headless browser pour rejouer `captureImage`/`captureVideoServerHls` tels quels.** Garantit 1 seul code path image/video. Mais ajoute Puppeteer/Playwright + serveur local obligatoire pendant tout le bulk de 130 Go. Risque et lourdeur incompatibles avec "zero risque, diff minimal". A garder en note si un jour la duplication img Node/navigateur diverge.
+
+Cablage bulk (insertion AVANT L270, dans la boucle `for (const f of files)`) :
+
+```js
+import { classify, KIND } from '../src/capture/classify.js'   // module PUR -> importable Node
+import { ingestImageNode } from './img-ingest.mjs'            // NOUVEAU sidecar
+import { ingestVideoNode } from './video-hls-lib.mjs'         // wrapper autour de transcodeHls+pushHls
+
+const { kind } = classify({ name: f.rel, mime: mimeOf(f.rel), size: curSize })
+
+if (kind === KIND.IMAGE) {
+  // produit .img.json + binaire hash + vignette webp ; PAS de chunk
+  await ingestImageNode(f.abs, destNodeFor(f.rel)); done++; continue
+}
+if (kind === KIND.VIDEO) {
+  await ingestVideoNode(f.abs, destNodeFor(f.rel)); done++; continue   // .media.json HLS
+}
+// kind AUDIO/PDF (phase 1) et BINARY -> chunk .file.json  (code actuel inchange a partir d'ici)
+```
+
+Garde-fous bulk respectes : push = git push (pas REST), shards <= 5 Go (rollover deja la pour chunk ; `img-ingest`/`video` reutilisent les caps des pipelines respectives), P0 anti-fuite (chemins hashes, jamais de nom media dans commits — `img-ingest` ecrit `ab/cd/<sha>.<ext>`, HLS ecrit segments par SHA, deja conforme).
+
+### 1.4 Mobile : meme `classify()`, meme `captureFiles()`
+
+L'upload mobile n'existe pas aujourd'hui (audit-mobile manque n1). On l'ajoute en **reutilisant `captureFiles()`** (universalCapture.js:739, pool 4) — donc il herite automatiquement de `routeFile` -> `classify`. Zero routeur mobile dedie. Detail UI en section 3.
+
+Contrainte video mobile : `captureVideoServerHls` exige localhost. Hors localhost, `classify` renvoie quand meme `VIDEO`, mais `routeFile` retombe sur le message "import video local requis" deja existant. Mobile en prod -> image/audio/binaire OK, video differee (note a l'utilisateur). Pas de regression : c'est le comportement actuel.
+
+---
+
+## 2. VIEWER UNIFIE
+
+### 2.1 Le dispatch existe deja — on le centralise, on ne le reecrit pas
+
+Aujourd'hui le dispatch est par `typeOfPath()` (node.js:6) puis un `switch` duplique (App.jsx:2804 + clone QuickLook). Cible : **UN composant** `UnifiedViewer` qui encapsule ce switch, appele aux deux endroits. Les viewers feuilles existants (`ImageNodeViewer`, `MediaViewer`, `FileNodeViewer`) **ne changent pas** : `UnifiedViewer` ne fait que router vers eux.
+
+```jsx
+// src/create/UnifiedViewer.jsx  (NOUVEAU, ~40 lignes, pur dispatch)
+import { typeOfPath } from './node.js'
+export function UnifiedViewer({ path, node, ...props }) {
+  switch (typeOfPath(path)) {
+    case 'image': return <ImageNodeViewer path={path} {...props} />
+    case 'media': return <MediaViewer path={path} {...props} />   // re-route interne video/audio/pdf existant
+    case 'file':  return <FileNodeViewer path={path} {...props} />// archive chunk : RETROCOMPAT v2/v3/v4
+    default:      return <PageOrFolderView path={path} {...props} />
+  }
+}
+```
+
+- `App.jsx:2804` et le clone QuickLook : **REMPLACER** les deux switch dupliques par `<UnifiedViewer .../>`. Diff : -2 blocs dupliques, +1 import. Comportement identique.
+- **RETROCOMPAT NON NEGOCIABLE** : `typeOfPath('.file.json') -> 'file'` reste, `FileNodeViewer` garde `chunkRefs(m)` aplatissant `parts[]` (v4) avec fallback mono-shard v2/v3, `versionsOf`, `mode raw+chunked`. Les 130 Go DJI s'ouvrent a l'identique. Le refactor du viewer est purement une **factorisation de l'aiguillage**, pas une touche aux lecteurs.
+
+### 2.2 Dedup des helpers chunk (qualite, pas fonctionnel)
+
+`chunkRefs` / reassemblage sont dupliques dans `FileNodeViewer.jsx` ET `DownloadsView.jsx` (audit-archive). Extraire un module partage `src/create/chunkAssembly.js` (`chunkRefs(manifest)`, `versionsOf`, `assembleChunks(refs, {stream})`). Les deux fichiers l'importent. **Aucun changement de format**, pure deduplication. A faire en phase 2 (non bloquant).
+
+### 2.3 Download streame (corrige l'OOM mobile)
+
+`assembleChunks` recoit une option `stream` : si `window.showSaveFilePicker` (File System Access API) dispo -> ecrit chunk par chunk dans le fichier cible (RAM bornee). Fallback `new Blob(parts)` (comportement actuel) si l'API absente. Resout l'OOM iPhone sur gros `.file.json` sans casser le desktop. S'applique aussi aux images/HLS qui n'en ont pas besoin (1 blob / segments).
+
+---
+
+## 3. PLAN MOBILE (iPhone 15 Pro, ~390px)
+
+### 3.1 Upload trivial (manque n1) — `MobileUploadButton`
+
+Nouveau composant FAB (bouton flottant coin bas-droit, liquid glass, accent coral #cc7c5e). Contient UN input universel :
+
+```jsx
+<input type="file" multiple
+  accept="image/*,video/*,audio/*,application/pdf,*/*"
+  // capture omis sur l'input galerie ; un 2e bouton "camera" porte capture="environment"
+  onChange={e => runCapture([...e.target.files], currentFolder)} />
+```
+
+- Reutilise `runCapture` (App.jsx:2004) -> `captureFiles` -> `routeFile` -> `classify`. **Zero nouvelle pipeline.**
+- 2e affordance : bouton camera (`capture="environment"`) pour photo/video directe.
+- 3e affordance : **Web Share Target** (manifest PWA) — partager depuis Photos/Files iOS vers l'app. Entree -> meme `captureFiles`.
+- `navigator.share` sortant pour partager un node depuis l'app.
+- Corrige aussi le bug actuel : le seul input du menu + est `accept="video/*"` (App.jsx:2587) — l'input universel le remplace cote mobile.
+
+### 3.2 Download iOS
+
+`a.download` cross-origin (raw.githubusercontent) est ignore par Safari. Pour mobile : passer par `assembleChunks({stream:true})` (File System Access si dispo) ou, a defaut iOS, ouvrir le blob dans un nouvel onglet + `navigator.share({files})` pour "Enregistrer dans Fichiers". Images/HLS : deja servis web, lien direct OK.
+
+### 3.3 Streaming sur machine faible
+
+Deja resolu structurellement : sortir image/video de l'archive (section 1.3) leur rend HLS adaptatif + img servie web. C'est l'argument central du refactor pour le mobile. Rien a ajouter cote lecture HLS (deja adaptatif, hls.js + Safari natif). Verifier seulement les controles `HlsVideo` a 390px (3.4).
+
+### 3.4 Responsive ~390px (audit-mobile)
+
+- `index.html` : `<meta viewport viewport-fit=cover>` + `env(safe-area-inset-*)` (notch/home bar).
+- Constante `IS_PHONE` + breakpoint 480 (en plus du 860 existant). Clamp du zoom Finder (App.jsx:840 `cols`) : forcer min colonnes / max zoom a 390px (les 132 par defaut donnent 2-3 colonnes geantes).
+- Viewers : `MediaViewer maxWidth 980 -> 100vw` sur mobile ; menus `HlsVideo` (coin) -> **bottom-sheet** cibles >=44px ; boutons <44px agrandis.
+- Drive/Archives : grilles `minmax(240px,1fr)` -> `1fr` sous 480 ; blocs `curl`/mono en `overflow-x:auto` (anti-debordement).
+- Editeur BlockNote : padding reduit, deja fonctionnel.
+- Design : liquid glass, accent coral + gris, polices Anthropic graisses <= Medium, zero em-dash/pipe dans titres.
+
+---
+
+## 4. RECAP : QUOI CREER / MODIFIER / GARDER
+
+### CREER
+- `src/capture/classify.js` — routeur pur isomorphe `classify({name,mime,size}) -> {kind,pipeline}`. Coeur du refactor.
+- `Scripts/img-ingest.mjs` — sidecar Node : image -> `.img.json` v1 + binaire hash + vignette webp (reutilise ffmpeg local + crypto Node). Isofonctionnel au format img existant.
+- `src/create/UnifiedViewer.jsx` — dispatch viewer centralise (router vers les 3 viewers existants).
+- `src/create/chunkAssembly.js` (phase 2) — `chunkRefs`/`versionsOf`/`assembleChunks(stream)` dedupliques.
+- `src/mobile/MobileUploadButton.jsx` — FAB input universel + camera + share, branche sur `runCapture`.
+- Manifest PWA + Web Share Target (phase mobile).
+
+### MODIFIER (diff minimal, comportement identique)
+- `src/capture/universalCapture.js` `routeFile()` (660) — delegue a `classify()`, branches inchangees. ~20 l.
+- `Scripts/archive-folder.mjs` boucle (256, avant 270) — branchement `classify` : IMAGE -> `ingestImageNode`, VIDEO -> `ingestVideoNode`, AUDIO/PDF/BINARY -> chunk actuel inchange. ~40 l.
+- `Scripts/video-hls-lib.mjs` — exporter un wrapper `ingestVideoNode(abs,dest)` autour de `transcodeHls`+`pushHls` (re-export, pas de reecriture).
+- `App.jsx:2804` + clone QuickLook — remplacer les 2 switch par `<UnifiedViewer/>`.
+- `App.jsx:2587` — input + : `accept` universel cote mobile.
+- `index.html` — viewport-fit cover, safe-area, media-queries 480, clamp zoom.
+- `FileNodeViewer.jsx` + `DownloadsView.jsx` (phase 2) — importer `chunkAssembly` au lieu du code duplique ; download `stream:true`.
+
+### GARDER INTACT (retrocompat non negociable)
+- Format `.file.json` v4 (`parts[]`, `versions[]`, v2/v3/v4) — lecture ET ecriture inchangees pour le binaire.
+- `typeOfPath()` registre (`.file.json -> file`), `chunkRefs`, `versionsOf`, `mode raw+chunked`.
+- `captureImage`, `captureVideoServerHls`, `captureAudio`, `captureBinaryMedia` — coeurs des pipelines, zero touche.
+- Schemas `.img.json` v1, `.media.json {type:'hls'}`, primitives shard (`activeShard/putBlob/commitShard/writeNode`), resolveur URL img, `HlsVideo`, `/api/stream`.
+- Sidecars `archive-thumbs.mjs`, `archive-organize.mjs`. Cache `zrfm5:`, regroupement `ARCHIVE_PARENTS`, union index CDN.
+- 130 Go DJI deja en ligne : s'ouvrent et se telechargent exactement comme avant. **Le refactor n'ecrit jamais sur les manifestes existants ; il change seulement ce que produisent les NOUVELLES ingestions.**
+
+---
+
+## 5. SEQUENCE D'EXECUTION (par valeur decroissante / risque croissant)
+
+1. **`classify.js`** + brancher `routeFile` dessus (in-app). Non-regression drop/paste. Risque ~0. Debloque le partage.
+2. **Bulk video** -> `ingestVideoNode` (reutilise `video-hls-lib`, deja prouve). Gros gain immediat (les videos DJI futures deviennent streamables).
+3. **`img-ingest.mjs`** + bulk image -> `.img.json`. Gain : vignettes reelles, 0 reassemblage.
+4. **`UnifiedViewer`** (factorisation viewer). Risque ~0, comportement identique.
+5. **Mobile** : `MobileUploadButton` + responsive 390px + download streame. Manque n1 d'abord.
+6. **Phase 2 qualite** : `chunkAssembly` dedup, audio/pdf bulk -> sidecar media, PWA share target.
+
+Chaque etape : build vert + commit sur `refactor/unified-ingest`, jamais de push.
+
+### Arbitrage cle assume
+
+A choisit **A1 (sidecars Node, duplication img controlee)** plutot que **A2 (headless browser, 1 seul code path)**. Raison : "zero risque pour 130 Go + diff minimal" prime. Le cout de A1 = un `img-ingest.mjs` a garder synchrone du format `.img.json` (4 miroirs thumb deja signales par audit-image, invariant "search-8" a respecter). Acceptable et explicite. Si la divergence img Node/navigateur devient douloureuse, basculer en A2 plus tard sans rien jeter de A1.

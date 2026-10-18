@@ -1,0 +1,31 @@
+# Phase F — Vérification go/no-go
+
+Date : 2026-06-02. Voir docs/media-public-encrypted-design.md §10.
+
+## Résultat : GO sur code + build + audit P0. Reste UNE confirmation navigateur avant la migration --apply.
+
+## Checklist critères d'acceptation
+
+| Critère | État | Preuve |
+|---|---|---|
+| Upload → image chiffrée sur repo public, chemin hashé, manifest iv/alg | GO (code) | captureImage : shardPathFor `ab/cd/<sha256>.ext`, manifest {vis:public, cdnRepo, cdnPath, cdnCommit, iv, thumbIv, alg}. Commit 6bee7b5 |
+| Affichage déchiffré sans refresh (vignette + plein écran + recherche + copie) | GO (code) | ImageNodeViewer isEncrypted + hooks useResolved* + useResolvedDirectThumb. Commit 81c95cf |
+| Re-téléchargement = fichier d'origine identique, bon nom/type | GO (code) | downloadOriginal (un blob, clair déchiffré). Commit f43843f |
+| Images legacy privées toujours affichées (rétro-compat) | GO (code) | branche `vis==='public' && iv` ; sans iv = chemin synchrone d'origine intact |
+| Migration DRY-RUN liste sans rien toucher | GO (code) | scripts/migrate-encrypt-public.mjs DRY-RUN défaut. Commit 3f2d519. Test croisé Node/WebCrypto = ciphertext identique octet-pour-octet |
+| Recherche : vignettes via CDN chiffré, zéro API REST | GO (code) | index {u, iv} (build-search-index.mjs + page.js). Commit 35f3e37 |
+| Build npm run build vert | GO | build OK (3.0s) |
+| Clé absente de tout commit, .zenray-media-key gitignored | GO | git ls-files / git log -p : clé jamais trackée ni historisée ; valeur absente des fichiers suivis |
+| Aucun nom de média humain sur repo public | GO | chemins hashés uniquement |
+| **Test navigateur réel : upload → affichage déchiffré → download identique** | **PENDANT** | nécessite une action UI sur localhost:3100 — non vérifiable en headless avec certitude |
+
+## Décision migration --apply (tâche G)
+
+Le code, le build et l'audit P0 sont GO. Le test croisé Node↔WebCrypto prouve que le script de migration écrit
+exactement ce que l'app sait lire. La SEULE chose non confirmée automatiquement est le test navigateur de bout en
+bout (upload réel d'une image → elle s'affiche déchiffrée → re-téléchargement identique).
+
+Recommandation : **NE PAS lancer --apply sur les 30 Go avant cette confirmation navigateur** (P0 standing :
+bulk --apply manuel + ne pas re-chiffrer à l'aveugle). Une fois Matthieu confirme l'upload/affichage/download
+d'UNE image en local, --apply peut partir (les originaux sont conservés, opération non destructive + trace
+rollback).

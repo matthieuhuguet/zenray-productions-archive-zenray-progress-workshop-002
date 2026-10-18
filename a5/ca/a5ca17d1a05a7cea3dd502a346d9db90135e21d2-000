@@ -1,0 +1,82 @@
+# Phase A — Upload chiffré (captureImage)
+
+Statut : **TERMINÉ**, build vert. Date : 2026-06-02. Agent : builder-1.
+Fichier touché : `src/capture/universalCapture.js` UNIQUEMENT.
+
+## Ce qui en une phrase
+
+Quand on importe une image en mode `vis='public'`, on chiffre désormais les octets (image + vignette)
+côté navigateur AVANT de les pousser sur le shard public. Le repo public ne reçoit que du ciphertext ;
+le manifest porte les infos pour déchiffrer à l'affichage. Le flux privé legacy est strictement inchangé.
+
+## Ce qui a changé dans `captureImage`
+
+1. Import ajouté : `getMediaKey` depuis `src/media/crypto.js`.
+2. Trois helpers ajoutés en haut du module (près de `shardPathFor`) :
+   - `deriveIvBytes(hashHex)` : prend les 12 premiers octets (24 chars hex) du SHA-256 → IV de 12 octets.
+   - `b64FromBytes(u8)` : base64 d'un Uint8Array (chunké pour éviter le dépassement d'arguments).
+   - `encryptBytesDeterministic(arrayBuffer, hashHex)` : chiffre AES-GCM via `getMediaKey()` avec l'IV
+     DÉRIVÉ → `{ cipher, iv: base64 }`. Déterministe : même clair = même ciphertext.
+3. Branche `isPublic` dans `captureImage` :
+   - binaire : `encryptBytesDeterministic(ab, hash)` → on pousse le ciphertext (au lieu du clair).
+   - vignette : on calcule le SHA-256 de SON clair, on chiffre avec son propre IV dérivé, on pousse le ciphertext.
+   - manifest public enrichi : `{ vis:'public', cdnRepo, cdnPath, cdnCommit, alg:'AES-GCM', iv, thumbIv? }`.
+     `thumbIv` n'est présent que si une vignette a bien été chiffrée et poussée.
+   - branche privée : inchangée (`{ vis:'private', repo, path }`, octets bruts).
+
+## Décisions
+
+- **IV déterministe dérivé du hash du CLAIR (choix retenu du brief §6.1).** Raison : préserver la dédup
+  GitHub (même clair → même ciphertext → même blob sha → GitHub dédoublonne) et rendre la migration
+  idempotente. L'IV n'est pas secret ; sa seule contrainte (unicité par fichier sous la même clé) tient
+  car deux clairs distincts ont des SHA-256 distincts.
+- **On chiffre via `getMediaKey()` directement, pas via `encryptBytes()` de crypto.js.** Raison :
+  `encryptBytes()` tire un IV ALÉATOIRE, incompatible avec la dédup voulue. On n'a PAS modifié crypto.js
+  (consigne : ne toucher que `universalCapture.js`).
+- **Le chemin (`cdnPath`) reste l'adresse de contenu du CLAIR** (`shardPathFor(hash, ext)`), identique
+  privé/public/migration. Le blob qui y vit diffère (cipher vs clair) mais le chemin logique est stable :
+  c'est ce qui permet à la migration (§6.4) de réécrire « au même chemin hashé ».
+- **Vignette chiffrée avec son propre IV** (hash de la vignette, pas de l'image) : la vignette est un
+  contenu distinct, elle a donc un hash et un IV distincts.
+
+## P0 respectés
+
+- Chemins HASHÉS uniquement (`ab/cd/<sha>.<ext>`), zéro nom humain sur le repo public.
+- Jamais de plaintext poussé sur public (binaire ET vignette chiffrés).
+- Clé maître jamais committée (récupérée à l'exécution via `getMediaKey()` → `/api/media-key`).
+- Rétro-compat : manifests legacy sans `iv` non touchés ; branche privée bit-pour-bit identique.
+
+## Contrat pour les phases aval (B affichage, C output, D migration, E index)
+
+Manifest image public produit par cette phase :
+
+```json
+{
+  "type": "image", "v": 1, "name": "<humain, vit dans le manifest privé zenray-content>", "ext": "...",
+  "w": 0, "h": 0, "size": 0, "tags": [], "addedAt": "ISO",
+  "vis": "public",
+  "cdnRepo": "zenray-img-public-NN",
+  "cdnPath": "ab/cd/<sha256-du-clair>.<ext>",
+  "cdnCommit": "<sha commit, pin jsDelivr>",
+  "alg": "AES-GCM",
+  "iv": "<base64 12 octets, IV du binaire>",
+  "thumbIv": "<base64 12 octets, IV de la vignette — ABSENT si pas de vignette>"
+}
+```
+
+- URL ciphertext binaire : `buildJsDelivrUrl(cdnRepo, cdnCommit, cdnPath)`.
+- URL ciphertext vignette : `buildJsDelivrUrl(cdnRepo, cdnCommit, <cdnPath avec ext .webp>)`
+  (= `shardPathFor(hashDuClair, 'webp')` = mêmes `ab/cd/` + même `<sha>` mais extension `.webp`).
+- Déchiffrement : `decryptToObjectUrl(cipher, iv, mime)` pour le binaire, idem avec `thumbIv` + `image/webp`
+  pour la vignette.
+- Détection public/legacy : présence du champ `iv` (ou `vis === 'public'` + `cdnRepo`). Si absent →
+  comportement legacy (servi par `/api/shard`, octets clairs).
+
+## Points ouverts
+
+- La phase B (affichage) doit reconstruire le chemin `.webp` de la vignette à partir de `cdnPath` (remplacer
+  l'extension par `.webp`). Le manifest ne stocke pas explicitement `cdnThumbPath` ; il est dérivable car le
+  hash dans le chemin est commun. Si B préfère un champ explicite, à coordonner avec le team-lead (ce serait
+  une modif de ce contrat de manifest, donc un re-pass sur cette phase).
+- Aucune image publique n'a encore été produite en vrai (pas de déploiement). La validation bout-en-bout
+  (upload → affichage → download identique) est du ressort de la phase F (test navigateur).

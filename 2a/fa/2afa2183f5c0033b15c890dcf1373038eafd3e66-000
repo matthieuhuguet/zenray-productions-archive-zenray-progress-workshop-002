@@ -1,0 +1,43 @@
+# Icônes lecteur, badge retiré, commentaires vidéo (2026-07-01)
+
+## 1. Icônes
+
+`src/components/Icon.jsx` étendu (pas de système parallèle) :
+- `speaker.wave.0` (muet visuel sans slash), `fullscreen.enter` / `fullscreen.exit` (4 flèches symétriques, façon SF Symbols), `bubble.left.fill` (non utilisée finalement, `bubble.left` outline suffisait au toggle).
+
+`VideoPlayer2.jsx` : toutes les icônes des contrôles (`play.fill`, `pause`, `speaker.wave.2/1`, `speaker.slash`, `gearshape`, `fullscreen.enter/exit`) reçoivent `color="#fff"` + `style={ICON_SHADOW}` (`filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5))`), constante ajoutée en bas du fichier. Vérifié via `preview_inspect` : le filtre est bien appliqué sur le SVG rendu.
+
+Volume : 3 états visuels (`speaker.wave.2` fort, `speaker.wave.1` faible <0.5, `speaker.slash` muet), au lieu de 2 avant.
+
+Plein écran : `fullscreen.enter`/`fullscreen.exit` selon `full`, remplace l'icône unique `arrow.up.left.and.arrow.down.right` qui ne changeait jamais visuellement en sortie de plein écran.
+
+Centrage vérifié par capture d'écran sur une vraie vidéo (page `/watch`) : boutons alignés, pas de décalage optique.
+
+## 2. Badge retiré
+
+Le seul badge « icône + info superposée sur le lecteur lui-même » identifié dans `VideoPlayer2.jsx` et son wrapper `MediaViewer.jsx` était le **badge CDN** (`MediaViewer.jsx`, ~ligne 225-232 avant retrait) : pastille colorée + texte `raw.github` / `jsDelivr`, en `position: fixed, right: 12, bottom: 44`, flottant par-dessus tout l'écran dès qu'une vidéo streamable était ouverte. Retiré intégralement.
+
+Recherche effectuée avant suppression : aucun autre rendu icône+durée en overlay du `<video>` n'existe dans `VideoPlayer2.jsx` (grep sur `fmt(dur)`, `position: absolute` + `top`). Le vrai badge durée+vignette est dans `SharedFolderPage.jsx` ligne 58 (carte galerie de dossier partagé) — **non touché**, conforme à la consigne.
+
+## 3. Toggle Commentaires
+
+UI : bouton texte discret « Commentaires (n) » sous le bloc titre/auteur, icône `bubble.left` + chevron, transition `max-height`/`opacity` 0.2s. Formulaire Nom + textarea + bouton Envoyer (accent). Liste : nom en gras + horodatage relatif + texte, sans avatar.
+
+Backend, patron Git Data API (comme `page.js`, pas de DB) :
+- `server/video-comment.js` — GET (`?videoPath=`) lit `pages/_comments/<sha256(videoPath).slice(0,24)>.json` via `raw.githubusercontent.com` (hors quota REST) ; POST (`{videoPath,name,text}`) fait un read-modify-write avec retry sur 409/422 (HEAD qui bouge), append borné à 500 entrées.
+- Câblé dans `api/[...route].js` : import + entrée `'video-comment': videoCommentHandler` + **une seule ligne ajoutée** dans `authOk()` (`if (name === 'video-comment') return true`), route publique explicite pour que le lien `/watch` fonctionne sans mot de passe. Aucune autre ligne du fichier touchée.
+
+Vérifié en conditions réelles (repo `zenray-data`, pas de mock) sur `/watch?v=...` : POST → 200 `{ok:true}` → commit confirmé côté GitHub → GET après propagation cache `raw.githubusercontent.com` (~5-10 s, comportement déjà présent ailleurs dans le repo) → commentaire affiché avec horodatage relatif « il y a 1 min ». Commentaire de test supprimé après vérification (`DELETE` API GitHub, commit `cleanup test comment (QA)`).
+
+`shared` (page `/watch`, sans mot de passe) fonctionne à l'identique du lecteur normal : `path` déjà transmis par `ShareVideoPage.jsx`, et la route serveur est publique.
+
+## 4. Build
+
+`npm run build` vert (aucune régression). Pas de commit ni push effectué (consigne).
+
+Fichiers modifiés/créés :
+- `src/components/Icon.jsx`
+- `src/components/VideoPlayer2.jsx`
+- `src/components/MediaViewer.jsx`
+- `api/[...route].js`
+- `server/video-comment.js` (nouveau)

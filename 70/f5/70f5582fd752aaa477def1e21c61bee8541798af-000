@@ -1,0 +1,291 @@
+# Architecture ZenRayProgress
+
+Document de référence pour transformer l'app actuelle (une drive markdown sur GitHub, 6 vues dans un seul `App.jsx`) en un Notion personnel complet : éditeur de pages riche, bases de données, galerie d'images, et import de l'export Notion existant.
+
+Principe directeur tout au long : **ne rien casser de l'existant**, ajouter par vues neuves, garder GitHub comme source de vérité.
+
+---
+
+## 1. Éditeur de pages
+
+### Librairie choisie
+
+**BlockNote** : `@blocknote/core` + `@blocknote/react` + `@blocknote/mantine` (cœur sous licence MPL-2.0).
+
+On évite **tous** les paquets `@blocknote/xl-*` (GPL-3.0 ou payants), **sauf** `xl-multi-column` qui reste tolérable en repo perso privé non distribué, si les colonnes multiples deviennent un jour indispensables.
+
+### Licence (le piège à connaître)
+
+Le cœur (`core` / `react` / `mantine` / `shadcn`) est en **MPL-2.0** : usage commercial + code fermé autorisés. Parfait pour une app perso privée.
+
+Le piège : les paquets `xl-*` (colonnes multiples avancées, export PDF/Word, fonctions IA) sont en **GPL-3.0 ou licence commerciale payante**. On ne les installe pas. L'export n'est de toute façon pas un besoin : on persiste déjà en markdown sur GitHub.
+
+### Pourquoi BlockNote et pas un autre
+
+C'est la seule librairie qui livre l'expérience **1:1 Notion déjà câblée** : slash menu, poignée de glissement (drag handle), titres, todo, toggle, callout, citation, code, table, image, mentions de page. Avec sérialisation **markdown ET JSON** native, orientée React, tourne sous Vite.
+
+Tiptap / Lexical / Plate sont des boîtes à outils nues : il faudrait écrire 60-70 % de code de liaison maison, pas 20 %. BlockNote est construit **sur** Tiptap + ProseMirror mais fait l'interface Notion à notre place. Projet très actif (v0.51.x en mai 2026).
+
+### Installation
+
+```bash
+npm i @blocknote/core @blocknote/react @blocknote/mantine
+```
+
+Importer **obligatoirement** `@blocknote/mantine/style.css`, sinon l'éditeur est cassé visuellement.
+
+Client-only : monter l'éditeur uniquement côté navigateur. En SPA Vite c'est natif, pas de SSR à gérer.
+
+### Limites connues (gaps) à anticiper
+
+1. **Le round-trip markdown est volontairement avec pertes (lossy)** : couleurs de fond, blocs custom riches, imbrications exotiques ne survivent pas à l'aller-retour markdown. On reste sur CommonMark + GFM (titres, listes, tâches, tables, code, citations, liens, images, gras/italique/barré), ce qui suffit largement à la direction artistique minimaliste.
+2. **Embed / transclusion d'une page dans une autre** = pas natif. C'est du code maison : un bloc custom `pageRef` qui va chercher et affiche le contenu de l'autre page.
+3. **`uploadFile`** = callback à brancher manuellement sur l'API image existante (`/api/img`).
+4. **Polices** : surcharger via les variables CSS de BlockNote (`--bn-font-family`), jamais via un `!important` global, sinon ça casse le slash menu et la barre d'outils.
+
+---
+
+## 2. Bases de données
+
+### Approche
+
+Modèle JSON « à la Notion » : chaque base de données = **un fichier JSON** dans le repo `zenray-content` (ex. `databases/tasks.json`) décrivant des propriétés typées + options + vues.
+
+La **logique** (tri, filtre, groupement, colonnes typées) vient de **TanStack Table** (headless = sans interface imposée, on rend chaque cellule en JSX, donc polices Anthropic et sobriété sans se battre contre un thème).
+
+Le **kanban / board** vient de **@dnd-kit** (glisser une carte entre colonnes select).
+
+Une même source `data + columns` alimente **4 vues** : table, list, gallery (on change le composant qui rend une ligne) et board (on groupe par une colonne select).
+
+### Librairies
+
+- `@tanstack/react-table` (MIT, ~45 KB) — logique table / list / gallery
+- `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities` (MIT) — kanban
+- `@tanstack/react-virtual` (MIT) — **seulement** si une DB dépasse ~500 lignes (peu probable)
+
+Écartés et pourquoi :
+- **AG Grid** : look Excel, fonctions clés payantes (Enterprise)
+- **MUI X DataGrid** : open-core, pinning/grouping payants, esthétique Material
+- **Glide** : rend en canvas = perte du DOM, donc impossible d'avoir les polices Anthropic cellule par cellule
+- **react-beautiful-dnd** : déprécié par Atlassian, pas de React 19. Si on a vraiment besoin de son API exacte, le fork vivant est `@hello-pangea/dnd`
+
+### Modèle de stockage
+
+Un fichier JSON par DB dans `zenray-content/databases/<id>.json`. Schéma calqué sur Notion :
+
+```json
+{
+  "id": "...",
+  "name": "...",
+  "properties": {
+    "<propId>": { "id": "...", "name": "...", "type": "...", "options": [] }
+  },
+  "rows": [ { "id": "...", "<propId>": "valeur" } ],
+  "views": [
+    { "id": "...", "name": "...", "type": "table|board|gallery|list",
+      "visibleProps": [], "filters": [], "sort": [], "groupBy": "..." }
+  ]
+}
+```
+
+Types de propriété : `text`, `number`, `select`, `multi_select`, `date`, `checkbox`, `relation` (vers une autre DB).
+
+CRUD via la même mécanique que les pages markdown : une nouvelle action dans `/api`, ou réutiliser `api/page.js` généralisé en `api/file.js` pour gérer tout fichier de la drive.
+
+Source de vérité = le JSON commité sur GitHub, sans perte (lossless).
+
+---
+
+## 3. Import de l'export Notion (`build.zip`)
+
+### Format d'export
+
+`build.zip` externe = un wrapper en mode « stored » (non recompressé) contenant **un seul** zip interne `ExportBlock-*.zip` (2,7 Go, 9684 entrées), avec une racine unique `Build/`. Extraire seulement l'interne suffit.
+
+Décompte : 6020 `.md` (pages), 609 `.csv` (databases, dont 290 paires `_all.csv`), ~3000 médias (2628 png, 279 jpg, 25 webp, 3 avif, gif/svg), 45 pdf, 34 fichiers audio/vidéo. Imbrication jusqu'à **16 niveaux**.
+
+Conventions Notion à connaître :
+- Chaque page = `Nom <hash32>.md` où `hash32` = UUID Notion sans tirets
+- Page avec enfants = un dossier frère, même nom + hash
+- DB = `Nom <hash>.csv` (vue résumée, souvent juste la colonne Name) + `Nom <hash>_all.csv` (toutes colonnes / lignes) + un dossier homonyme où chaque `.md` = une ligne
+- Liens internes = `[Texte](Chemin%20Relatif%20<hash>.md)`, URL-encodés
+- Médias posés à plat à côté du `.md` qui les référence
+
+### Parseur
+
+Porter la **logique** (ne pas installer comme dépendance) du dossier `src/formats/notion/` de **obsidianmd/obsidian-importer** (MIT, la référence éprouvée mondialement sur ce format).
+
+Librairies réellement installées :
+- `papaparse` (MIT) — lire les CSV : virgules échappées, multi-lignes, UTF-8, BOM à stripper
+- `unified` / `remark-parse` / `remark-gfm` / `remark-frontmatter` (MIT) — parser le markdown en AST
+
+À éviter : `notion-to-md` / `n2y` / `notion2md` — ils partent de l'API Notion, pas du ZIP.
+
+**Parseur en 6 passes :**
+
+1. **Indexer** : décompresser, parcourir récursivement, regex `/^(.*) ([0-9a-f]{32})(\.\w+)?$/`, construire la map `uuid → entrée`.
+2. **Reconstruire l'arbre** : dossier `X<uuid>/` + fichier `X<uuid>.md` = la même page ; le contenu du dossier = ses enfants.
+3. **Parser chaque page** : séparer le bloc de propriétés en-tête (H1 + lignes `Clé: Valeur`) du corps.
+4. **Parser les `_all.csv`** (jamais le `.csv` résumé).
+5. **Indexer les médias.**
+6. **Re-résoudre les liens internes** : décoder `%20`, mapper `hash → nouvel ID`.
+
+### Mapping vers la nouvelle structure
+
+- **Pages Notion** → fichiers markdown dans `zenray-content/pages/` (ou un sous-arbre miroir de la hiérarchie Notion, pour préserver l'ordre actuel demandé par Matthieu).
+- **Databases `_all.csv`** → un fichier JSON par DB au format défini en section 2 (colonnes variables = propriétés dynamiques ; dates anglaises `May 30, 2025 12:21 PM` à normaliser ; relations/rollups = UUID bruts à recâbler).
+- **Médias** → upload via le pipeline image existant (re-encodage webp/AVIF) dans `zenray-content/uploads/`, références markdown réécrites vers `/api/img`.
+- **Liens internes `[[hash]]`** → nouveaux chemins de pages.
+
+Pièges du `build.zip` réel : noms avec espaces / accents / emojis / `?` mal transcodés (mélange Latin1/UTF-8, à normaliser) ; BOM UTF-8 en tête des CSV ; `/` interdits déjà remplacés par Notion ; parseur **récursif** (pas une profondeur fixe — 16 niveaux).
+
+---
+
+## 4. Images (galerie)
+
+### Stratégie de layout
+
+**Masonic** (masonry virtualisée, MIT) : ne monte dans le DOM que le viewport + une marge (overscan), rend des dizaines de milliers de cellules sans lag, avec `useInfiniteLoader` intégré.
+
+**Toujours** fournir `width`/`height` (ou `aspect-ratio`) par cellule depuis un **manifest de métadonnées** (jamais mesuré au runtime), pour éviter le layout shift.
+
+Si la galerie vit dans un panneau scrollable (cas Notion-like), utiliser `useScroller` + `useContainerPosition` plutôt que le composant `<Masonry>` clé en main.
+
+### Format et thumbnails
+
+- AVIF servi natif (94 % de support en 2026 ; les 110k images Eagle sont déjà en AVIF). **Zéro conversion à la volée** : la conversion runtime coûte du CPU à chaque cache miss et n'apporte rien sur une source déjà AVIF.
+- Thumbnails **pré-générés en batch local** (CPU = coût nul, `xargs -P16`, pipeline AVIF CRF 25 déjà validé) : un `thumb` ~400px dans la grille, le `full` seulement en lightbox.
+- **Éliminer Vercel Image Optimization** : 5000 transforms/mois en Hobby = inutilisable pour 110k images.
+
+### Librairie et service des fichiers
+
+`masonic` (MIT) pour la grille.
+
+Servir depuis le repo **privé** `zenray-content` via le proxy serverless `/api/img` **existant** : le client demande `/api/img?path=gallery/thumb/x.avif`, la fonction va chercher le fichier via l'API GitHub Contents (token serveur jamais exposé) et renvoie les bytes.
+
+`Cache-Control` **crucial** :
+
+```
+Cache-Control: public, max-age=0, s-maxage=31536000, immutable
+```
+
+Le `s-maxage` long pose le binaire sur l'edge Vercel : après le 1er hit, GitHub n'est plus jamais touché.
+
+**Ne jamais faire suivre le header `Authorization` du client** : une réponse portant `Authorization` n'est pas mise en cache par l'edge Vercel.
+
+Adapter `api/img.js` : ajouter le `Content-Type: image/avif` (actuellement codé en dur `image/webp`) et gérer le chemin `gallery/` en plus de `uploads/`.
+
+---
+
+## 5. Polices (fonts)
+
+Conserver le système `@font-face` déjà en place (`src/fonts.css` : AnthropicSerif / Sans / Mono en woff2 + ttf, GT Super Display pour le logo).
+
+**Répartition imposée 80 Serif / 15 Sans / 5 Mono :**
+
+- **Serif** = corps de texte, contenu des pages/blocs, titres de cartes. C'est le défaut visuel partout.
+- **Sans** = chrome de l'interface : sidebar, boutons, labels, toolbar, slash menu.
+- **Mono** = **uniquement** chiffres, pourcentages, dates techniques, code, maths.
+
+Pour BlockNote : ne **pas** forcer un `font-family` global au `!important` (casse slash menu / toolbar). Piloter via la variable `--bn-font-family` (mapper Serif sur le corps) et n'appliquer Mono que sur les blocs code.
+
+Pour l'éditeur de pages actuel (textarea), il est en mono par choix d'édition brute. Quand BlockNote remplacera ce textarea, le rendu passera naturellement en Serif.
+
+Cible mesurable : sur n'importe quel écran, **~80 % des glyphes affichés sont en Serif**.
+
+---
+
+## 6. Intégration dans l'existant
+
+**Règle d'or : ne RIEN casser des 6 vues existantes** (Tableau/Board, Pages, Projects, Archive, Documents, Freelance), qui vivent dans un seul `App.jsx` de 687 lignes piloté par un state `view`.
+
+- BlockNote s'introduit **uniquement** dans le composant `Pages()`, en remplaçant le bloc `textarea` + `marked` du mode édition, sans toucher au reste de l'App.
+- Le flux de persistance reste identique : `api/page.js` (list/read/save/delete markdown sur `zenray-content`) ne change pas. On garde le markdown comme format on-disk **mais** on stocke en plus le **JSON BlockNote** (source de vérité lossless) dans un fichier jumeau (ex. `pages/x.md` + `pages/x.blocknote.json`), pour éviter la perte au round-trip.
+- `uploadFile` de BlockNote se branche sur `/api/img` (déjà fonctionnel ; `fileToWebp` côté client existe déjà dans `api.js`).
+- Les **DB** sont une **7e vue nouvelle** (n'altère aucune existante).
+- La **galerie** est une **8e vue nouvelle**.
+- L'import `build.zip` est un **outil hors-ligne** qui écrit dans `zenray-content` ; il ne touche pas le runtime.
+
+Discipline de livraison : chaque sprint = une branche, un livrable testé, merge seulement si les 6 vues marchent encore. Avant tout push : lire `README.md` (règle du repo). Commit auto après chaque modif. `PROGRESS.md` de ZenRayProgress mis à jour à chaque sprint livré.
+
+---
+
+## 7. Sprints
+
+| # | Titre | Livrable | Librairies | Vérification |
+|---|-------|----------|------------|--------------|
+| 1 | Socle BlockNote isolé | BlockNote monté dans une route/vue cachée de test (pas encore dans Pages), CSS importé, fonts Anthropic via `--bn-font-family`, slash menu/drag/blocs fonctionnels. Les 6 vues intactes. | `@blocknote/core` `@blocknote/react` `@blocknote/mantine` | `npm run dev` : l'éditeur s'affiche, slash menu marche, corps en Serif, code en Mono. Tableau/Pages/Archive/Docs/Freelance/Projects toujours OK. |
+| 2 | Round-trip markdown + persistance jumelle | Charger un `.md` de `zenray-content` dans BlockNote (`tryParseMarkdownToBlocks`), éditer, sauver en commitant à la fois le `.md` (lisible) et le `.blocknote.json` (lossless source de vérité) via `api/page.js` étendu. | BlockNote (`blocksToMarkdownLossy` + JSON natif) | Créer page, écrire blocs riches, sauver, recharger : aucune perte (le JSON est relu en priorité). `api/page.js` list/read/delete inchangés pour les pages legacy. |
+| 3 | Bascule de la vue Pages sur BlockNote | Remplacer le `textarea` + `marked` du mode édition dans `Pages()` par BlockNote, garder la liste de pages, le bouton nouvelle page, la suppression. Mode aperçu rendu par BlockNote read-only. `uploadFile` branché sur `/api/img`. | BlockNote | Toutes les pages existantes s'ouvrent et restent éditables ; drag-drop image insère via `/api/img` ; Cmd+S sauve ; liens `[[slug]]` toujours cliquables. |
+| 4 | Embed / transclusion de page | Bloc custom `pageRef` (slash command `embed`) qui rend inline le contenu d'une autre page de la drive ; mentions de page natives BlockNote câblées sur la liste de pages. | BlockNote (custom block API) | Insérer un embed d'une page B dans page A : le contenu de B s'affiche inline, se met à jour quand B change. Pas de boucle infinie sur auto-référence. |
+| 5 | Bases de données — modèle + vue Table | Nouvelle vue `Databases` (8e onglet sidebar) : créer une DB (JSON dans `zenray-content/databases/`), propriétés typées, vue Table TanStack avec tri/filtre, édition de cellules, CRUD lignes. Aucune vue existante touchée. | `@tanstack/react-table` + api file CRUD | Créer DB `Tasks`, ajouter colonnes/lignes, trier, filtrer, recharger : persisté sur GitHub. Les 6 vues d'origine + Pages BlockNote intactes. |
+| 6 | DB — vues Board/Gallery/List + relations | Mêmes données, 3 vues supplémentaires : Board kanban (`@dnd-kit`, drag entre colonnes select met à jour la valeur), Gallery, List. Relations entre DB (lookup par id). | `@dnd-kit/core` `@dnd-kit/sortable` `@dnd-kit/utilities` | Basculer Table/Board/Gallery/List sur la même DB ; drag d'une carte Board change son statut et persiste ; relation affiche le titre de la ligne liée. |
+| 7 | Galerie images virtualisée | Nouvelle vue `Galerie` : Masonic + manifest de métadonnées (w/h/ratio) + thumbs AVIF servis via `/api/img` (Content-Type AVIF + chemin `gallery/`, Cache-Control edge). Lightbox charge le full. | `masonic` | Afficher quelques centaines d'images sans lag (scroll fluide, DOM limité au viewport) ; 1er hit GitHub puis edge cache ; lightbox ouvre le full-res. |
+| 8 | Outil d'import `build.zip` | Script Node hors-ligne (`scripts/import-notion.mjs`) qui parse l'export en 6 passes, écrit pages markdown+json, DB json, médias re-encodés dans `zenray-content` en miroir de la hiérarchie Notion, recâble les liens. Ne tourne pas au runtime. | `papaparse` + `unified`/`remark-parse`/`remark-gfm`/`remark-frontmatter` ; logique portée d'obsidian-importer | Dry-run sur un sous-arbre (ex. dossier Vision) : arbre reconstruit, `_all.csv` → DB JSON, liens internes résolus, médias référencés via `/api/img`. Puis import complet, vérifier dans l'app que pages/DB/images s'affichent. |
+
+---
+
+## 8. `build.zip` (détail de l'archive)
+
+### Structure
+
+`build.zip` (wrapper externe, mode « stored » non recompressé) → contient **un seul** `ExportBlock-01ddab12-…-Part-1.zip` (interne, 2,7 Go, 9684 entrées). Racine unique `Build/` = export d'un seul workspace. Extraire l'interne suffit.
+
+Hiérarchie standard Notion :
+- `Nom <hash32>.md` par page (`hash32` = UUID Notion sans tirets)
+- Page avec enfants = dossier frère `Nom <hash32>/` contenant sous-pages `.md`, médias et CSV
+- DB = `Nom <hash>.csv` (vue résumée) + `Nom <hash>_all.csv` (complet) + dossier homonyme (1 `.md` par ligne)
+- Imbrication jusqu'à 16 niveaux
+- Liens internes = chemins relatifs URL-encodés `[Texte](Sous/Page%20<hash>.md)`
+
+### Décompte précis
+
+- `.md` 6020 (pages)
+- `.csv` 609 (DB, dont 290 paires `_all.csv`)
+- médias ~3000 (png 2628, jpg 279, jpeg 16, webp 25, avif 3, gif 4, svg 3)
+- pdf 45
+- mp4 19, wav 12, mp3 3
+- docx 3, jsx 2, divers marginaux
+
+Gros dossiers à profondeur 2 : Calendar 3736, Components Old 2810, Memory 1451, Vision 630, Create Components 02 237, Tutorials 214, Fonts 118, Finance&Docs 117, Sport 90, Health 90, Japon 55.
+
+### Notes d'import (à gérer impérativement)
+
+- BOM UTF-8 en tête des CSV (le caractère avant `Name`) à stripper
+- dates anglaises `May 30, 2025 12:21 PM` à normaliser
+- champs multi-valeurs entre guillemets
+- relations/rollups = UUID bruts non lisibles à recâbler
+- noms de fichiers avec espaces/accents/emojis/`?` mal transcodés (mélange Latin1/UTF-8 : `cr+?ateur`) à normaliser
+- `/` interdits déjà remplacés par Notion
+- pour chaque DB, ignorer le `.csv` résumé et n'importer que le `_all.csv`
+- parseur **récursif** (pas profondeur fixe)
+
+Clé de tout le recâblage = le **hash 32-hex** présent dans chaque nom. Ordre : `.md` d'abord (arbre hash→parent), puis `_all.csv` (DB + rows), puis médias, enfin liens.
+
+Source observée : `/Users/zenray/Downloads/tmp img/ExportBlock-01ddab12-15b8-44d3-ae84-9ac9bbde4280-Part-1`.
+
+---
+
+## 9. Risques et mitigations
+
+1. **Round-trip markdown lossy** : si on persiste seulement le `.md`, on perd colonnes/callouts/couleurs à chaque save. *Mitigation* : stocker le JSON BlockNote comme source de vérité (sprint 2), le `.md` devient un dérivé lisible.
+
+2. **Licence BlockNote XL** : colonnes multi avancées, export PDF/Word et IA en GPL-3.0 ou payant. *Mitigation* : rester sur le cœur MPL-2.0, ne jamais importer `@blocknote/xl-*` (sauf `xl-multi-column` toléré en privé non distribué si vraiment nécessaire).
+
+3. **Régression de l'existant** : tout vit dans un `App.jsx` de 687 lignes monolithique. *Mitigation* : BlockNote n'entre que dans `Pages()`, DB et Galerie sont des vues neuves, test des 6 vues à chaque sprint avant merge.
+
+4. **Edge cache galerie** : si le proxy `/api/img` relaie le header `Authorization`, l'edge Vercel ne cache rien → 110k images frappent GitHub à chaque vue. *Mitigation* : token serveur uniquement, `Cache-Control` `s-maxage` long immutable, jamais d'`Authorization` renvoyé au client.
+
+5. **Volume `build.zip`** (2,7 Go, 9684 entrées, 16 niveaux) : un import naïf en mémoire ou non-récursif casse. *Mitigation* : parseur récursif streaming hors-ligne, dry-run sur un sous-arbre avant import complet, encodage des noms normalisé.
+
+6. **Coût Vercel Image Optimization** (5000 transforms/mois Hobby) inutilisable pour 110k images. *Mitigation* : AVIF servi natif, thumbs pré-générés en batch local, zéro transform runtime.
+
+7. **Limite API GitHub Contents** pour des binaires lourds (commits de médias volumineux, rate limit) lors de l'import des ~3000 médias. *Mitigation* : batch espacé, ou Git LFS / repo d'assets dédié, et re-encodage AVIF/webp pour réduire le poids avant commit.
+
+---
+
+## 10. Deuxième source d'import : `media.zip`
+
+`media.zip` (8,7 Go) = wrapper « stored » contenant un seul zip interne `ExportBlock-528a1ed1-312f-4747-a16e-200de42f9dec-Part-1.zip` (~9,35 Go), **même structure que `build.zip`** (export Notion d'un workspace). C'est la part **Media**, plus volumineuse (beaucoup de fichiers lourds).
+
+Règle d'import (sprint 8) : importer `build.zip` d'abord, puis `media.zip` **mappé à l'identique** (mêmes 6 passes, même schéma pages/DB/médias) et **mis à la suite** en préservant l'ordre. Les médias lourds passent par le ré-encodage AVIF/webp avant commit (cf. risque 7) ; vu le volume (8,7 Go), prévoir un repo d'assets dédié ou Git LFS plutôt que de gonfler `zenray-content`. Ne lancer qu'une fois l'app Notion-like terminée et validée par Matthieu.

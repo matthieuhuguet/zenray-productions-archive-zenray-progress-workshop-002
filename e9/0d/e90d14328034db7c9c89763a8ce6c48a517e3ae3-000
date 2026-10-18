@@ -1,0 +1,30 @@
+# Show Assets project images inside a Gallery
+
+9 October 2026
+
+A project can expose its existing cloud-backed images in a Gallery without copying files or changing the Gallery's own collection.
+
+Edit `src/config/pointerGalleries.js` and add an `assetsProjects` list to the chosen gallery:
+
+```js
+{
+  key: 'todo3d',
+  label: 'ToDo-3D',
+  path: 'pages/ToDo-3D/todo-3d.json',
+  assetsProjects: [{ id: 'louisiana-bayou', name: 'Louisiana Bayou' }],
+}
+```
+
+Use the existing Assets project ID, which is the folder name below `pages/ZenRayAssets/`. Add one `{ id, name }` entry per project linked to that Gallery. To remove a link, remove the entry from the list.
+
+The Gallery reads image manifest paths already present in the encrypted search index. It includes `.img.json` image nodes and image files stored as `.file.json` archives, including textures. It never uploads, duplicates, renames, or moves those files. The source filter, folder navigation, and search only change what is shown. Selecting a tile opens the existing Quick Look; its open action navigates to the original cloud folder.
+
+For archived files, an existing cloud thumbnail is reused when available. Otherwise the Gallery creates a temporary WebP preview only when a tile becomes visible, for originals up to 16 MiB. It reads at most two archives at once and keeps up to 36 previews in memory. This does not write a thumbnail or another copy to the cloud. Larger or encrypted archives remain listed, though they may show a generic image icon when no usable thumbnail exists.
+
+If a project is linked but shows no images, confirm that its image manifests are present in the search index and that the cloud index has refreshed. A local inventory or an unindexed local image is not a cloud backup proof.
+
+## 9 October 2026: Keep curated references apart from cloud files
+
+The Gallery has two separate views. **Mes références** keeps the user's manually collected images, groups, folder navigation, ordering, and layout modes. **Fichiers cloud** shows the already backed-up images from linked Assets projects. Switching views does not move or rewrite either collection.
+
+The cloud view starts with one folder for each source, such as Atelier, Houdini, or Unreal. Open a folder to browse its child folders and images. The breadcrumb returns to the project root or any parent folder. The source selector narrows the same tree, while search matches files under the current folder. A Gallery linked to several Assets projects shows one selected project at a time.

@@ -1,0 +1,87 @@
+# Phase D — Migration chiffrée privé → public (DRY-RUN)
+
+Livrable de la tâche #4. Fichier produit : `scripts/migrate-encrypt-public.mjs`. Date : 2026-06-02.
+
+## En une phrase (pour tout le monde)
+
+Ce script recopie nos images, aujourd'hui en clair sur des dépôts GitHub **privés**, vers un dépôt
+**public** mais **chiffrées** (illisibles sans la clé). Public débloque le CDN mondial gratuit jsDelivr ;
+le chiffrement préserve la confidentialité. Le navigateur de l'utilisateur déchiffre chez lui avec la clé.
+
+Image mentale : ranger ses affaires dans un casier transparent en pleine rue, mais tout dans des boîtes
+verrouillées. Tout le monde voit le casier, personne ne lit le contenu sans la clé.
+
+## Ce que fait le script
+
+1. Clone `zenray-data` (les manifests) en local, en git (hors quota API REST 5000/h).
+2. Liste les manifests `.img.json` qui pointent encore un binaire **privé** (`m.repo` + `m.path`) et ne sont
+   **pas déjà** publics (`m.vis !== 'public'`). Filtre optionnel `--folders=` pour migrer par sous-arbre.
+3. **[--apply]** Clone les dépôts privés source + le dépôt public cible. Pour chaque image : lit le clair,
+   **chiffre** (AES-GCM, IV dérivé du hash), écrit le **ciphertext** sur le dépôt public au **même chemin
+   hashé** ; idem pour la vignette `.webp` (IV propre). Pousse en 1 commit, récupère le commit (pin jsDelivr).
+4. **[--apply]** Réécrit les manifests : `vis:'public'`, `cdnRepo/cdnPath/cdnCommit`, `alg:'AES-GCM'`, `iv`,
+   et `thumbIv` si vignette. Écrit une **trace de rollback** sur disque, puis pousse `zenray-data`.
+
+## Schéma de chiffrement (figé par la tâche A, respecté à l'identique)
+
+- **Algo** : AES-GCM 256 bits, **même clé maître** que `/api/media-key`.
+- **IV déterministe** : 12 premiers octets du SHA-256 du **clair** (24 premiers car. hex). Même clair → même
+  IV → même ciphertext → même sha de blob → GitHub dédoublonne, et la migration est **idempotente**.
+- **Ciphertext = `ciphertext || authTag`** : WebCrypto concatène le tag GCM dans sa sortie ; Node le sépare
+  (`getAuthTag()`), donc on le **réappend**. Sans ça, le client ne pourrait pas déchiffrer.
+- **Vignette** : chiffrée avec **son propre IV** (hash de son propre clair), stocké en `thumbIv`.
+- **Chemin** : adresse de contenu = hash du clair (`ab/cd/<hash>.<ext>`), **identique** privé/public/migration.
+  Aucun nom humain (P0 anti-fuite).
+
+### Preuve de correction (vérifiée, load-bearing)
+
+Test croisé Node `createCipheriv('aes-256-gcm')` vs `webcrypto.subtle.encrypt` (l'API du navigateur, utilisée
+par `encryptBytesDeterministic` côté app) sur la même clé, même IV dérivé, même clair :
+
+- longueurs identiques (78 o = clair + 16 o de tag),
+- **ciphertext octet-pour-octet identique**,
+- le navigateur (`webcrypto.subtle.decrypt`) déchiffre sans erreur le ciphertext produit par Node.
+
+Conclusion : ce que le script écrit sur le dépôt public est exactement ce que l'app sait déchiffrer.
+
+## Garde-fous P0 (respectés)
+
+- **DRY-RUN par défaut.** Sans `--apply` : clone uniquement `zenray-data` (shallow), n'écrit ni ne pousse rien,
+  affiche le plan exact (images, octets, dépôts source, et présence/absence de la clé). `--apply` manuel par Matthieu.
+- **Clé maître JAMAIS générée** par le script (env `ZENRAY_MEDIA_KEY` ou fichier local `.zenray-media-key`,
+  gitignored). En `--apply` sans clé valide (32 octets) → arrêt immédiat avec message clair. Générer une clé
+  rendrait tout le média indéchiffrable : interdit.
+- **Jamais de plaintext** poussé : seul le ciphertext part sur le dépôt public.
+- **Chemins hashés uniquement** sur le dépôt public, aucun nom humain dans commit/chemin/branche.
+- **Non destructif** : les binaires privés source ne sont **jamais** supprimés (orphelins, purge manuelle
+  séparée APRÈS vérification de l'affichage public). **Trace de rollback** (`rollback-<horodatage>.json`,
+  état `before` de chaque manifest) écrite sur disque avant le push.
+- **Intégrité** : le hash du clair lu sur disque est recalculé et comparé au chemin source ; un écart (octets
+  corrompus) range l'image en `échecs` plutôt que de migrer silencieusement.
+- Token **jamais loggé** (redaction systématique des sorties git).
+
+## Usage
+
+```
+# DRY-RUN (tout le média privé) — ne touche rien
+GITHUB_TOKEN=$(gh auth token) node scripts/migrate-encrypt-public.mjs
+
+# DRY-RUN restreint à un sous-arbre
+GITHUB_TOKEN=$(gh auth token) node scripts/migrate-encrypt-public.mjs --folders=pages/References/Games
+
+# APPLY (manuel, Matthieu uniquement) — nécessite la clé maître
+GITHUB_TOKEN=$(gh auth token) ZENRAY_MEDIA_KEY=<base64> node scripts/migrate-encrypt-public.mjs --apply
+```
+
+Options : `--target=zenray-img-public-01` · `--workdir=.migrate-encrypt-tmp` · `--limit=N` (cap debug).
+
+## Après --apply (rappel)
+
+Vider le cache Create (bouton « Vider le cache ») puis recharger, sinon l'app sert les anciennes URLs en cache.
+Vérifier l'affichage public déchiffré AVANT toute purge des binaires privés source.
+
+## Vérification
+
+- `node --check scripts/migrate-encrypt-public.mjs` : **OK**.
+- Test d'équivalence Node ↔ WebCrypto : **identique octet-pour-octet, déchiffrement client OK** (ci-dessus).
+- Pas de build front impacté (script Node autonome, fichier neuf, aucun conflit avec App.jsx / viewers).

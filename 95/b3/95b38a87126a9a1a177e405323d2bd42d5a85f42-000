@@ -1,0 +1,17 @@
+# i18n FR/EN/JP — infrastructure légère
+
+## Fichiers créés
+- `src/i18n/dict.js` — dictionnaire `{ fr, en, ja }`, namespaces `share.*`, `folder.*`, `nav.*`.
+- `src/i18n/useT.js` — `useLang()` (localStorage `zr:lang`, défaut `fr`, détection `navigator.language` au 1er lancement) + `useT()` → `t(key)` avec repli `fr` puis repli clé brute.
+- `src/components/LanguageSwitcher.jsx` — pill FR/EN/JP, style aligné sur `GitHubQuotaBadge` (`t.cardBg`/`t.border`/radius 999), pas de reload.
+
+## Fichiers modifiés
+- `src/components/ShareVideoPage.jsx` — 100% des chaînes visibles traduites (lien invalide, vidéo introuvable, chargements) + `LanguageSwitcher` dans le header.
+- `src/components/SharedFolderPage.jsx` — 100% des chaînes visibles traduites (lien invalide, contenu/dossier introuvable, chargements, dossier vide) + `LanguageSwitcher` dans le header.
+- `src/App.jsx` — scope surgical : `LanguageSwitcher` ajouté dans la sidebar (au-dessus de l'indicateur `○ local`), les 13 labels de nav + 3 labels de zone (CREATE/APPS/SYSTÈME) traduits via `nav.*`. Aucune autre ligne touchée (menus contextuels, Finder, DnD hors scope, propriété d'autres agents en parallèle).
+
+## Portée — honnêteté
+Ce n'est **pas** une traduction à 100% de toute l'app (des milliers de chaînes ailleurs dans App.jsx, hors scope demandé). C'est : infrastructure i18n complète et extensible (ajouter une langue = un bloc dans `dict.js`) + couverture 100% des vues de partage public (`/watch`, `/folder`) + 100% du chrome de nav principal (labels sidebar). Le reste de l'app (Finder, éditeurs, modales, etc.) reste en FR statique, à traduire au fil de l'eau avec les mêmes clés `t()`.
+
+## Build
+`npm run build` → vert, 0 erreur (seuls warnings pré-existants de taille de chunk, non liés à ce changement).

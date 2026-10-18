@@ -1,0 +1,137 @@
+# Fiche de référence — Upload / Archive / Compression (ZenRayProgress)
+
+Inventaire EXHAUSTIF des features qui marchent à 100 %, avec la call function exacte et son emplacement.
+Source : lecture directe du code au 2026-06-12. Règle d'or : **réutiliser, jamais réinventer**.
+
+---
+
+## A. UPLOAD / CAPTURE — déposer un média dans Create (drag-drop, coller, bouton)
+
+| Quoi | Call function | Fichier |
+|---|---|---|
+| Point d'entrée unique (lot de fichiers) | `captureFiles(files, { folder, onProgress, mode, vis })` | `src/capture/universalCapture.js:739` |
+| Dispatch par type (mime/extension) | `routeFile(file, folder, onProgress, mode, vis)` | `universalCapture.js:660` |
+| Écriture blob+commit côté serveur (client→API) | `shardApi(payload)` | `universalCapture.js:119` |
+
+`captureFiles` traite le lot **en parallèle** (pool borné), résilient, ordre d'entrée préservé, barre agrégée 0→1. Retourne `results[i] = { ok, type, nodePath?, name, error? }`. Branche chaque fichier vers :
+
+- **Image** (`image/*` ou png/jpg/jpeg/gif/webp/avif/bmp/tiff/heic) → `captureImage` : original **chiffré** (IV déterministe dérivé du hash = upload idempotent) + **vignette webp** 384px. Nœud `.img.json`. Défaut **public**.
+- **Audio** (`audio/*` ou wav/flac nus) → `captureAudio` : chunké chiffré, indexé (mutex `appendAudioIndex`).
+- **Vidéo** (`video/*` ou mp4/webm/mkv/avi/mov/m4v/ts/flv/wmv) → `captureVideoServerHls` (SSE vers transcodage serveur), **fallback** `captureVideoLocalCmd` (génère la commande ffmpeg locale si le serveur ne peut pas).
+- **PDF** (`application/pdf` ou .pdf) → `captureBinaryMedia(..., 'pdf')` : famille dédiée `zenray-pdf-public-NN`.
+- **Fallback** tout autre binaire → `captureBinaryMedia` générique (média chunké).
+
+Après écriture : `addToSearchIndex(paths)` → `/api/page action=index-add` → cherchable immédiatement (best-effort).
+
+---
+
+## B. ARCHIVE — sauvegarder un DOSSIER local entier sur le drive
+
+| Quoi | Commande / function | Fichier |
+|---|---|---|
+| Archiver un dossier | `node Scripts/archive-folder.mjs <dossier> [destCreate]` | `Scripts/archive-folder.mjs` |
+| Barre de progression | `bash Scripts/archive-progress.sh [log] [totalGo]` | `Scripts/archive-progress.sh` |
+| Ouvrir un `.file.json` (aperçu + download + versions) | composant | `src/components/FileNodeViewer.jsx` |
+| Vue Downloads (UX Google Drive) | composant | `src/components/DownloadsView.jsx` |
+
+Usage : `GITHUB_TOKEN=$(gh auth token) node Scripts/archive-folder.mjs <dossier> [destCreate]`. Flags `--dry` (inventaire), `--reindex`. destCreate défaut `pages/Archives/<nom>`.
+
+- Shard public `zenray-productions-archive-<nom>`, **rollover -NN à 5 Go**, flush à 4 Go.
+- **Tous** les fichiers en chunks 19 Mo **hashés** (`aa/bb/<fid>-NNN`, aucun nom/extension) → repo public non exploitable.
+- Manifeste **privé** `.file.json` (`v:3`, `versions[]` append-only) dans `zenray-data` : vrai nom, arbo, ordre chunks, **sha256 entier**, commit. Recompose **bit à bit**.
+- **Versionning** : re-archiver le même dossier ne duplique pas (compare sha256), garde l'historique (clone partiel, jamais force-push).
+- Push par lots 150 Mo, **vérif HEAD 200 ×16** sur tout. **Purge locale JAMAIS auto**.
+- Robustesse (2026-06-12) : fichier disparu/illisible = skip+log (n'avorte plus) ; **timeouts sur tous les fetch** (raw/HEAD/API) = plus de hang réseau à 0 % CPU.
+
+---
+
+## C. COMPRESSION / TRANSCODAGE
+
+| Quoi | Call function / commande | Fichier | Réglage |
+|---|---|---|---|
+| Vidéo → HLS chiffré (runtime) | `transcodeAndUploadHls(file, dest, onProgress, onLog)` | `src/media/hlsTranscoder.js:124` | libx264 **preset fast crf 21**, aac 160k, HLS+AES-128, var_stream_map dynamique (1 vidéo + N audio) |
+| Vignette image | `makeThumbWebp(fileOrBlob, max=384)` | `src/capture/thumbnailer.js:81` | **WebP qualité 0,72**, plus grand côté ≤ 384px, offload Worker |
+| Vidéo → HLS (CLI bulk) | `node Scripts/video-hls.mjs` + `video-hls-lib.mjs` | `Scripts/` | ladder 360/720/1080/2160, hls_time 2s |
+| Vidéo → fMP4 (segments obfusqués) | `node Scripts/video-fmp4.mjs` | `Scripts/` | byte-range / segments |
+| ffmpeg in-browser (wasm) | `getFFmpeg()` / `withLogs()` / `releaseFFmpeg()` | `src/media/ffmpegCore.js` | core copié par `Scripts/copy-ffmpeg-core.mjs` |
+| Worker de transcodage | `node Scripts/transcode-worker.mjs` | `Scripts/` | — |
+| Images AVIF (offline, hors app) | `avifenc --min 25 --max 25 --speed 10` | Tools/EagleAvif | **CRF 25** sweet spot (100 % gagnent, -88 %) |
+
+Note : à la capture, l'image **originale n'est PAS recompressée** (stockée chiffrée telle quelle) ; seule la **vignette** est en WebP. La recompression AVIF est un pipeline offline séparé (convention globale CRF 25).
+
+---
+
+## D. CHIFFREMENT / SÉCURITÉ
+
+| Quoi | Call function | Fichier |
+|---|---|---|
+| Clé média (AES-GCM, depuis /api/media-key) | `getMediaKey()` | `src/media/crypto.js:16` |
+| Chiffrer / déchiffrer | `encryptBytes(ab)` · `decryptBytes(cipher, iv)` | `crypto.js:31/39` |
+| Déchiffrer → objectURL affichable | `decryptToObjectUrl(cipher, iv, mime)` | `crypto.js:46` |
+| IV déterministe (idempotence upload) | `encryptBytesDeterministic(ab, hashHex)` | `universalCapture.js:93` |
+
+Modèle : repos publics servis par CDN, mais contenu **chiffré AES-GCM** (médias) ou **obfusqué par chunks hashés** (archive). Clé jamais en clair côté repo. Voir P0 [no_media_name_leak].
+
+---
+
+## E. STOCKAGE / SHARDING
+
+| Quoi | Call function | Fichier |
+|---|---|---|
+| Familles de shards | `KINDS = [img, vid, audio, doc, pdf, table, markdown]` · `VIS = [public, private]` | `src/capture/shardNaming.js` |
+| Nom de shard | `shardName(kind, vis, n)` · `parseShard(name)` | `shardNaming.js:24/29` |
+| URL jsDelivr figée au commit | `buildJsDelivrUrl(repo, commit, path)` | `shardNaming.js:42` |
+| Upload chunké (Git Data API) | `uploadChunked(file, dest, onProgress)` → `/api/media` (init/blob/commit) | `src/media/chunked.js:27` |
+| Visibilité d'un dossier (public/privé) | `resolveFolderVis(dir)` · `setFolderVis(dir, vis)` · `peekFolderVis(dir)` | `src/capture/folderVisibility.js` |
+
+Endpoints serveur : `/api/media` (chunké), `/api/shard` + `server/upload-shard.js` (blob+commit, retry fast-forward, marge 5 Go, compteurs concurrents), `/api/page` (nœuds), `/api/stream` (range), `/api/media-key`, `/api/hls*`.
+
+---
+
+## F. LECTURE / RÉASSEMBLAGE / PLAYBACK
+
+| Quoi | Call function | Fichier |
+|---|---|---|
+| Réassembler un média chunké | `loadChunked(manifestPath, onProgress, conc=4)` · `readManifest(p)` | `src/media/chunked.js:75/67` |
+| Lecture vidéo (remux/transcode à la volée) | `playRemux({...})` · `playTranscode({...})` · `pickPipeline(probe)` | `src/media/remuxPlayer.js` |
+| Lecture par plage (range) | `readRange(path, start, end)` · `streamUrl(path)` | `src/media/rangeReader.js` |
+| Vignette d'index (lazy, viewport) | `useThumb(url)` · `useInView(onVisible)` | `src/media/useImageThumb.js` |
+| Cache image (LRU mémoire + IndexedDB) | `imageCache` · `idbGet/idbPut` · `resolveDisplayUrl(url)` | `src/media/imageCache.js`, `imageCacheIDB.js` |
+| Préchargement | `prefetchOne(url)` · `prefetchMany(urls)` | `src/media/prefetch.js` |
+
+---
+
+## G. INDEX / RECHERCHE
+
+| Quoi | Call function / action | Fichier |
+|---|---|---|
+| Auto-index à la création | `/api/page action=index-add` → `appendPublicDelta` | `server/page.js:294` |
+| Index serveur (actions) | list / children / tree / index / read / save / index-add / delete / move / move-tree | `server/page.js` |
+| Rebuild complet de l'index | `node Scripts/build-search-index.mjs --apply` | `Scripts/build-search-index.mjs` |
+| Lecture index côté client (CDN chiffré shardé) | `loadFromCDN` (head + shards + delta, déchiffre) | `src/search/searchIndexClient.js` |
+
+---
+
+## H. SCRIPTS CLI (opérations en masse)
+
+Règle : upload en masse = **git push**, jamais l'API blob-par-blob (plafond 5000/h).
+
+- `archive-folder.mjs` — archive d'un dossier (cf. B).
+- `build-search-index.mjs` — (re)construit l'index de recherche.
+- `regen-thumbnails.mjs` · `thumb-backfill.mjs` · `gen-thumbs-git.mjs` — (re)génération de vignettes.
+- `reindex-images.mjs` · `reindex-media.mjs` — réindexation.
+- `migrate-encrypt-public.mjs` · `migrate-media-git.mjs` — migrations chiffrement/public.
+- `reorg-public-shards.mjs` · `rebuild-shard-clean.mjs` — réorganisation des shards.
+- `eagle-import-git.mjs` · `eagle-img-gitpush.mjs` · `eagle-video-migrate.mjs` — import depuis Eagle (variantes API REST `eagle-import.mjs`/`eagle-video-bulk.mjs` archivées le 2026-07-16, `scripts/_archive/`).
+- `video-hls.mjs` · `video-fmp4.mjs` · `video-mse.mjs` · `transcode-worker.mjs` — transcodage vidéo.
+- `zenray-uploader.mjs` — uploader générique.
+- `local-server.mjs` — serveur local (bind 127.0.0.1).
+
+---
+
+## Déclencheurs langage naturel (routeur, tête du CLAUDE.md projet)
+
+- « archive / save / clone / backup / décharge ce dossier » → **B** (`archive-folder.mjs`).
+- « importe / dépose / colle une image/vidéo/audio/note/pdf » → **A** (`captureFiles` / `routeFile`).
+- « ce fichier n'est pas cherchable » → **G** (`index-add` / rebuild).
+- « preview / espace / quicklook » → **F** (`FileNodeViewer` / QuickLook).

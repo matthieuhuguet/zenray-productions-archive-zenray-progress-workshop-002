@@ -1,0 +1,292 @@
+# Audit — Pipeline IMAGE (ZenRayProgress)
+
+Carte technique exhaustive du pipeline image : entrée -> stockage -> rendu, formats de données,
+fichiers + lignes clés, et points d'accroche pour le refactor d'unification. Tout est tiré du code réel.
+
+---
+
+## 0. Vue d'ensemble en une phrase
+
+Une image entre par drop/paste/input -> `captureFiles` -> `routeFile` détecte « image » ->
+`captureImage` garde les **octets d'origine**, les chiffre (AES-GCM, IV déterministe), pousse **UN blob**
+(pas de chunk) + une **vignette .webp** sur un shard `zenray-img-public-NN`, commit -> écrit un manifeste
+`.img.json` (refs CDN + IV) dans `zenray-content`. À l'affichage, `ImageNodeViewer`/`ImgNodeThumb`
+fetch le ciphertext sur jsDelivr (URL pinnée commit), déchiffre en `objectURL`, l'affiche dans un `<img>`.
+**Zéro réassemblage de chunks** : 1 image = 1 blob.
+
+---
+
+## 1. ENTRÉE — points d'ingestion (UI)
+
+Toutes les entrées convergent vers **`captureFiles`** (`src/capture/universalCapture.js`).
+
+| Source | Fichier:ligne | Appel |
+|---|---|---|
+| Paste (Cmd+V) dans Create | `src/App.jsx:2096` `useClipboardTarget('create', { onPasteImage })` -> `:2099` | `runCapture(files)` |
+| Drop Finder dans Create | `runCapture` (`src/App.jsx:2004`) appelé par les drops du Finder | `captureFiles(captureList, { folder, vis, onProgress })` `:2026` |
+| Input file (cartes Board) | `src/App.jsx:553` `<input type=file accept=image/*>` -> `addImages` `:199` | passe par le flux carte |
+| Drop sur RefBoard | `src/ref/RefBoardHost.jsx:54` `onDrop` -> `:71` | `captureFiles(files, { folder: dir, mode, onProgress })` |
+| Paste URL sur RefBoard | `src/ref/RefBoardHost.jsx:84` `onPaste` | branche texte/URL (séparée) |
+
+`runCapture` (`src/App.jsx:2004`) :
+- résout la **visibilité** du dossier cible via `resolveFolderVis(dest)` (défaut **public**) `:2015`.
+- appelle `captureFiles(list, { folder: dest, vis, onProgress })`.
+- après succès : MAJ optimiste de l'index `paths` (recherche) + injection dans le listing courant
+  `optimisticDir` (`:2042-2050`), puis `loadTree()`.
+
+`captureFiles` (`universalCapture.js:739`) : pool **FILE_CONCURRENCY=4** (`:762`), `results[i]` indexé
+par i (ordre préservé), progression agrégée (moyenne des ratios). En fin de lot : `addToSearchIndex`
+(1 commit pour tous les nodePaths, `:714`).
+
+---
+
+## 2. ROUTAGE — `routeFile` (universalCapture.js:660)
+
+Détection image (`:664`) :
+```js
+if (mime.startsWith('image/') ||
+    ['png','jpg','jpeg','gif','webp','avif','bmp','tiff','heic'].includes(ext))
+  return captureImage(file, folder, onProgress, vis)
+```
+Ordre des branches : **image -> audio(mime) -> vidéo -> texte -> audio(ext) -> pdf -> binaire générique**.
+Image est en TÊTE : un fichier image est toujours happé avant tout. C'est le point d'accroche n°1 du
+routeur unifié : aujourd'hui la classification vit **inline dans `routeFile`**, pas dans un module
+réutilisable partagé.
+
+`fileKind` (`src/lib/fileKind.js`) existe en parallèle mais ne sert QUE l'identité visuelle (label +
+couleur de badge), **pas** le routage de pipeline. C'est une 2e table de vérité « type de fichier »
+qu'un routeur unifié devrait fusionner/aligner.
+
+---
+
+## 3. STOCKAGE — `captureImage` (universalCapture.js:249)
+
+Signature : `captureImage(file, folder, onProgress, vis = 'public')`.
+
+Étapes :
+1. `ab = file.arrayBuffer()` ; `hash = sha256Hex(ab)` (`:53`) ; `ext = extOf(name, type)`.
+2. **Chemin = adresse de contenu** : `path = shardPathFor(hash, ext)` = `ab/cd/<sha256>.<ext>`
+   (`:62`, 2 premiers octets du hash en répertoires). Stable privé/public/migration, dédup native GitHub.
+3. `repo = activeShard('img','public', file.size)` (public) **ou** `activeShard()` (privé legacy = famille
+   img/private, repo `zenray-media-NN`). `:256`.
+4. **PUBLIC** : chiffrement du CLAIR avant envoi. `encryptBytesDeterministic(ab, hash)` (`:93`) — AES-GCM,
+   IV **déterministe** dérivé des 12 premiers octets du hash du clair (`deriveIvBytes`, `:78`) ->
+   ciphertext déterministe -> **dédup conservée** (même clair = même blob). IV (base64) part au manifeste.
+   **PRIVÉ** : octets bruts (rétro-compat).
+5. `binSha = putBlob(repo, uploadB64)` — **UN seul blob, PAS de chunking** (`:277`). Sémaphore global
+   `PUT_MAX=6` (`:143`). Échec (blob > ~100 Mo GitHub) -> message explicite « image trop volumineuse » `:279`.
+6. **Vignette** : `makeThumbWebp(file, 384)` (`src/capture/thumbnailer.js`) -> WebP qualité 0.72, plus
+   grand côté <= 384px, dans un **Web Worker** (`thumbWorker.js` via OffscreenCanvas) avec repli inline.
+   Public : vignette CHIFFRÉE avec son **propre** IV (`thumbIv`) dérivé du hash de SON clair (`:297`).
+   Poussée au chemin `shardPathFor(hash,'webp')` (= même hash, ext .webp). Best-effort (échec n'arrête rien).
+7. `commitShard(repo, files, addBytes)` (`:311`) -> renvoie `{ ok, repo, commit }`. **`commit` PIN
+   l'URL jsDelivr** (cache immuable, anti écran-blanc).
+8. `imageDims(file)` (`:190`, via `createImageBitmap`) -> w,h.
+9. Écrit le **manifeste `.img.json`** via `writeNode` (`:180`, action `save` vers `zenray-content` PUBLIC) :
+   `nodePath = <folder>/<sanitize(name)>.<rand6>.img.json` (`:327`).
+
+### Format `.img.json` (la donnée centrale)
+
+Base commune (`:315`) :
+```json
+{ "type":"image", "v":1, "name":"<orig>", "ext":"jpg",
+  "w":1920, "h":1080, "size":1234567, "tags":[], "addedAt":"ISO" }
+```
+
+PUBLIC (chiffré, défaut) — ajoute (`:322`) :
+```json
+{ "vis":"public", "cdnRepo":"zenray-img-public-03", "cdnPath":"ab/cd/<sha>.jpg",
+  "cdnCommit":"<sha-commit>", "alg":"AES-GCM", "iv":"<b64>", "thumbIv":"<b64>?" }
+```
+- `thumbIv` présent **seulement** si une vignette chiffrée a bien été poussée.
+- Vignette = `cdnPath` avec extension remplacée par `.webp` (convention « dérivée du chemin », JAMAIS de
+  champ `thumb` écrit dans le .img.json — cf. `:95`, `:228`).
+
+PRIVÉ / LEGACY (`:326`) :
+```json
+{ ...base, "vis":"private", "repo":"zenray-media-NN", "path":"ab/cd/<sha>.jpg" }
+```
+Manifeste **sans `vis`** = traité comme privé (rétro-compat exacte).
+
+### Shards & nommage
+
+- Schéma : `zenray-<kind>-<vis>-NN`, kind ∈ `img/vid/audio/doc/pdf/table/markdown`, vis ∈ `public/private`
+  (`src/capture/shardNaming.js`, miroir de `server/shard-naming.js`).
+- Legacy : `zenray-media-NN` (= img/private), `zenray-vid-NN` (= vid/public).
+- `OWNER = 'matthieuhuguet'`. **Cap dur 4,6 Go/shard** (`server/upload-shard.js:19`, marge sous 5 Go),
+  pré-check `need=file.size` -> rollover avant push.
+- API serveur `POST /api/upload-shard` (`shardApi`, `universalCapture.js:119`) : actions `active-shard`
+  (avec `kind,vis,need`), `blob` (-> sha), `commit` (atomique base_tree+tree+commit+ref). État par famille
+  dans `zenray-data` privé (`pages/.zr-drive-<kind>-<vis>.json`).
+- `writeNode` -> `POST /api/page` action `save` (manifeste texte dans `zenray-content` public).
+
+### Crypto (src/media/crypto.js)
+
+- Clé maître unique AES-GCM 256, fetch via `/api/media-key` (gaté), cachée en RAM, non-extractible
+  (`getMediaKey`, `:16`).
+- `encryptBytes` (IV aléatoire), `decryptBytes`, `decryptToObjectUrl(cipher, ivB64, mime)` (`:46`).
+- L'image utilise une variante **déterministe** d'`encryptBytes` redéfinie dans `universalCapture.js`
+  (`encryptBytesDeterministic`) pour préserver la dédup. Le déchiffrement, lui, passe par `crypto.js`.
+
+---
+
+## 4. RÉSOLVEUR D'URL (ImageNodeViewer.jsx)
+
+Le cœur réutilisable. Fonctions exportées :
+
+| Fonction | Ligne | Rôle |
+|---|---|---|
+| `isEncrypted(m)` | 25 | `m.vis==='public' && m.iv` -> ciphertext, à déchiffrer |
+| `shardImgUrl(m)` | 73 | URL image pleine **synchrone** : public+commit -> `buildJsDelivrUrl` ; sinon proxy `/api/shard?repo&path`. Renvoie le **ciphertext** si chiffré (à NE PAS donner à `<img>` tel quel). |
+| `shardThumbUrl(m)` | 85 | idem pour la vignette `.webp` (chemin dérivé). `null` si pas de repo (placeholder propre, jamais l'image pleine en grille). |
+| `resolveFullUrl(m)` | 53 | **ASYNC partagé** non-React : chiffré -> objectURL du clair déchiffré (caché RAM) ; sinon URL synchrone. |
+| `resolveThumbUrl(m)` | 58 | idem vignette ; sans `thumbIv` -> repli sur l'image pleine déchiffrée. |
+| `buildJsDelivrUrl(repo,commit,path)` | shardNaming.js | `https://cdn.jsdelivr.net/gh/<OWNER>/<repo>@<commit>/<path>` (pin commit OBLIGATOIRE). |
+
+**Cache RAM du clair** (`_decCache`, `:29`) : Map `URL CDN ciphertext -> Promise<objectURL>`. Stocke la
+PROMESSE (dédoublonne les déchiffrements concurrents de la même image). Jamais révoqué (cache session).
+`decryptedObjectUrl(cdnUrl, iv, mime)` (`:33`) = fetch CDN -> `decryptToObjectUrl`.
+
+**Lecture manifeste** : `readImgManifest(path, tries=5)` (`:132`) via `/api/page?action=read&raw=1` ;
+distingue `missing` (null cachable) vs transitoire (retry backoff, jamais de cache négatif) vs
+`rateLimited` (arme le bandeau global). Cache mémoire `_cache` (`:149`), `readImgManifestCached` (`:161`),
+`invalidateManifest`/`clearManifestCache`. File bornée `MANIFEST_CONC=6` (`:168`).
+
+---
+
+## 5. RENDU — vignette & plein écran
+
+### `ImgNodeThumb` (ImageNodeViewer.jsx:315) — la tuile Finder
+
+Props : `{ path, thumbUrl, thumbIv, size, radius, priority }`.
+
+Deux modes :
+- **Manifeste** (défaut) : lazy gaté au viewport (`useInView`, rootMargin 700px, `:177`). Lit le manifeste
+  (`useManifest`, `:190`) seulement si visible/caché/priority. Résout la vignette via `useResolvedThumb`
+  (`:276`) — chiffré -> déchiffre `thumbIv` en objectURL gaté au viewport ; non chiffré -> `shardThumbUrl`.
+- **Direct** (recherche, `thumbUrl` fourni par l'index v2) : `useResolvedDirectThumb` (`:294`) ->
+  **ZÉRO fetch de .img.json**. Si `thumbIv` -> déchiffre ; sinon URL clair directe. Sur 404 (média renommé,
+  CDN pas propagé) -> `directFailed` bascule sur le manifeste live (`:323`, `:371`).
+
+Image **pleine** : résolue PARESSEUSEMENT au **survol seulement** (`hover`, `useResolvedFull(m, hover)`,
+`:346`) — éviter 30+ déchiffrements AVIF d'un coup au scroll d'un dossier chiffré (freeze documenté `:343`).
+
+**Backfill vignette manquante** (`:217-256`) : si `.webp` 404 sur un manifeste NON chiffré -> télécharge
+l'image pleine, re-thumbnaile (canvas), push au chemin .webp (idempotent, BACKFILL_CONC=2). **Désactivé
+pour le chiffré** (`onMissing`, `:369`) : pousser un .webp clair sur repo public = violation P0, et lire
+du ciphertext = image cassée. Sur chiffré sans vignette -> repli propre sur l'image pleine déchiffrée.
+
+**Rendu final** : `<SmartThumb url={thumb} fullUrl={full} noFullFallback onMissing radius priority/>`
+(`src/media/SmartThumb.jsx`) + pastille de provenance (vert = jsDelivr ; jaune = proxy `/api/shard`, `:384`).
+
+### `ImageNodeViewer` (default export, `:453`) — plein écran
+
+Lit le manifeste (`readImgManifest`), résout via `useResolvedFull(m, true)` (toujours activé), affiche
+`<img src={url}>` dans une `.zr-stage`. Métadonnées (w×h, orientation, taille, tags), liens « ouvrir »
+et « télécharger » -> `downloadOriginal(url, m, title)` (`:393`, blob -> download avec vrai nom+ext).
+Dispatch depuis `App.jsx:2804` : `typeOfPath(cur.path)==='image'` -> `LazyImageNodeViewer`.
+
+### Download par chemin (menu contextuel) — `downloadMedia(path, title)` (`:445`)
+
+- `.media.json` -> `downloadChunkedMedia` (réassemble N chunks déchiffrés, `:423`).
+- `.img.json` -> `readImgManifestCached` + `resolveFullUrl` + `downloadOriginal` (**1 blob, pas de
+  réassemblage**, `:447`). C'est exactement l'avantage que le diagnostic du patron veut généraliser.
+
+---
+
+## 6. INDEX DE RECHERCHE — vignette pré-calculée (3 miroirs à garder synchrones)
+
+La valeur thumb d'une image est calculée à **3 endroits identiques** (invariant « search-8 ») :
+1. `src/components/ImageNodeViewer.jsx:85` `shardThumbUrl` (produit l'URL finale).
+2. `scripts/build-search-index.mjs:65` `thumbEntry(m)` (produit `{u}` public clair, `{u,iv}` public
+   chiffré, `{r,p}` privé) — pour l'index v2 `pages/.zr-search-index.json`.
+3. `server/page.js:62` `thumbEntryOf(m)` (action `index-add`, delta du même index).
+
+Côté App : `thumbUrlFor(p)` / `thumbIvFor(p)` (`App.jsx:1917`) lisent cette carte et la passent à
+`ImgNodeThumb` -> vignette de résultat de recherche sans relire le manifeste.
+
+**Point d'accroche unification** : tout changement de la règle public/privé ou du format thumb doit
+toucher CES TROIS fonctions. Un routeur/viewer unifié devrait centraliser cette logique en UN module
+importé par les trois.
+
+---
+
+## 7. TYPAGE & DISPATCH DE VIEWER
+
+`typeOfPath(path)` (`src/create/node.js:6`) dérive le type de l'extension feuille (jamais stocké) :
+`.db.json->db`, `.media.json->media`, `.img.json->image`, `.canvas.json->canvas`, `.embed.json->embed`,
+`.file.json->file` (archive), `.md->page`, sinon `folder`.
+
+Dispatch viewer plein écran (`App.jsx:2804+`) : `image->ImageNodeViewer`, `media->MediaViewer`,
+`file->FileNodeViewer` (archive), `canvas->CanvasNodeViewer`, etc.
+Dispatch icône/tuile (`App.jsx:998`, `:2683`) : `isImg->ImgNodeThumb`, `isMedia->MediaIcon`,
+`.file.json->FileNodeThumb`.
+
+**C'est ici le 2e point d'accroche du viewer unifié** : le dispatch existe déjà (par extension), mais il
+est éclaté entre tuile et plein écran, et dupliqué entre la grille (`:998`) et la liste (`:2683`).
+
+---
+
+## 8. CE QU'UN ROUTEUR/VIEWER UNIFIÉ DEVRAIT RÉUTILISER TEL QUEL
+
+Le pipeline image est déjà le **modèle de référence** que le diagnostic veut généraliser (image =
+streamable, vignette réelle, zéro réassemblage). À réutiliser sans réécrire :
+
+**Stockage / ingestion :**
+- `captureImage` (universalCapture.js:249) — garder intégralement. C'est la cible de référence.
+- `shardPathFor` / adresse de contenu par hash (dédup) — `:62`.
+- `encryptBytesDeterministic` + `deriveIvBytes` (dédup chiffrée) — `:78`, `:93`.
+- `makeThumbWebp` (thumbnailer.js, worker + repli) — vignette réelle universelle.
+- `activeShard`/`putBlob`/`commitShard`/`writeNode` + sémaphore PUT — primitives shard partagées.
+- `captureFiles` (pool 4, progression agrégée, addToSearchIndex) — orchestrateur de lot.
+
+**Rendu / résolution :**
+- `isEncrypted`, `shardImgUrl`, `shardThumbUrl`, `resolveFullUrl`, `resolveThumbUrl` — résolveur d'URL.
+- `decryptedObjectUrl` + `_decCache` — cache RAM du clair.
+- `readImgManifest(Cached)` + files bornées — lecture manifeste résiliente.
+- `ImgNodeThumb` (lazy viewport, hover-full, direct/index) — tuile universelle.
+- `buildJsDelivrUrl` (pin commit) — URL CDN.
+
+**Format :**
+- `.img.json` v1 (refs CDN + iv/thumbIv) — schéma cible pour tout fichier nativement affichable/streamable.
+
+---
+
+## 9. POINTS D'ACCROCHE PRÉCIS POUR LE REFACTOR D'UNIFICATION
+
+1. **Classification centralisée** : extraire la logique de `routeFile` (`universalCapture.js:660-708`)
+   dans un module pur `classify(file) -> { pipeline: 'image'|'video'|'audio'|'binary'|'text', kind, mime }`,
+   importable par (a) `captureFiles`, (b) `Scripts/archive-folder.mjs`, (c) upload mobile. Aligner avec
+   `fileKind.js` (aujourd'hui table parallèle pour les badges seulement).
+2. **`captureImage` n'a pas de variante bulk** : `archive-folder.mjs` ne l'appelle pas (il chunke tout).
+   Le routeur partagé doit faire qu'une image en bulk passe par `captureImage`, jamais par les chunks .file.json.
+3. **Viewer unifié** : un seul composant `<MediaNode path/>` qui lit `typeOfPath` + manifeste et dispatch
+   (image inline / HLS / audio / pdf / chunk-viewer). Aujourd'hui le dispatch est dupliqué (tuile vs plein
+   écran, grille vs liste, `App.jsx:998/2683/2804`). Le viewer chunk générique pour les vrais binaires =
+   `FileNodeViewer` (.file.json) — déjà additif et rétro-compatible.
+4. **3 miroirs thumb** (§6) : centraliser `shardThumbUrl`/`thumbEntry`/`thumbEntryOf` en un module partagé
+   client+serveur (le commentaire « search-8 » documente déjà l'invariant à ne pas casser).
+5. **Garde-fous respectés par le pipeline image actuel** : public par défaut, chiffré, chemins hashés
+   (zéro fuite de nom), shards <= cap dur, push = commit GitHub (pas REST blob direct côté serveur),
+   commit-pin jsDelivr. Le routeur unifié doit conserver ces invariants pour image ET les étendre.
+6. **Mobile (~390px)** : `ImgNodeThumb` est déjà lazy/viewport/concurrence-bornée (bon pour machine faible).
+   L'upload mobile (input file + share sheet) doit appeler le MÊME `captureFiles`. Aucun blocage structurel
+   côté pipeline image ; le travail est UI responsive du Finder/viewer, pas du stockage.
+
+---
+
+## 10. Fichiers clés (récap)
+
+- `src/capture/universalCapture.js` — ingestion + routeFile + captureImage + primitives shard (769 l).
+- `src/capture/thumbnailer.js` — `makeThumbWebp` (worker + repli inline).
+- `src/capture/thumbWorker.js` — OffscreenCanvas worker.
+- `src/capture/shardNaming.js` — schéma shards + `buildJsDelivrUrl` (miroir `server/shard-naming.js`).
+- `src/components/ImageNodeViewer.jsx` — résolveur d'URL + `ImgNodeThumb` + viewer plein écran +
+  `downloadMedia`/`downloadChunkedMedia` (483 l).
+- `src/media/crypto.js` — clé maître AES-GCM, decrypt, `decryptToObjectUrl`.
+- `src/media/SmartThumb.jsx` — `<img>` avec fallback/onMissing.
+- `src/create/node.js` — `typeOfPath` (dispatch par extension).
+- `src/lib/fileKind.js` — table label/couleur (parallèle, à aligner).
+- `scripts/build-search-index.mjs` / `server/page.js` — 2 des 3 miroirs thumb pour l'index recherche.
+- `server/upload-shard.js` — actions active-shard/blob/commit, cap 4,6 Go, état par famille.
+- `src/App.jsx` — `runCapture` (:2004), paste (:2096), dispatch viewer (:2804), tuiles (:998/:2683).

@@ -1,0 +1,41 @@
+# Refinement of 14-15 October 2026 (ZenRayProgress)
+
+Written 15 October 2026. Scope asked by Matthieu: speed, no design regression, no data bug, Assets and Create fluid,
+Freelance automated, hub coherent. All of it is on `origin/main` and deployed; every change has a test.
+The details of each fault are rows of `INDEX-ERREURS-FEATURES.md` dated 2026-10-15.
+
+## What changed, by product
+
+| Product | Change | Where | Measured effect |
+|---|---|---|---|
+| Assets (service) | Memoised file lists, coalesced state saves, coalesced automatic backups (240 s), yield to interactive actions, parallel snapshots | `scripts/AssetsService.mjs`, `scripts/AssetsConfig.json` | the "loader is busy" state is gone: bridge answers in ~110 ms during a pass |
+| Assets (publication) | One Git transaction per publication (3 saves + 9 fetches become 1 fetch + 1 push); unchanged index not rewritten; no-op passes skip republication for 6 h | `scripts/AssetsCloudGitWriter.mjs`, `AssetsCloudPublisher.mjs` | 26-30 s of Git per pass down to one push |
+| Assets (batches) | Batches of 2 000 files / 512 MiB; the engine pays about 35 s fixed per batch; 4 batches per pass | `AssetsConfig.json` | Japanese corpus: 51 309 pending files down to 0 |
+| Assets (card lookup) | Table instead of a linear normalised search per file | `AssetsService.mjs` (`cardsByRel`) | 25 s freeze per batch removed |
+| Assets (snapshot) | Three unread fields dropped (-29 %), failed metadata publication no longer an error loop, warning at 90 Mo | `AssetsService.mjs` | Japanese snapshot 104.7 MB (refused by GitHub) down to 80.8 MB |
+| Assets (UI) | An automatic pass no longer disables the save button | `src/components/assets/*` | - |
+| Index / search | Refresh reads only the first bytes of the 22 MB delta and reuses decrypted shards | `src/search/searchIndexClient.js` | no 22 MB download per view change |
+| Create | Tree poll skips download parsing when the ETag is unchanged; visibility markers kept 10 min and never cache a failed read | `src/capture/folderVisibility.js` | 20 000-item folder: first tiles in 250 ms |
+| Hub | One Cmd/Ctrl+K palette at the app root; "open in Create" links work from every view (mailbox `poserDemandePages`); a project opens its cloud folder | `src/App.jsx`, `src/create/Pages.jsx`, `src/components/SpotlightSearch.jsx` | - |
+| Freelance | The whole batch (3/5/10/20/50) opens as tabs through the local service, one letter copied per card, a batch recorded in one confirmed click; groups draw 72 cards then page; deterministic day batch | `src/components/freelance/FreelanceBatch.jsx`, `src/lib/freelanceBatch.js`, `scripts/Freelance/Service.mjs` | 10 000 DOM nodes before, 72 cards now |
+| Gallery | Text filter that only changes what is drawn; lightbox closes with Escape, steps with arrows, shows its position | `src/components/GalleryView.jsx` | - |
+| Films | Subtitles, proof and unload of a streaming batch run 4 films at a time (`ZR_FINISH_FLOWS`) | `scripts/Films/ProcessFilmsSequentially.py` | - |
+| Delivery | `Ship.sh` rebuilds the main checkout `dist/` after each delivery | atelier `Scripts/Ship.sh` | local :3100 no longer serves an old build |
+
+## Deliberately not done (needs Matthieu's go)
+
+- `GITHUB_TOKEN=$(gh auth token) node scripts/build-search-index.mjs --apply` (folds the 22 MB `delta.json` into the shards; reserved to Matthieu).
+- Create TEMP triage: plan in `/Users/zenray/.claude/tmp/tmp-zenray-refine-14oct/data/Plan-TEMP.json`, dry-run only, nothing moved.
+- Report on the state of Create: `/Users/zenray/.claude/tmp/tmp-zenray-refine-14oct/REPORT-create-organisation.md`.
+
+## Known limits
+
+- Film packaging is bound by the hardware encoder (about 20x real time at 2 flows).
+- The Japanese snapshot keeps a margin of about 23 % under GitHub's 100 MiB file limit; sharding it is the next step if it grows.
+- Counts differ on purpose between the Freelance header (609) and the filter chip (618): the 9 closed offers offered as "Périmé".
+
+## How to ship (reproducible)
+
+`/Users/zenray/.claude/tmp/tmp-zenray-refine-14oct/Scripts/Ship.sh [--restart-assets] [--restart-freelance] [--no-deploy]`:
+rebase on origin/main, full tests (one retry), build, push, Cloudflare Pages deploy to `--branch main`, main checkout fast-forward,
+main `dist/` rebuild, served-bundle check.

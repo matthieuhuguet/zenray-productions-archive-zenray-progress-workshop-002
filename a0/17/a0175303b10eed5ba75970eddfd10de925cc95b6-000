@@ -1,0 +1,68 @@
+# Fiabilisation + fluidification du drag-and-drop (2026-07-01)
+
+Contexte : Matthieu va retrier massivement des fichiers par glisser-déposer. Objectif : zéro bug possible,
+regroupement en dossier fluide, animations 0.2s, réécriture de chemin correcte pour tous les types de manifeste.
+
+## Bugs trouvés et corrigés
+
+### 1. `.file.json` (archive / blob-raw) absent du serveur `move` — CRITIQUE
+`server/page.js`, action `move` : `isSolo = isDb || isCanvas || isEmbed` n'incluait pas `.file.json`.
+Conséquence : déplacer un fichier brut/archive par drag renvoyait 400 `bad-path` — le drop échouait
+silencieusement (absorbé par le `.catch(() => null)` client, tuile réapparue sans message clair).
+Fix : `isFile = from.endsWith('.file.json') && to.endsWith('.file.json')` ajouté à `isSolo`.
+
+### 2. Même famille de bug côté client, 3 endroits
+`hasLeaf` dans `movePage` (`/\.(db|media|img|canvas|embed)\.json$|\.md$/`) omettait `file` : un fichier brut
+était traité comme un DOSSIER (route `move-tree` au lieu de `move`), produisant un chemin cassé du type
+`.../x.file.json/x.file.json`. Même trou dans `TRASH_TYPE_EXT` (suffixage de doublons en corbeille) et dans
+le calcul d'extension de `renamePage` (renommer un fichier brut lui faisait perdre son extension). Les 3 corrigés.
+
+### 3. Aucune protection contre les moves concurrents sur le même item
+`movePage` n'avait pas de verrou : deux gestes rapprochés sur la même tuile pouvaient lancer 2 requêtes
+réseau concurrentes sur le même `fromPath` → état incohérent (tuile qui réapparaît/disparaît selon l'ordre
+de retour réseau). Fix : `movingRef` (Set des chemins en vol), un 2e move sur un chemin déjà en cours est
+ignoré proprement (`setStatus('déplacement déjà en cours…')`) au lieu de partir en course.
+
+### 4. Fonctionnalité absente : « déposer un item sur un autre pour créer un dossier »
+Avant : seuls les VRAIS dossiers (`e.hasKids`) recevaient `onDragOver`/`onDrop`. Déposer une tuile-feuille sur
+une autre tuile-feuille ne déclenchait rigoureusement rien. Ajouté `createFolderFromDrop` : crée un dossier
+(nommé d'après la tuile cible), y déplace les 2 items en séquence via `movePage` (donc même fiabilité/retry
+que le reste du DnD, zéro duplication de logique). Multi-sélection (>1 item transporté) volontairement exclue
+(ambiguïté du nom de dossier). Câblé dans les 2 vues (grille icônes ET liste).
+
+## Animations 0.2s ajoutées
+
+`transition: '... .2s ease'` sur : highlight de survol pendant un drag (`dragOverLeaf`/`dragOver`), apparition
+du contour pointillé de la cible de groupement, léger `scale()` (1.02–1.04) sur la tuile survolée pour un
+retour immédiat et net. Appliqué sur `IconTile` (page/leaf/folder), `VideoMediaTile`, et les lignes de la vue
+liste. CSS inline, cohérent avec le reste du fichier (pas de librairie).
+
+## Preuve de l'invariance de chemin par type
+
+Trace statique du code serveur (`server/page.js`, actions `move`/`move-tree`) :
+- `.img.json` / `.media.json` / `.file.json` / `.db.json` / `.canvas.json` / `.embed.json` : un `move` simple
+  ne fait JAMAIS de réécriture de contenu — seul `git mv` logique (nouveau blob au chemin cible réutilisant
+  le même `sha`, suppression de l'ancien chemin). Le JSON interne (`cdnPath`, `cdnCommit`, `thumb`, `parts[]`)
+  est bit-identique avant/après.
+- `rewriteTreePaths` (réécriture de chemin interne) ne s'applique QUE dans `move-tree` (déplacement de
+  dossier), et uniquement aux fichiers `.m3u8`/`.media.json`, en remplaçant le préfixe de dossier déplacé.
+  Les manifestes `video-raw`/`blob-raw` stockent leurs `parts[]` en URLs CDN absolues vers d'autres repos
+  (zenray-vidraw-*, zenray-blob-public-*) → aucune correspondance possible avec un chemin `pages/...` local,
+  donc invariant par construction. Seuls les vieux manifestes `dash`/`chunked-media` référencent des chemins
+  locaux (`media/<id>/NNN.bin`) — c'est précisément pour eux que `rewriteTreePaths` existe, comportement
+  serveur inchangé et déjà correct.
+- Conclusion : pour tous les types demandés (image, vidéo video-raw/dash/chunked-media, fichier brut
+  blob-raw/archive), seul le CHEMIN du manifeste bouge ; le binaire (shard, hash) ne bouge jamais.
+
+## Fichiers modifiés
+- `server/page.js` : `isSolo` += `.file.json`.
+- `src/App.jsx` : `movePage`/`movePageInner` (garde anti-race + regex `hasLeaf`), `TRASH_TYPE_EXT`,
+  `renamePage` (regex leaf), `newFolder` (retourne `{dir}`, params `nameHint`/`skipRename`),
+  `createFolderFromDrop` (nouveau), `tileH`/`h` (`dragOverLeaf`/`dragLeaveLeaf`/`dropLeaf`), `IconTile`,
+  `VideoMediaTile`, vue liste (lignes leaf).
+
+## Build
+`npm run build` → vert (aucune erreur, warnings taille de chunk préexistants sans rapport).
+
+## Hors scope (non touché)
+Sidebar de navigation, menu contextuel "Partager"/"Télécharger l'original" (autres agents en parallèle).

@@ -1,0 +1,311 @@
+# Migrer ZenRayProgress sur Cloudflare, et pouvoir revenir
+
+Audit fait le 2026-07-30, après le blocage Vercel. Il répond à trois questions : ce qu'un
+déménagement coûterait réellement, ce qui bloquerait, et si un basculement d'un hébergeur à
+l'autre en un geste est atteignable.
+
+> **Avertissement de méthode.** Les chiffres de plateformes cités ici viennent de la page
+> tarifaire lue le 2026-07-30 ou de ma connaissance arrêtée en mai 2026. Les seuils des Workers
+> (requêtes par jour, millisecondes de processeur) ne sont **pas vérifiés** et doivent l'être avant
+> tout engagement. Tout ce qui concerne le dépôt, en revanche, est mesuré.
+
+---
+
+## 1. L'inventaire réel, mesuré
+
+| Élément | Chiffre | Source |
+|---|---|---|
+| Handlers dans `server/` | **44 fichiers** | `ls server/*.js` |
+| Fonctions déclarées à Vercel | **1** (routeur catch-all `api/[...route].js`) | contournement de la limite Hobby de 12 |
+| Variables d'environnement | **38** | `grep process.env` |
+| Fichiers dans `dist/` | **2 197** | plafond Pages : 20 000, donc large |
+| Poids de `dist/` | **104 Mo** | |
+| Plus gros fichier | **30,7 Mo** (`ffmpeg-core.wasm`) | **dépasse le plafond Pages de 25 Mo** |
+| Modules Node utilisés | `crypto` (9), `url` (2), `path` (2), `fs` (2) | |
+
+Ce n'est donc pas « une fonction de 145 lignes », comme je l'avais dit d'abord et à tort. C'est un
+routeur mince devant quarante-quatre handlers.
+
+---
+
+## 2. Ce qui migre sans rien changer
+
+La très grande majorité. Les handlers appellent `fetch` vers l'API GitHub, transforment du JSON et
+répondent : c'est du code standard qui tourne partout.
+
+- Le front Vite, statique, servi par Pages sans aucune adaptation.
+- Tous les handlers qui n'utilisent que `fetch`, `JSON`, `URL`, `TextEncoder`.
+- Le chiffrement : `aes-256-gcm` est directement disponible en Web Crypto sous le nom `AES-GCM`.
+- Le streaming : les Workers gèrent les flux nativement, souvent mieux que les fonctions Node.
+
+---
+
+## 3. CORRECTION DU 2026-07-30 : les trois quarts de cette section étaient faux
+
+Ce qui suivait a été écrit avant vérification, sur des suppositions. Trois requêtes à la
+documentation Cloudflare les ont démenties, et il faut lire la suite en le sachant.
+
+| Ce que j'affirmais | Ce qui est vrai | Conséquence |
+|---|---|---|
+| `node:crypto` demande une réécriture en Web Crypto | **supporté**, y compris `createHash`, `createHmac`, `randomBytes`, `createDecipheriv` | rien à réécrire |
+| « Un Worker n'a pas de système de fichiers » | **`node:fs` supporté** : mémoire, fichiers du bundle lisibles sous `/bundle`, écriture dans `/tmp` non persistante | `media-key.js` fonctionne tel quel, son repli disque étant de toute façon réservé au développement |
+| Les 38 variables demandent un portage | **`process.env` est peuplé automatiquement** par `nodejs_compat_populate_process_env`, actif par défaut depuis le 2025-04-01 | les 112 lectures de `process.env` ne bougent pas |
+
+**Le coût de la migration tombe donc de deux journées à quelques heures**, et la couche
+d'adaptation se réduit à une seule fonction au lieu de trois.
+
+**La leçon de méthode, qui vaut plus que la correction :** j'ai conçu une abstraction pour
+contourner des contraintes que je n'avais pas vérifiées. Une abstraction écrite avant la mesure
+abstrait surtout l'ignorance de celui qui l'écrit. Trois requêtes ont fait fondre cent lignes de
+code et une journée d'estimation.
+
+### Ce qui reste vrai de la section d'origine
+
+Seul le point 3.3 (`vercel.json` à transposer) et le point 3.4 (`@vercel/analytics`) tiennent. Le
+reste est conservé ci-dessous **à titre d'historique**, barré par le tableau ci-dessus.
+
+## 3 bis. Ce que je croyais devoir réécrire (historique, démenti)
+
+### 3.1 `node:crypto`, cinq primitives (une demi-journée)
+
+| Primitive | Où | Remplacement |
+|---|---|---|
+| `createHash` | 9 fichiers | `crypto.subtle.digest` |
+| `createHmac` | | `crypto.subtle.sign` avec une clé HMAC importée |
+| `randomBytes` | | `crypto.getRandomValues` |
+| `createDecipheriv('aes-256-gcm')` | `stream.js`, `shared-media.js` | `crypto.subtle.decrypt` en `AES-GCM` |
+| `timingSafeEqual` | `api/[...route].js` | dix lignes de comparaison à temps constant |
+
+Aucune n'est un obstacle : Web Crypto couvre les cinq. La seule vigilance porte sur `AES-GCM`, où
+l'étiquette d'authentification est concaténée au chiffré par Web Crypto alors que Node la sépare.
+Se tromper là produit un déchiffrement qui échoue sans dire pourquoi.
+
+### 3.2 `node:fs`, deux fichiers, et c'est le vrai travail
+
+**Un Worker n'a pas de système de fichiers.** Deux endroits en dépendent.
+
+`server/media-key.js` lit et **écrit** un fichier de clé sur disque. L'écriture est impossible sur
+Cloudflare : il faut passer par une variable d'environnement pour la lecture, et par KV si une
+rotation doit persister. C'est le point qui demande une décision, pas seulement une traduction.
+
+`server/share-og.js` lit `dist/index.html` pour y injecter les métadonnées Open Graph. Sur Pages,
+cela se fait par `env.ASSETS.fetch()`, qui remplace exactement le `includeFiles` de `vercel.json`.
+
+### 3.3 `vercel.json` (une heure)
+
+Les réécritures deviennent un fichier `_redirects`, les en-têtes un fichier `_headers`. La
+politique de sécurité du contenu se transpose telle quelle. Le `maxDuration: 60` disparaît, les
+Pages Functions ayant leurs propres limites.
+
+### 3.4 `@vercel/analytics` (dix minutes)
+
+Un import dans `src/main.jsx`, remplacé par Cloudflare Web Analytics ou simplement retiré.
+
+### 3.5 Le stockage clé-valeur (à décider)
+
+Quatre variables trahissent une dépendance : `KV_REST_API_URL`, `KV_REST_API_TOKEN`,
+`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`. Upstash s'appelle en HTTP depuis n'importe
+où, donc rien ne casse ; mais si c'est Vercel KV qui sert, il faut basculer sur Cloudflare KV ou
+garder Upstash comme service tiers commun aux deux hébergeurs. **Cette dernière voie est la bonne
+si l'on veut le basculement en un geste** : un stockage neutre ne dépend d'aucun des deux.
+
+---
+
+## 4. Ce qui bloquait, et qui est RÉSOLU depuis le 2026-07-30
+
+`ffmpeg-core.wasm` (32,2 Mo) est sorti du déploiement et servi par le CDN npm de jsDelivr.
+`dist/` passe de 104 à 73 Mo, le plus gros fichier de 30,7 à 1,9 Mo : le plafond de 25 Mo par
+fichier de Cloudflare Pages n'est plus atteint.
+
+**Nuance qui a failli faire écarter la solution :** la limite d'environ 20 Mo de jsDelivr vaut pour
+le chemin `/gh/`, celui de nos médias. Le chemin `/npm/` sert les 32 232 419 octets en HTTP 200,
+avec `application/wasm` et CORS ouvert. Vérifié, pas supposé.
+
+## 4 bis. Le raisonnement d'origine sur ce blocage (historique)
+
+### `ffmpeg-core.wasm` pèse 30,7 Mo, le plafond de Pages est de 25 Mo
+
+Trois issues, par ordre de préférence.
+
+1. **Le servir depuis jsDelivr**, exactement comme les médias le sont déjà. Le fichier est public,
+   immuable, versionné : c'est précisément le cas d'usage d'un CDN de paquets. Coût : changer une
+   URL. C'est aussi la solution qui allège le déploiement de trente mégaoctets, ce qui profite à
+   Vercel autant qu'à Cloudflare.
+2. Le mettre dans R2 et le servir par le Worker.
+3. Charger `@ffmpeg/core` depuis un registre public au moment de l'exécution.
+
+**La première voie mérite d'être faite tout de suite, indépendamment de toute migration.**
+
+---
+
+## 5. Le basculement en un geste, est-ce atteignable ?
+
+Oui, et l'architecture est déjà à moitié en place, puisque `api/[...route].js` est un routeur mince
+devant des handlers qui ne connaissent pas leur hébergeur. Il manque une couche et un pipeline.
+
+### 5.1 La couche d'adaptation
+
+Un seul fichier, `server/_platform.js`, expose les trois seules choses qui diffèrent :
+
+```
+readAsset(chemin)   → lit un fichier livré (dist/index.html)
+secret(nom)         → lit une variable d'environnement
+kv                  → get / set, si un stockage est nécessaire
+```
+
+Les quarante-quatre handlers ne parlent plus qu'à cette couche. Deux implémentations coexistent,
+une par hébergeur, choisies au moment du build. **Une seule règle à tenir : aucun handler
+n'importe `node:fs` ni ne lit `process.env` directement.** Elle se vérifie par une commande, donc
+elle peut devenir un test.
+
+### 5.2 Le pipeline
+
+GitHub Actions construit une fois et déploie où on lui dit, l'hébergeur cible n'étant qu'une
+variable du workflow. Les deux déploiements peuvent même coexister en permanence, l'un servant de
+secours à l'autre, le basculement se réduisant alors à un changement d'enregistrement DNS.
+
+C'est d'ailleurs la vraie réponse au blocage de ce mois : **un hébergeur unique est un point de
+défaillance unique**, et quatre jours de production figée l'ont démontré.
+
+### 5.3 Coût
+
+| Étape | Estimation |
+|---|---|
+| Sortir le wasm de 30,7 Mo vers jsDelivr | 1 h, utile immédiatement |
+| Écrire `server/_platform.js` et y faire passer les 44 handlers | 1 journée |
+| Porter les cinq primitives de `node:crypto` | 1 demi-journée |
+| Transposer `vercel.json` en `_redirects` et `_headers` | 1 h |
+| Reporter les 38 variables d'environnement | 1 h, fastidieux et sans risque |
+| Décider du sort de la clé média (`media-key.js`) | à trancher, pas à coder |
+| Workflow GitHub Actions à deux cibles | 2 h |
+
+**Environ deux journées**, dont une seule vraiment technique.
+
+---
+
+## 6. Faut-il migrer ?
+
+Pas dans l'urgence, et la raison est mesurée. Le blocage de ce mois venait d'**une ligne** qui
+redemandait 3,02 Mo toutes les 25 secondes, corrigée le 2026-07-30 : la consommation est passée à
+300 octets par appel, facteur 10 553. Le plan Vercel actuel redevient largement suffisant.
+
+Ce qui reste vrai en revanche, et ne dépend d'aucun correctif :
+
+- Vercel facture **les octets**, Cloudflare facture **le calcul**. Une application qui sert des
+  médias consomme des octets, donc elle joue contre le compteur de Vercel et pour celui de
+  Cloudflare.
+- Vercel bloque sur une **appréciation** (« fair use ») autant que sur un seuil. Un compteur se
+  pilote, un jugement ne se pilote pas.
+- Un hébergeur unique reste un point de défaillance unique.
+
+**La conclusion raisonnable** est donc de préparer le basculement sans l'exécuter : écrire la
+couche d'adaptation, sortir le wasm, monter le pipeline à deux cibles. Le jour où Vercel bloque de
+nouveau, la bascule prend dix minutes au lieu de deux jours.
+
+---
+
+# ÉTAT AU 2026-07-30 : LA MIGRATION EST PRÊTE, ELLE N'EST PAS EXÉCUTÉE
+
+Tout ce qui suit est écrit, testé et commité. Rien n'est déployé sur Cloudflare, et le site
+continue de tourner sur Vercel.
+
+## Ce qui existe désormais dans le dépôt
+
+| Fichier | Rôle | Vérifié par |
+|---|---|---|
+| `server/_platform.js` | la seule chose qui diffère entre les deux hôtes : lire un fichier livré | usage réel dans `share-og.js` |
+| `server/_cloudflare-adapter.js` | traduit `Request`/`Response` en `req`/`res` | **9 tests**, dont le streaming |
+| `functions/api/[[route]].js` | point d'entrée Cloudflare Pages | build |
+| `public/_headers` | les en-têtes de `vercel.json` | **test de parité** |
+| `public/_redirects` | les réécritures de `vercel.json` | **test de parité** |
+| `public/_routes.json` | seules `/api/*` et les trois routes de partage invoquent la fonction | **test de parité** |
+| `wrangler.toml` | `nodejs_compat` + date de compatibilité au 2025-06-01 | — |
+| `tests/hebergement.test.js` | interdit aux deux configurations de diverger | **5 tests** |
+| `.github/workflows/deploiement.yml` | publie sur l'une ou l'autre cible, à la main | — |
+
+**379 tests verts, build vert.**
+
+## Les trois garde-fous, et pourquoi chacun existe
+
+**Le test de parité.** `vercel.json` et `public/_headers` décrivent la même politique pour deux
+plateformes, et rien n'oblige techniquement à les tenir égaux. C'est exactement le danger : une
+politique de sécurité modifiée d'un seul côté ne casse rien, ne se voit nulle part, et n'apparaît
+que le jour où l'on bascule sur l'hébergeur qu'on ne regardait pas.
+
+**`_routes.json`.** Sans lui, chaque requête statique consommerait une invocation de fonction.
+C'est la version Cloudflare du piège qui a fait exploser le compteur d'origine chez Vercel, et il
+valait mieux le fermer avant d'y tomber une seconde fois.
+
+**Les tests de l'adaptateur.** Il ne tournera jamais sur Cloudflare avant le jour de la bascule.
+Ces neuf tests sont donc la seule chose qui distingue un adaptateur qui marche d'un adaptateur qui
+en a l'air, et le plus important d'entre eux vérifie que la réponse part **avant** que le handler
+ait fini d'écrire : sans cela, un flux de plusieurs centaines de mégaoctets deviendrait un tampon
+en mémoire et ferait tomber le Worker.
+
+## La marche à suivre, le jour où l'on bascule
+
+1. Créer le projet Pages, en le liant au dépôt GitHub.
+2. Poser les **38 variables** listées en section 1 dans le projet Cloudflare. C'est l'étape la plus
+   longue et la plus bête, aucune ne se devine.
+3. Poser `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID` dans les secrets du dépôt.
+4. Lancer le workflow `Déploiement` avec la cible `cloudflare`.
+5. Vérifier trois choses avant de basculer le domaine : `/api/page?action=tree` répond, une image
+   chiffrée se déchiffre (donc `node:crypto` et `ZENRAY_MEDIA_KEY` fonctionnent), et un lien de
+   partage rend ses métadonnées Open Graph (donc `readAsset` joint bien le service d'assets).
+6. Basculer le DNS.
+
+**Compter une heure**, dont quarante minutes de report de variables.
+
+## Ce qui reste attaché à Vercel, et n'a pas d'importance
+
+`@vercel/analytics` dans `src/main.jsx` pose un script vers `/_vercel/insights/script.js`. Sur
+Cloudflare ce chemin n'existe pas : le script échoue en 404 sans rien casser. À remplacer par
+Cloudflare Web Analytics le jour venu, ou à retirer.
+
+## Faut-il basculer ?
+
+**Non, pas aujourd'hui.** La cause du blocage était une ligne qui redemandait 3,02 Mo toutes les
+25 secondes, corrigée le 2026-07-30 : 3 165 910 octets sont devenus 300, soit un facteur 10 553.
+Le plan Vercel redevient largement suffisant.
+
+Ce qui reste vrai malgré la correction, et qui justifie d'avoir tout préparé :
+
+- Vercel facture **les octets**, Cloudflare facture **le calcul**. Une application qui sert des
+  médias joue contre le premier compteur.
+- Vercel bloque sur une **appréciation** autant que sur un seuil. Un compteur se pilote, un
+  jugement ne se pilote pas.
+- Un hébergeur unique reste un point de défaillance unique. Quatre jours de production figée l'ont
+  démontré, et aucune ligne de code ne répare cela.
+
+Le jour où Vercel bloque de nouveau, la bascule prend une heure au lieu de deux jours.
+
+---
+
+# 2026-07-31 : LA PROCÉDURE CI-DESSUS A ÉTÉ EXÉCUTÉE
+
+Le site tourne sur Cloudflare Pages. Tout ce qui précède devient donc de l'**histoire** : le
+raisonnement qui a conduit à la migration, les suppositions démenties en chemin, et la procédure
+telle qu'elle avait été prévue. Rien n'y est réécrit, parce que ce document sert aussi à savoir ce
+qu'on croyait avant de vérifier.
+
+**Les lois d'exploitation vivent désormais dans le CLAUDE.md du projet**, section « LE SITE TOURNE
+SUR CLOUDFLARE, ET UN PUSH NE PUBLIE RIEN ». Ne pas les recopier ici : c'est là qu'on les lira.
+
+Trois écarts entre ce qui était prévu et ce qui s'est passé méritent d'être notés, car ils
+corrigent des chiffres écrits plus haut.
+
+**Le report des variables n'a pas pris quarante minutes, et pas davantage deux.** Vercel marque ses
+variables « sensibles », si bien qu'elles ne se relisent jamais, pas même par sa propre CLI :
+`vercel env pull` rend `NOM=""`. Six secrets ont finalement suffi à faire tourner le site, quatorze
+autres ayant déjà un défaut dans le code et les seize restantes ne servant que des fonctions
+périphériques.
+
+**Le plan payant n'était pas nécessaire.** J'avais recommandé les cinq dollars mensuels en estimant
+que le hachage de trois mégaoctets dépasserait les dix millisecondes de processeur du plan gratuit,
+en signalant qu'il s'agissait d'un ordre de grandeur. Mesuré en production : `/api/page?action=tree`
+rend ses 30 248 chemins en **2,3 s** sans approcher le plafond, parce que celui-ci ne compte que le
+calcul et que l'essentiel du temps part en attente de GitHub.
+
+**La migration a duré une heure environ**, comme prévu, mais le temps n'est pas allé où on
+l'attendait : presque rien dans la configuration, presque tout dans trois pannes que seule
+l'exécution pouvait révéler, et qui sont décrites dans `PROGRESS.md` aux entrées du 2026-07-31.

@@ -1,0 +1,155 @@
+# Chantier "Media Public + Chiffré + jsDelivr" — Brief d'architecture
+
+Statut : **SETUP** (prêt à exécuter par la team d'agents). Date : 2026-06-02.
+
+Ce document est la SOURCE DE VÉRITÉ du chantier. Il survit aux coupures de contexte.
+La team d'agents lit ce fichier et l'exécute phase par phase. Chaque phase écrit son livrable sur disque.
+
+---
+
+## 1. L'idée en une phrase (pour tout le monde)
+
+Aujourd'hui nos images vivent sur des dépôts GitHub **privés**. Pour les afficher, notre serveur
+doit aller les chercher lui-même (lent, coûteux en bande passante, limité par GitHub).
+
+Demain : on met les fichiers sur des dépôts **publics**, mais **chiffrés** (illisibles sans une clé secrète).
+N'importe qui peut télécharger les octets — ce n'est que du charabia sans la clé. Un CDN mondial gratuit
+et illimité (**jsDelivr**) les sert à la vitesse de l'éclair. Le navigateur récupère le charabia + la clé
+(via un petit point d'accès privé) et **déchiffre directement chez l'utilisateur** pour afficher l'image.
+
+Image mentale : on range ses affaires dans un casier transparent en pleine rue (public, accessible à tous),
+mais tout est dans des boîtes verrouillées (chiffrées). Seul celui qui a la clé voit ce qu'il y a dedans.
+
+Gain : vitesse maximale (CDN mondial), coût serveur quasi nul, plus aucune limite GitHub, et la
+confidentialité est préservée par le chiffrement, pas par le secret du dépôt.
+
+---
+
+## 2. Les trois canaux d'accès GitHub (rappel technique)
+
+- **API REST** (`api.github.com`) : lister des dossiers. **Limite dure 5000 requêtes/heure.** C'est elle
+  qui faisait freezer le site. On l'évite au maximum.
+- **raw.githubusercontent.com** : contenu brut d'un fichier. **Hors quota 5000/h**, mais passe par notre
+  serveur (bande passante) et peut throttler.
+- **jsDelivr** (`cdn.jsdelivr.net/gh/<owner>/<repo>@<commit>/<path>`) : CDN mondial, **vraiment illimité**,
+  cache immuable. **Dépôts PUBLICS uniquement.** C'est la cible.
+
+Le passage en public+chiffré débloque jsDelivr pour TOUT le média → fin des limites.
+
+---
+
+## 3. Ce qui est DÉJÀ fait (fondation, committée, ne pas refaire)
+
+- **`src/media/crypto.js`** — chiffrement AES-GCM 256 bits côté navigateur (WebCrypto) :
+  - `getMediaKey()` : récupère la clé maître une fois via `/api/media-key`, la garde en mémoire (CryptoKey non-extractible).
+  - `encryptBytes(arrayBuffer)` → `{ cipher: Uint8Array, iv: base64 }`. IV aléatoire 12 octets par fichier.
+  - `decryptBytes(cipher, ivB64)` → ArrayBuffer clair.
+  - `decryptToObjectUrl(cipher, ivB64, mime)` → objectURL prêt pour `<img>`.
+- **`server/media-key.js`** + route `media-key` dans `api/[...route].js` — sert la clé maître (base64 32 octets).
+  Source : env `ZENRAY_MEDIA_KEY` sinon fichier local `.zenray-media-key` (gitignored, mode 0600). `Cache-Control: no-store`.
+
+La clé n'est JAMAIS committée ni poussée sur un dépôt public.
+
+---
+
+## 4. Nommage des dépôts (déjà en place — `server/shard-naming.js` + `src/capture/shardNaming.js`)
+
+Schéma : `zenray-<kind>-<vis>-NN`. kind ∈ {img, vid, audio, doc, table, markdown}. vis ∈ {public, private}.
+Legacy accepté en lecture : `zenray-media-NN` (= img/private), `zenray-vid-NN` (= vid/public).
+`buildJsDelivrUrl(repo, commit, path)` (client) construit l'URL CDN pinnée sur le commit.
+
+Cible du chantier : tout le binaire média migre vers des familles **`-public-NN`** chiffrées.
+
+---
+
+## 5. Chemins HASHÉS uniquement (P0 anti-fuite, NON négociable)
+
+Sur un dépôt public, le **nom des fichiers et des dossiers est visible de tous**. Donc :
+**JAMAIS de nom de média humain** dans un chemin, un message de commit, ou un nom de branche, sur
+`zenray-*-public-NN` ni `zenray-data`. Uniquement des chemins hashés : `ab/cd/<hash>.<ext>` (voir `shardPathFor`).
+Le nom lisible vit seulement dans le manifest (chiffré ou sur dépôt privé). Incident de référence : 2026-06-01.
+
+---
+
+## 6. Les 4 pipelines à livrer
+
+### 6.1 — Upload (chiffrement à l'écriture)
+Fichier : `src/capture/universalCapture.js`, fonction `captureImage` (et sœurs futures audio/doc/table).
+- Hacher le binaire (pour dédup + chemin). Décider : hash du **clair** (dédup possible, IV déterministe dérivé
+  du hash) OU hash du **ciphertext** (pas de dédup, IV aléatoire). **Choix retenu : hash du clair + IV dérivé**
+  (12 premiers octets du SHA du clair) → même image = même ciphertext = dédup conservée. À valider par l'agent.
+- `encryptBytes(ab)` → pousser le **ciphertext** sur le shard `img/public` via `putBlob`.
+- Idem pour la vignette `.webp` (chiffrée aussi).
+- Manifest enrichi : `{ vis:'public', cdnRepo, cdnPath, cdnCommit, iv, thumbIv, alg:'AES-GCM' }`.
+- Forcer `activeShard('img','public', …)`.
+
+### 6.2 — Affichage (déchiffrement à la lecture)
+Fichier : `src/components/ImageNodeViewer.jsx` (+ `SmartThumb`, `ImgNodeThumb`).
+- Brancher sur le champ `enc`/`iv` du manifest : si présent → fetch ciphertext via `buildJsDelivrUrl` →
+  `decryptToObjectUrl(cipher, iv, mime)` → objectURL. Sinon → comportement actuel (rétro-compat legacy intacte).
+- Conserver le cache RAM (jamais déchargé) + IndexedDB + lazy viewport. **Décision : on cache le CLAIR
+  déchiffré** (objectURL) pour ne pas re-déchiffrer à chaque scroll. Le clair ne quitte jamais la RAM navigateur.
+- Vignette : même logique avec `thumbIv`.
+
+### 6.3 — Output (re-téléchargement = déchiffrer + réassembler)
+Bouton "télécharger l'original". Récupère le(s) morceau(x) chiffré(s) via jsDelivr, déchiffre, réassemble le
+fichier d'origine (bon nom + bon type MIME), déclenche le download navigateur. Pour les gros fichiers découpés
+en chunks : déchiffrer chunk par chunk dans l'ordre puis concaténer.
+
+### 6.4 — Migration (le gros morceau, ~30 Go sur 7 shards privés)
+Script : `scripts/migrate-encrypt-public.mjs`. **DRY-RUN par défaut, `--apply` manuel par Matthieu.**
+- Pour chaque shard privé (`zenray-media-NN` / `zenray-img-private-NN`) : cloner en local (git, hors quota REST).
+- Pour chaque binaire : déchiffrer si déjà chiffré (non), lire le clair, `encrypt`, écrire le ciphertext sur le
+  dépôt **public** correspondant (chemin hashé identique), réécrire le manifest (`.img.json`) → refs CDN + iv + alg.
+- Pousser en git local (clone/push, pas l'API). Logger ce qui est migré, ce qui est sauté, ce qui échoue.
+- Ne JAMAIS supprimer l'original tant que le public n'est pas vérifié. Garder une trace de rollback.
+
+---
+
+## 7. Index de recherche
+`pages/.zr-search-index.json` : les `thumbs` doivent pointer vers les refs CDN chiffrées (iv inclus) pour que la
+recherche affiche les vignettes sans toucher l'API REST. `scripts/build-search-index.mjs` à adapter.
+
+---
+
+## 8. Contraintes de sécurité et de livraison (P0, verbatim)
+
+1. **Ne pas déployer sur Vercel** (un seul déploiement éventuel, sur demande explicite de Matthieu).
+2. **Clé maître** : jamais committée, jamais sur dépôt public.
+3. **Jamais de plaintext** poussé sur un dépôt public.
+4. **Chemins hashés uniquement** sur les dépôts publics (P0 anti-fuite noms média).
+5. **index.html jamais en cache** (no-cache/no-store) ; assets hashés en cache long.
+6. **Scripts bulk = DRY-RUN**, `--apply` déclenché manuellement par Matthieu.
+7. **Build VERT** (`npm run build`) avant chaque commit.
+8. **PROGRESS.md append-only.**
+9. Fonts : Anthropic Serif 80% / Sans 15% / Mono 5%, jamais Inter.
+
+---
+
+## 9. Découpage proposé pour la team d'agents
+
+L'écriture de fichiers ne doit JAMAIS avoir deux agents qui modifient le même fichier en parallèle
+(App.jsx, universalCapture.js, ImageNodeViewer.jsx = monolithes). Donc : conception en parallèle, écriture séquentielle.
+
+- **Agent A — Upload** : `captureImage` chiffré (6.1). Livrable : diff + note `docs/phase-upload.md`.
+- **Agent B — Affichage** : ImageNodeViewer/SmartThumb déchiffrés (6.2). Livrable : diff + `docs/phase-display.md`.
+- **Agent C — Output** : bouton download + réassemblage (6.3). Livrable : diff + `docs/phase-output.md`.
+- **Agent D — Migration** : `scripts/migrate-encrypt-public.mjs` DRY-RUN (6.4). Livrable : script + `docs/phase-migration.md`.
+- **Agent E — Index recherche** : refs CDN chiffrées (7). Livrable : diff + note.
+- **Agent F — Vérif/Build** : `npm run build` vert, cohérence rétro-compat legacy, check P0 anti-fuite. Livrable : rapport `docs/phase-verify.md`.
+
+Ordre d'écriture (séquentiel sur fichiers partagés) : A → B → C (touchent App.jsx / viewers) ; D, E en parallèle
+(fichiers distincts) ; F en dernier (build + audit). Chaque agent **écrit son livrable sur disque à la fin de sa phase**
+(règle "ne jamais perdre le transcript des agents", CLAUDE.md global 2026-06-02).
+
+---
+
+## 10. Critères d'acceptation (ship)
+
+- [ ] Nouvelle image uploadée → poussée chiffrée sur `zenray-img-public-NN`, chemin hashé, manifest avec iv/alg.
+- [ ] Cette image s'affiche (déchiffrée client) sans rafraîchir la page, vignette comprise.
+- [ ] Re-téléchargement → fichier d'origine identique (octet pour octet), bon nom, bon type.
+- [ ] Images legacy privées : toujours affichées (rétro-compat intacte) tant que non migrées.
+- [ ] `scripts/migrate-encrypt-public.mjs` en DRY-RUN : liste exactement ce qu'il ferait, ne touche rien.
+- [ ] Recherche : vignettes via CDN chiffré, zéro appel API REST.
+- [ ] `npm run build` vert. Aucun nom de média humain sur un dépôt public. Clé absente de tout commit.

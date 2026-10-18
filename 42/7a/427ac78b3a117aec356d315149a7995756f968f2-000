@@ -1,0 +1,169 @@
+# Audit MOBILE / RESPONSIVE + carte technique pour le refactor d'unification
+
+Branche : `refactor/unified-ingest`. Audit factuel du code réel (rien d'inventé). Cible UX : iPhone 15 Pro, viewport CSS ~390px (393 logique).
+
+---
+
+## 0. Synthèse en une page
+
+- **Détection tactile** : une seule constante `IS_TOUCH` (App.jsx:35-37), figée au chargement. Sert UNIQUEMENT à ouvrir au tap simple (App.jsx:2190). Aucune autre adaptation pilotée par le tactile.
+- **Breakpoint** : il n'y a qu'**un seul vrai breakpoint applicatif, 860px** (sidebar overlay + Finder « narrow »). Les media queries CSS (1024 / 640 / 860) ne touchent que typo, scrollbars, wrap de toolbar, hauteur de tap. Rien à ~390px de spécifique.
+- **Ce qui casse à 390px** : grille Finder jouable mais tuiles trop grosses (zoom défaut 132 → ~2 colonnes), barre d'outils dense, viewers (MediaViewer / FileNodeViewer / ImageNodeViewer) pensés desktop (maxWidth 980, options en hover), éditeur BlockNote utilisable mais toolbar étroite, Drive/Archives en grille fixe `minmax(240px,1fr)` qui force le scroll horizontal.
+- **Manques iPhone bloquants** : (a) **upload image impossible au doigt** depuis la grille (le seul input file natif accept image est sur la carte calendrier, pas le Finder ; le Finder n'a qu'un input `accept="video/*"`). (b) **Pas de capture appareil photo** (`capture=`). (c) **Pas de share sheet** (`navigator.share` absent). (d) **Vidéo : import impossible hors localhost** (routeFile exige `localhost`). (e) Download d'archive = réassemblage Blob full-RAM, OK petits fichiers, KO gros sur iPhone.
+- **Bonne nouvelle** : le **routeur d'ingestion existe déjà** (`routeFile` dans universalCapture.js:660) et le **routeur de viewer existe déjà** (App.jsx:2804-2839, dérivé de `typeOfPath`). Le refactor est surtout une **convergence/extension** de ces deux points, pas une réécriture.
+
+---
+
+## 1. État MOBILE / RESPONSIVE actuel
+
+### 1.1 IS_TOUCH
+`src/App.jsx:35-37`
+```js
+const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches
+```
+- Figé au load (commentaire L32-34 : le type de pointeur ne change pas en session).
+- **Seul usage** : `src/App.jsx:2190` → sur tactile, un tap simple ouvre l'entrée (pas de double-clic).
+- Pas de variante de layout, de viewer, de toolbar conditionnée par `IS_TOUCH`. C'est le seul levier tactile du code.
+
+### 1.2 Breakpoints
+**JS (un seul seuil réel : 860px)**
+- `App.jsx:134-135` `navOpen` / `navOverlay` : init selon `innerWidth >= 860` / `< 860`.
+- `App.jsx:143-153` resize listener : sous 860 → sidebar en overlay flottant + repli auto (ne force qu'au franchissement du seuil, pas à chaque resize, cf. commentaire P8).
+- `App.jsx:1063-1064` `pageMobile` = `innerWidth <= 860` (passe les pages/éditeur en pleine largeur).
+- `App.jsx:1163-1167` `narrowFinder` = `innerWidth < 860` → bascule les colonnes Favoris/Inspecteur en `drawer` (`App.jsx:1164` `drawer = 'fav' | 'inspect' | null`).
+- `App.jsx:2568` calcul de position du menu « + » avec `innerWidth`.
+
+**CSS (`index.html`)**
+- L174-179 `@media (max-width:1024px)` : `.zr-tap` min-height 40, `.zr-treeitem/.zr-navitem` min-height 38, `.zr-hover-action` rendues visibles (révèle les actions hover sur tactile).
+- L182-184 `@media (max-width:1024px) and (min-width:641px)` : densité tablette.
+- L187-193 `@media (max-width:640px)` : feuille pleine largeur, md 16px, scrollbars 6px.
+- L196-198 `@media (max-width:860px)` : `.zr-wrap` force `flex-wrap` (toolbars).
+- **Aucune media query < 480 ni dédiée ~390px.** Le viewport (`index.html:5`) est correct (`width=device-width, initial-scale=1`) mais sans `viewport-fit=cover` (pas de gestion safe-area / encoche iPhone).
+
+### 1.3 Ce qui casse concrètement à ~390px
+
+**Finder en grille** (`VirtualIconGrid` App.jsx:800-858, `IconTile` 964+)
+- Largeur de colonne pilotée par `zoom` (défaut **132**, persisté `zr:create:zoom`). `cols = floor((width+GAP)/(zoom+GAP))` (L840). À 390px utiles → ~2-3 colonnes, tuiles énormes. Pas de clamp du zoom sur petit écran.
+- `tileThumbSize = clamp(44 … zoom-30 … 220)` (L785). Reste utilisable mais pas optimisé doigt.
+- Grille virtualisée OK (perf), mais aucune réduction auto du zoom en mobile → UX « zoomée ».
+
+**Sidebar** : gérée (overlay < 860 + backdrop `zr-sidebar-overlay/-backdrop`). Largeur fixe **224px** (`App.jsx:321`) → sur 390px elle couvre 57% de l'écran, acceptable en overlay. Pas de safe-area top (encoche).
+
+**Barre d'outils Finder** : `.zr-wrap` wrap OK, mais densité forte (zoom slider, filtres, view switch, bouton +). Le menu « + » se positionne via `getBoundingClientRect` + clamp viewport (App.jsx:2568) — fonctionne, mais largeur menu 244 fixe.
+
+**Viewers**
+- `MediaViewer` (`src/components/MediaViewer.jsx:87`) : `maxWidth: vidWide ? 100% : 980`. À 390 le `width:100%` tient, mais les options (`optsOpen`, download ffmpeg) sont des contrôles fins pensés souris.
+- `HlsVideo` (`src/components/HlsVideo.jsx`) : lecteur custom complet (menus qualité/audio/sous-titres en overlay `bottom:56 right:8`, boutons 13.5px). Cibles tactiles trop petites, menus non repensés mobile. **Le streaming HLS lui-même fonctionne** (hls.js d'abord, natif Safari/iOS fallback — exactement la reco mémoire).
+- `FileNodeViewer` (`src/components/FileNodeViewer.jsx`) : carte + bouton download. Le download chunké (`downloadFile` L29-47) **bufferise tous les chunks en RAM** (`new Blob(parts)`), idem `QuickLookOverlay.assembleFileUrl` (cap 500 Mo, L18). Sur iPhone, gros fichiers → crash mémoire.
+- `ImageNodeViewer` : affichage image, OK responsive de fait (image fluide).
+
+**Éditeur BlockNote** (`src/components/PageEditorBN.jsx:500`) : `maxWidth: maxW` (passe 100% via `pageMobile`). Éditable au doigt mais la toolbar BlockNote et les menus slash sont étroits ; `focusPageBody` OK. Pas de blocage dur, juste exigu.
+
+**Drive** (`src/components/DriveDashboard.jsx`) et **Archives/Downloads** (`src/components/DownloadsView.jsx`) : grilles `repeat(auto-fit,minmax(240px,1fr))` (motif récurrent, ex App.jsx:440). À 390px → 1 colonne forcée à 240px mini = OK en largeur mais cartes hautes ; les tableaux d'arborescence repo (tree) et les blocs de liens curl/sparse **débordent** (texte mono long, pas de wrap/scroll-x contrôlé).
+
+---
+
+## 2. Manques précis pour une UX iPhone 15 Pro
+
+| Besoin | État actuel | Manque |
+|---|---|---|
+| Upload image au doigt depuis le Finder | Seul input file `accept="video/*"` dans le menu + (App.jsx:2587). L'`accept="image/*"` n'existe que sur la carte calendrier (App.jsx:553) et le cover (3119/3131). | **Aucun input file image/universel dans le Finder.** Le drop existe mais le doigt ne « drag » pas un fichier sur iPhone. |
+| Capture photo/vidéo via caméra | Aucun `capture=` dans le repo. | Attribut `capture="environment"` + input `accept="image/*,video/*"`. |
+| Partage entrant (share sheet iOS « ouvrir dans ») | `navigator.share` / Web Share Target absent. | Pas de PWA share target (manifest) ni de bouton `navigator.share` sortant pour download/lien. |
+| Import vidéo mobile | `routeFile` (universalCapture.js:682-687) exige `location.hostname === localhost` sinon refus avec notif. | **Sur iPhone (prod jsDelivr, pas localhost) la vidéo est refusée.** Bloquant pour l'upload mobile vidéo → HLS. |
+| Download facile | Archives : `a.download` (raw) ou Blob full-RAM (chunké). | iOS Safari ignore souvent `download` cross-origin (raw.githubusercontent) → ouvre l'onglet au lieu de télécharger ; Blob gros = OOM. Manque : Web Share / lien direct / streaming download. |
+| Lecture streamable machine faible | HLS adaptatif déjà là (HlsVideo, ABR `currentLevel=-1`). Images servies web. | **OK** sauf les archives `.file.json` chunkées = NON streamables (doivent être réassemblées). C'est précisément la cible du refactor (ne plus chunker images/vidéos). |
+| Cibles tactiles | `.zr-tap`/`.zr-treeitem` min-height 38-40 (≥1024). | Boutons des viewers (HLS, options) < 44px, menus non agrandis. |
+| Safe-area encoche | viewport sans `viewport-fit=cover`, aucun `env(safe-area-inset-*)`. | Header/sidebar passent sous l'encoche / la barre home. |
+
+---
+
+## 3. Carte technique — fichiers, formats, flux
+
+### 3.1 Les 3 pipelines (entrée → stockage → rendu)
+
+**Routeur d'ingestion unique (DÉJÀ EN PLACE)** : `src/capture/universalCapture.js`
+- `routeFile(file, folder, onProgress, mode, vis)` L660-708 classifie par `file.type` + extension :
+  - image/* ou ext image → `captureImage` → manifeste **`.img.json`** (binaire par hash sur shard img public + vignette). **Streamable web.**
+  - audio/* (mime prioritaire L670) ou ext audio (L694) → `captureAudio` → **`.media.json`**.
+  - video/* ou ext vidéo → `captureVideoServerHls` **mais seulement si localhost** (L682), sinon refus. → **`.media.json`** type HLS AES-128.
+  - md/txt → `captureText` → page `.md`.
+  - pdf → `captureBinaryMedia(... 'pdf')` → **`.media.json`** (famille zenray-pdf-public).
+  - fallback → `captureBinaryMedia(octet-stream)` → média chunké `.media.json`.
+- `captureFiles(files, {folder,onProgress,mode,vis})` L739-769 : pool concurrence 4, agrège la progression, push 1 commit d'index recherche.
+- **Point clé** : `routeFile` ne produit JAMAIS de `.file.json`. Le `.file.json` (archive chunkée opaque) vient UNIQUEMENT du script bulk `scripts/archive-folder.mjs`. → **divergence des deux chemins d'ingestion à unifier.**
+
+**Script bulk archive** : `scripts/archive-folder.mjs`
+- Découpe TOUT fichier en chunks 19 Mo (`CHUNK`), shards `zenray-productions-archive-*` ≤5 Go, manifeste **`.file.json` v4** dans zenray-data (privé).
+- Format v4 (L333-334) : `{ type:'file', v:4, name, rel, mime, mode:'chunked', size, sha256, chunkSize, parts:[{repo,commit,chunks[]}], repo, commit, chunks, versions[] }`. `versions[]` append-only.
+- `parts[]` = multi-shards (gros fichier réparti). Reassemblage = concat de tous les chunks de toutes les parts dans l'ordre.
+- Vignette best-effort via `scripts/archive-thumbs.mjs` → champ `thumb` (image) / `poster` (vidéo) dans le manifeste (L366-371).
+- **Ne classifie pas** : une image ou une vidéo passe quand même en chunks opaques (= le problème diagnostiqué).
+
+### 3.2 Routeur de viewer (DÉJÀ EN PLACE)
+`src/create/node.js:typeOfPath()` dérive le type du suffixe : `db | media | image | canvas | embed | file | page | folder`.
+`src/App.jsx:2804-2839` aiguille :
+- `image` → `LazyImageNodeViewer` (ImageNodeViewer.jsx)
+- `media` → `LazyMediaViewer` (MediaViewer.jsx → HlsVideo / VideoPlayer / audio / PDF)
+- `canvas` → CanvasNodeViewer · `embed` → EmbedNodeViewer
+- `file` → `LazyFileNodeViewer` (archive : aperçu si raw/preview-able, sinon download recomposé)
+- `db` → DatabaseTable · défaut → éditeur BlockNote.
+QuickLook (`src/components/QuickLookOverlay.jsx`) refait le même aiguillage en overlay (image/media/page/file), avec `filePreviewable(mime,size)` (image|video|audio|text|pdf ≤500 Mo).
+
+### 3.3 Manifestes (formats de données)
+- **`.img.json`** : binaire par hash sur shard img public + champ vignette (thumb). Servi web (raw/jsDelivr). Streamable de fait.
+- **`.media.json`** : type `hls` → `{ type:'hls', name, mime, duration, master:'…/master.m3u8', repo, probe, audio[], subs[] }` (HlsVideo.jsx en-tête). Ou média chunké / pdf via `media/chunked.js`. AES-128 ladder 360/720/1080/4K, segments jsDelivr@SHA.
+- **`.file.json` v4** : cf. 3.1. **À NE JAMAIS CASSER (130 Go DJI en ligne).** Rétro-compat v2/v3 gérée dans FileNodeViewer (`chunkRefs` L20-23 : `parts[]` sinon `chunks[]`).
+
+### 3.4 Points d'entrée d'ingestion in-app (drop/paste/picker)
+- Finder drop : `App.jsx:2504-2507` (drop sur la grille) + `2154-2161` (drop sur dossier) → `runCapture(files)` (App.jsx:2004) → `captureFiles`.
+- Paste image : `App.jsx:2097` `onPasteImage`.
+- Picker vidéo (menu +) : `App.jsx:2581-2587` input `accept="video/*"` → `runCapture([f], folder)`.
+- Carte calendrier : `App.jsx:553` input `accept="image/*"` → `addImages` (chemin séparé, pas `captureFiles`).
+
+---
+
+## 4. Points d'accroche pour le refactor d'unification
+
+### 4.1 Unifier l'INGESTION (un seul routeur partagé)
+- **Centre de gravité = `routeFile`** (universalCapture.js:660). C'est déjà LE classifieur in-app.
+- **Action** : extraire la logique de classification pure en `src/capture/classify.js` → fonction `classifyFile({name, mime, size}) → 'image'|'video'|'audio'|'page'|'pdf'|'binary'`, sans effet de bord, **importable aussi par Node** (le script bulk).
+- Faire consommer ce `classify` par : (a) `routeFile` (in-app), (b) `scripts/archive-folder.mjs` (bulk : si image → pipeline img, si vidéo → HLS, si audio → media, **sinon seulement** → chunks `.file.json`), (c) le futur upload mobile (§4.3).
+- **Garde-fou** : `.file.json` chunké devient le **fallback** (binaires/projets/zip/proprios), plus le défaut. L'ancien format reste lu tel quel (additif).
+- Lever le blocage vidéo hors-localhost (universalCapture.js:682) **uniquement** quand un chemin d'upload mobile→HLS existe (sinon garder le refus clair). Sur iPhone, l'upload vidéo doit router vers une voie qui ne dépend pas du ffmpeg natif local (ex : upload brut en `.file.json` raw si <95 Mo, ou file d'attente transcodage côté serveur local quand dispo).
+
+### 4.2 Unifier le VIEWER
+- **Centre de gravité = le switch `typeOfPath`** (App.jsx:2804) + son clone QuickLook.
+- **Action** : extraire un composant `UnifiedViewer({path, t})` qui encapsule le switch, réutilisé par la zone contenu ET QuickLook (supprime la duplication de classification). Le `.file.json` reste géré par FileNodeViewer ; ajouter dans FileNodeViewer/MediaViewer un **download streamé** (cf. 4.3) au lieu du Blob full-RAM.
+
+### 4.3 Harmoniser le MOBILE (≤480 / ~390px)
+Composants/CSS à ajouter (additif, design liquid glass coral #cc7c5e, graisses ≤ Medium, polices Anthropic, zéro em-dash/pipe dans les titres) :
+
+1. **`IS_PHONE` / breakpoint 480** : ajouter une constante + state `phone = innerWidth <= 480` (à côté de `pageMobile`/`narrowFinder`, App.jsx:1063/1163). Sur `phone`, **clamp le zoom Finder** (ex `min(zoom, 96)`) pour 3-4 colonnes confortables.
+2. **Bouton d'upload universel mobile (FAB)** : composant `MobileUploadButton` rendu si `phone`. Un seul `<input type="file" accept="image/*,video/*,audio/*,application/pdf,*" multiple capture>` + un second input `capture="environment"` pour la caméra → `runCapture(files, folder)`. **C'est le manque n°1.** À placer près du bouton « + » du Finder.
+3. **Share sheet** : (a) sortant — bouton `navigator.share({files|url})` dans les viewers pour partager/télécharger (contourne le `download` cross-origin cassé sur iOS) ; (b) entrant — déclarer un **Web Share Target** dans un `manifest.webmanifest` (PWA) + route qui reçoit le fichier et appelle `captureFiles`. Permet « Partager → ZenRay » depuis Photos.
+4. **Download streamé** (remplace Blob full-RAM dans FileNodeViewer.downloadFile L29-47 et QuickLookOverlay.assembleFileUrl) : utiliser le **File System Access API** (`showSaveFilePicker` + `WritableStream`) quand dispo, sinon fallback Blob borné. Évite l'OOM iPhone sur gros `.file.json`.
+5. **CSS safe-area** : `index.html:5` ajouter `viewport-fit=cover` ; padding `env(safe-area-inset-top/bottom)` sur header (App.jsx:230) et sidebar overlay. Nouveau bloc `@media (max-width:480px)` : tuiles plus serrées, cibles ≥44px sur les contrôles de viewer (HlsVideo menus/boutons), toolbars compactées.
+6. **Viewers tactiles** : agrandir les cibles des menus HlsVideo (qualité/audio/sous-titres) et MediaViewer options à ≥44px sous 480 ; menus en bottom-sheet plutôt qu'overlay coin.
+7. **PWA légère** (optionnel mais fort levier mobile) : `manifest.webmanifest` + `theme-color` (déjà L8) → installable « app » plein écran, share target, et ouverture des liens médias en standalone.
+
+### 4.4 Invariants à respecter pendant tout le refactor
+- Ne jamais casser les `.file.json` en ligne (rétro-compat v2/v3/v4 déjà dans FileNodeViewer `chunkRefs`/`chunkCount`).
+- Travail seulement sur `refactor/unified-ingest`. Pas de push, pas de deploy.
+- Pas de purge de source locale (archive-folder.mjs n'efface pas l'original).
+- Médias publics par défaut ; anti-fuite (aucun nom réel dans chemins/commits des repos publics) ; shards ≤5 Go ; bulk = git push ; index.html no-cache (déjà géré, lazyRetry App.jsx:19-31).
+- Design : liquid glass, accent coral #cc7c5e + gris, Anthropic Sans/Serif/Mono, graisses ≤ Medium, zéro em-dash/pipe dans titres.
+
+---
+
+## 5. Index des références (fichier:ligne)
+- Détection tactile : `src/App.jsx:35-37`, usage `2190`.
+- Breakpoint 860 : `src/App.jsx:134-153, 1063-1064, 1163-1167`.
+- Grille Finder virtualisée + zoom : `src/App.jsx:783-858 (tileThumbSize 785, cols 840), 964-1006, zoom 1053`.
+- Drop/paste/picker in-app : `src/App.jsx:2004 (runCapture), 2097, 2154-2161, 2504-2507, 2581-2587, 553`.
+- Routeur ingestion : `src/capture/universalCapture.js:660-708 (routeFile), 739-769 (captureFiles)`. Blocage vidéo non-localhost : `682-687`.
+- Script bulk archive : `scripts/archive-folder.mjs` (manifeste v4 `333-334`, parts `271-305`, thumbs `366-371`).
+- Routeur viewer : `src/create/node.js:typeOfPath`, `src/App.jsx:2804-2839`, QuickLook `src/components/QuickLookOverlay.jsx`.
+- Viewers : `MediaViewer.jsx:87`, `HlsVideo.jsx`, `FileNodeViewer.jsx:20-47`, `ImageNodeViewer.jsx`.
+- CSS responsive : `index.html:5 (viewport), 174-198 (@media 1024/640/860)`.
+- Drive/Archives grille fixe : `DriveDashboard.jsx`, `DownloadsView.jsx`, motif `minmax(240px,1fr)`.

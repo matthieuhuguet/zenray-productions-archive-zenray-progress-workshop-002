@@ -1,0 +1,95 @@
+# ZenRayShards refactor — 2026-07-11
+
+Full refactor of the ZenRayShards subsystem (upload scripts + pipeline libs + client read path),
+running IN PARALLEL with a live 76 GB upload. This document is the contract: what is frozen, what
+is safe, in what order things happen. Written to disk BEFORE any edit (context-loss insurance).
+
+## Live constraint — the wrapper re-reads files from disk
+
+`~/.zr-runs/dji-upload-10-07-et-07-07.sh` (nohup zsh, running) executes 4 sequential `node`
+invocations. Step 1 (images, in RAM) is immune to disk edits; steps 2/3/4 spawn FRESH node
+processes that load whatever is on disk at that moment. A mid-refactor file loaded by step 3
+(333 images, NO relaunch-skip → duplicate tiles) or step 4 (53 GB video) is the nightmare case.
+
+### FROZEN until the log prints `DJI UPLOAD 10-07 ET 07-07 COMPLET` (exact import closure, verified 2026-07-11)
+
+1. `scripts/upload-img-list.mjs`
+2. `scripts/upload-vidraw-list.mjs`
+3. `scripts/img-ingest.mjs`
+4. `scripts/video-raw-lib.mjs`
+5. `scripts/video-mse-lib.mjs` (pushBlobs, imported by both list scripts)
+6. `scripts/lib/img-pipeline.mjs`
+7. `src/lib/fileKinds.js` (imported by video-raw-lib.mjs:22 — the one src/ file in the closure)
+8. `~/.zr-runs/dji-upload-10-07-et-07-07.sh` — zsh reads script files incrementally by byte
+   offset; editing a running shell script corrupts execution. Never edit, period.
+
+`scripts/vidraw-progress.mjs` is not in the closure but parses the run's WORK dir state → also
+left untouched until the sentinel.
+
+**Noted exceptions to the freeze (both times: verified the live process is unaffected — Node has
+no hot-reload, editing disk does not touch an already-running invocation's in-memory code — and
+synced `scripts/_staging/` immediately so Phase D stays consistent):**
+- 2026-07-11 ~16:10 — `upload-img-list.mjs` / `upload-vidraw-list.mjs` got an explicit `process.exit(0)`:
+  the running process from step 1 had finished ALL its work (418/418 images verified committed) but
+  never exited (undici keep-alive HTTPS sockets never close on their own), permanently stalling the
+  wrapper before the 3 remaining ~75 GB steps. Confirmed no work lost (API check) before killing the
+  hung PID and relaunching the remaining steps with the fixed scripts.
+- 2026-07-11 ~16:40 — `upload-img-list.mjs` restructured for per-image manifest visibility (Matthieu's
+  repeated request) + `video-raw-lib.mjs` push threshold raised 400→900 MB. Applied while step 3
+  (images "7 Juillet 2026") was still running under the OLD in-memory code — safe, but means THIS
+  run's image steps used the old batch-at-the-end behavior; only step 4 (videos, not yet started)
+  and all FUTURE uploads benefit.
+- 2026-07-12 ~16:40 — `upload-img-list.mjs` switched BACK from per-image to ~900 MB BATCH (Matthieu's
+  explicit reversal for speed: per-image = one git push + one zenray-data commit + one jsDelivr verify
+  PER image ≈ 12 s/image measured; batch ≈ 4-5 shard pushes + 4-5 zenray-data commits for ~480 images).
+  `flushBatch()` reuses the PROVEN pattern of `scripts/upload-img-all.mjs`. `img-ingest.mjs` NOT touched
+  (pending.repo + commitOf already resolve each manifest on the right commit across a rollover). Escape
+  hatch `ZR_IMG_BATCH_MB=0` restores per-media via the same code (threshold 0 → flush every image).
+  Applied while the 481-image iPhone run (PID 10525, old per-image code) was at 414/481 — safe, no
+  hot-reload; that run finished per-image, only future runs batch. Tested on 4 throwaway PNGs: 1 shard
+  commit for all 4, 1 grouped `img lot (4)` zenray-data commit, skip + empty-repo guard confirmed, cleaned up.
+
+## Invariants — paid-for bugs, NEVER "simplified away"
+
+| Invariant | Where (verified this session) | Why |
+|---|---|---|
+| `-tag:v hvc1` on every HEVC→MP4 remux | video-raw-lib.mjs:112 | hev1 unreadable on iPhone/Apple — bug paid 2026-07-05 |
+| Repo naming `zenrayshards-<type>-<hex12>`, NEW repo per batch, zero remote checks | upload-vidraw-list.mjs:57, upload-img-list.mjs:24 | 313 repos renamed 2026-07-06; old names live on GitHub redirects — never recreate |
+| `zenrayshards-img-*` = PUBLIC (jsDelivr), everything else PRIVATE (api.github.com + token) | img-ingest.mjs:16, naming convention | Visibility by name convention — the whole read path depends on it |
+| Image chunking ≤19 MB, `cdnChunks[]` ALWAYS an array (even 1 element) | img-pipeline.mjs:88 `CHUNK_BYTES = 19*1024*1024` | jsDelivr refuses >~20 MB; uniform logic, no per-size special case |
+| Deterministic IV (blob dedup) + AES-256-GCM, master key `.zenray-media-key` — never regenerate | img-pipeline.mjs, video-raw-lib.mjs:18 | IV change silently doubles storage; key regen = all past media unreadable |
+| Video shard cap 4.0 GiB, LOCAL counter only, anticipated rollover | video-raw-lib.mjs:28 | GitHub soft limit 5 GB; asking GitHub for sizes was the "infinite reclone" bug |
+| Incremental push every 900 MB (video, raised from 400 MB) / 900 MB (image, raised from 800 MB) — 2026-07-11, BOTH strictly under the empirically-proven <1 GB/push safety line (a bigger single push HANGS, no timeout catches it) | video-raw-lib.mjs:201 (~line, post-edit), img-ingest.mjs:170 | Anti-hang + no monolithic multi-GB pushes. Matthieu proposed 1900 MB assuming a 2000 MB GitHub limit — no such limit exists in this project or GitHub's docs; the real, tested ceiling here is <1 GB, corrected instead of applied blindly |
+| Image manifests commit to zenray-data in ~900 MB BATCHES (2026-07-12, Matthieu's speed reversal): ingest N images → one `ctx.flush()` → resolve ALL → one grouped `pushBlobs` → one jsDelivr verify per (repo,commit). `ZR_IMG_BATCH_MB` tunes it (default 900; 0 = per-image = old media-by-media, same code path) | upload-img-list.mjs `flushBatch()` (patterned on upload-img-all.mjs) | ~480 images: ~4-5 shard pushes + ~5 zenray-data commits instead of ~480 each. Trade-off (accepted, reverses the 07-11 per-image request): images appear in Create per-batch, not one-by-one; a crash loses ≤1 batch (≤900 MB re-ingested next run, orphan binaries in a fresh shard, NEVER a duplicate tile — manifest path is deterministic) |
+| All chunks of ONE image land in the SAME repo/commit | img-ingest.mjs:157 reserve() | A rollover between two chunks would break reconstruction |
+| Manifest schema unchanged: new = `cdnChunks[]`+`cdnCommit`, old = `cdnPath` (pre-2026-07-07, never migrated) | resolveImgManifest, client useResolvedFull | Client must read BOTH forever |
+| Video manifests pin raw.github URLs on commit SHA | video-raw-lib.mjs:269-271 | Unpinned URLs break on force-push/rollover |
+
+## Phases
+
+- **A (done when this file is committed)** — this contract + persistent Monitor armed on the log
+  (sentinel, step changes `[2/4]`..`[4/4]`, failures).
+- **B (now, safe during run)** — client/server read path refactor: `src/lib/fetchAsset.js`,
+  `src/lib/archiveChunks.js`, `src/components/ImageNodeViewer.jsx`, `src/lib/storageInfo.js`,
+  `server/shared-media.js`, `src/capture/universalCapture.js`. English comments, simplification,
+  stability (bounded retries, AbortController), perf (bounded-concurrency chunk fetches). Build +
+  browser check after each file: 1 old `cdnPath` image + 1 new chunked image must both render.
+- **C (now, staging only)** — rewrite the 7 frozen files into `scripts/_staging/` (same relative
+  layout). Core move: deduplicate the twin shard-context pattern (img-ingest.mjs ↔
+  video-raw-lib.mjs openShard/pushShard/flush/reserve) into one `scripts/lib/shard-repo.mjs`.
+  English comments preserving incident dates. `node --check` on every file. Originals untouched.
+- **D (GATED on sentinel)** — atomic swap staging → real paths, then:
+  1. crypto parity test: same test image through old (git stash) vs new code → identical
+     ciphertext hashes + manifest JSON (minus commit SHA);
+  2. grep assertions on every invariant above;
+  3. real smoke test: 1 small image + 1 tiny video to `pages/System/RefactorTest`, verify jsDelivr
+     200 on chunks / private raw read on video parts, ffprobe says `hvc1`, then trash the tiles;
+  4. commit + push.
+- **E (after D)** — rewrite `~/.claude/skills/zenrayshards-upload-media/SKILL.md` against the
+  FINAL code, update `docs/INDEX-ERREURS-FEATURES.md`, PROGRESS.md, memory
+  `zenrayshards-conventions-v2.md` if paths changed.
+
+## Rollback
+
+Code is stateless (all state = GitHub repos + manifests): `git revert` of the refactor commit
+fully restores behavior. Staging dir is deleted after D.

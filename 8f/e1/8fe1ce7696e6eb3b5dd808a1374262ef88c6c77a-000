@@ -1,0 +1,127 @@
+# backup-mirror.mjs — deuxième exemplaire indépendant des binaires ZenRayShards
+
+## En une phrase
+
+Un deuxième jeu de dépôts GitHub **privés**, indépendant des dépôts primaires, qui contient les MÊMES octets
+(image, fichier, base, vidéo non-YouTube) redécoupés en chunks de 95 Mo, avec un index séparé qui permet de
+vérifier et de restaurer sans dépendre du primaire. But : survivre à la perte d'un repo primaire.
+
+## Ce qui a été construit
+
+Fichier : `Scripts/backup-mirror.mjs` (script Node autonome, aucune dépendance nouvelle).
+
+Réutilise 3 briques déjà éprouvées, sans les réécrire :
+- **`Scripts/archive-folder.mjs`** : logique de shard git (init, push incrémental, rollover à l'approche de 5 Go,
+  retries réseau) — reprise à l'identique pour les repos de backup.
+- **`server/repos.js` / `server/shard.js`** : convention de plafond dur (~4,5 Go avant rollover, sous la limite
+  GitHub de 5 Go) et modèle repo privé.
+- **`src/lib/archiveChunks.js`** : logique de résolution d'un manifeste `.file.json` (v2/v3/v4, multi-shards) en
+  liste ordonnée d'URLs à télécharger — портée ici en JS pur (`downloadUrlsFor`), étendue aux manifestes
+  `.img.json` (champ `cdnRepo/cdnPath/cdnCommit`) et `.media.json` (`video-raw` : `parts[].url` ; `dash`/`hls` :
+  `download.parts[]`, le MP4 muxé complet, seule représentation en un seul flux binaire téléchargeable pour ces
+  types).
+
+### Ce qui est couvert (binaire dupliqué)
+
+| Type de nœud | Source du binaire primaire | Traitement |
+|---|---|---|
+| `.img.json` | `cdnRepo/cdnPath/cdnCommit` (chiffré ou non, tel quel) | 1 flux, re-chunké 95 Mo |
+| `.file.json` | `parts[]` (v4 multi-shards) ou `chunks[]` (v2/v3) ou `blob-raw` | réassemblé puis re-chunké 95 Mo |
+| `.media.json` type `video-raw` | `parts[].url` (raw.github direct) | réassemblé puis re-chunké 95 Mo |
+| `.media.json` type `dash`/`hls` | `download.parts[]` (MP4 muxé) | réassemblé puis re-chunké 95 Mo |
+| `.db.json`, `.canvas.json`, `.embed.json` | le JSON lui-même (pas de binaire externe) | le JSON est le "binaire" mirroré |
+
+### Ce qui est ignoré (rien à dupliquer)
+
+`.media.json` `{type:'youtube'}` (le binaire vit chez YouTube, on ne stocke qu'un `videoId`) et
+`{type:'gmaps'}` (une URL Google Maps, zéro stockage). Détectés et sautés sans traitement (`skippedNoBinary`).
+
+### Sécurité / nommage
+
+- Repos de backup : `zenray-shards-<hex12>` (`crypto.randomBytes(6).toString('hex')`), **pas de numérotation
+  séquentielle** — un visiteur GitHub ne peut pas déduire le nombre total de shards de backup.
+- **Toujours PRIVÉS** (contrairement aux primaires publics/jsDelivr) : le backup est du stockage froid, aucun
+  besoin de CDN, on ne veut pas exposer une 2e fois un contenu potentiellement sensible.
+- Le binaire n'est **jamais re-chiffré ni déchiffré** : on mirrore les octets primaires actuels tels quels (si
+  déjà chiffrés AES-GCM comme les images, le backup reste chiffré à l'identique).
+- Index séparé `zenray-data:pages/_backup-index/index.json` (chemin cible, invisible du Finder qui ne liste
+  que les extensions connues `.md/.db.json/.media.json/...`, jamais un chemin sous `_`). Ne touche à AUCUN
+  manifeste existant — lecture seule côté primaire.
+
+### Idempotence / reprise
+
+Avant de télécharger un binaire, on compare le hash du **manifeste JSON primaire actuel** à celui enregistré
+lors du dernier backup de ce chemin (`sourceManifestSha256`). Identique → on saute sans réseau. Si le manifeste
+a changé mais que le binaire réassemblé a le même `sha256`, on met juste à jour l'index (pas de ré-upload).
+Une interruption ne fait donc jamais perdre de travail : relancer reprend exactement où le script s'était arrêté.
+
+### Rate-limit
+
+Chaque réponse GitHub REST est inspectée (`x-ratelimit-remaining`/`x-ratelimit-reset`). Sous 50 requêtes
+restantes, le script **attend** jusqu'au reset avant de continuer, au lieu de se faire jeter en 403. Les
+téléchargements de binaires (`raw.githubusercontent.com`, jsDelivr) ne comptent pas dans ce quota.
+
+## Test réel effectué (bout en bout, sous-ensemble minuscule)
+
+Commande exacte lancée :
+
+```
+GITHUB_TOKEN=$(gh auth token) node Scripts/backup-mirror.mjs \
+  --path="pages/Photos/DJI/16 Juin 2026/BestOf/Photos" --limit=3
+```
+
+Avant ça : `--dry-run --limit=3` sur le même chemin, pour vérifier l'inventaire sans écriture réseau (3 images
+`.img.json` détectées, 1 segment source chacune).
+
+**Résultat du run réel** :
+
+- Repo de backup réellement créé : **`zenray-shards-538dbd8b095d`** (privé, confirmé via
+  `gh repo view matthieuhuguet/zenray-shards-538dbd8b095d` → `"visibility":"PRIVATE"`).
+- 3 fichiers backupés :
+  - `DJI_20000609084039_0024_D.JPG.img.json` — 21,8 Mo, 1 chunk, sha256 `8b4a94bed975...`
+  - `DJI_20000609084133_0030_D.JPG.img.json` — 18,3 Mo, 1 chunk, sha256 `4357ae7403b5...`
+  - `DJI_20000609084214_0036_D.JPG.img.json` — 16,7 Mo, 1 chunk, sha256 `e092cbff7bda...`
+- Index écrit dans `zenray-data:pages/_backup-index/index.json` (3 entrées).
+
+**Vérification d'intégrité (intégrée au script, ré-exécutée automatiquement en fin de run)** : re-téléchargement
+des 3 chunks depuis `zenray-shards-538dbd8b095d`, recalcul du sha256, comparaison à l'index → **3/3 OK**,
+sha256 identiques.
+
+**Vérification indépendante supplémentaire (hors script, pour preuve tierce)** :
+
+```
+curl -sL -H "Authorization: Bearer $(gh auth token)" \
+  https://raw.githubusercontent.com/matthieuhuguet/zenray-img-public-01/1e78787a.../52/cc/52cc....jpg \
+  | shasum -a 256
+# -> 8b4a94bed97523765bba6703088bdeaeff88a4cbf7ef314c61aca6b440d03436
+```
+
+Identique au sha256 stocké dans l'index et à celui du chunk de backup. **Le binaire du primaire et le binaire
+du backup sont bit-exacts.**
+
+`npm run build` reste vert après ajout du script (fichier Node autonome, aucun impact sur le bundle Vite).
+
+## Comment lancer le run complet plus tard (PAS fait automatiquement)
+
+Le drive contient 100k+ éléments. Un run complet dure des heures et consomme une grosse part du quota GitHub.
+Modèle : le re-upload DJI en tâche de fond (nohup + log persistant + reprise par relance simple).
+
+```bash
+mkdir -p ~/.zr-runs
+nohup env GITHUB_TOKEN=$(gh auth token) node Scripts/backup-mirror.mjs \
+  > ~/.zr-runs/backup-mirror-$(date +%Y%m%d-%H%M).log 2>&1 &
+disown
+```
+
+Suivi : `tail -f ~/.zr-runs/backup-mirror-*.log`
+
+Reprise après coupure : relancer la **même commande** (sans `--limit`/`--path`) — l'index déjà écrit fait
+sauter tout ce qui est déjà backupé (comparaison sha256), le script continue où il s'était arrêté.
+
+Note technique : `action=tree` sur `zenray-data` est déjà **tronqué** par GitHub (43 560 entrées vues sur un
+premier appel, `truncated:true`) — le repo est trop gros pour un seul appel `git/trees?recursive=1`. Le run
+complet devra donc probablement s'exécuter **par sous-chemins successifs** (`--path=pages/X`, `--path=pages/Y`,
+…) pour couvrir la totalité de l'arbre, ou une itération future du script pourra automatiser ce découpage
+(lire les dossiers de premier niveau puis les traiter un par un). Ce n'est pas fait dans cette itération : le
+script refuse tout run sans `--limit` ni `--path` (garde-fou `--i-know-what-im-doing` requis en override
+explicite), donc aucun risque de lancement accidentel sur l'arbre tronqué.

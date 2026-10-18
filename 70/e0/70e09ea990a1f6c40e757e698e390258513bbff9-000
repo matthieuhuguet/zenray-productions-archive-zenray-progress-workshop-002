@@ -1,0 +1,258 @@
+# Audit — Routage d'ingestion ZenRayProgress (carte technique pour le refactor d'unification)
+
+Repo : `/Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress`
+Date : 2026-06-26. Branche de travail attendue : `refactor/unified-ingest` (NE PAS push/deploy).
+Lu sur le code réel (aucune supposition). Tous les chemins sont relatifs à la racine du repo sauf mention.
+
+---
+
+## 0. TL;DR — où vit le routage aujourd'hui, et où devrait vivre le routeur unifié
+
+- **Le SEUL classificateur par type réellement vivant** est `routeFile()` dans
+  **`src/capture/universalCapture.js:660`** (in-app : drop / paste / picker vidéo / Ref board).
+- **Le script d'archive bulk** `scripts/archive-folder.mjs` **ne classifie RIEN par type** : il chunke
+  *tout* (image, vidéo, audio, zip, projet) en blobs binaires 19 Mo opaques `.file.json`. **C'est le bug central** :
+  une image ou une vidéo archivée perd les pipelines streamables (`.img.json` / HLS) et devient non ouvrable
+  sans réassemblage complet.
+- **Il n'existe AUCUN routeur partagé** entre l'in-app et le bulk. Les deux mondes ne se parlent pas :
+  - in-app = navigateur, `fetch` vers `/api/upload-shard` + `/api/page`, chunks 3 Mo chiffrés AES-GCM, jsDelivr.
+  - bulk = Node, `git push` direct + Git Data API GitHub, chunks 19 Mo binaires, manifeste `.file.json` v4.
+- **Le seuil « 4 Mo image vs média » du brief n'existe PLUS dans le chemin vivant.** Le seul `> 4 * 1024 * 1024`
+  restant (`src/App.jsx:2105`) est dans un bloc **mort** (précédé d'un `return` ligne 2100). `routeFile` route
+  par **MIME + extension**, jamais par taille (sauf la vidéo : voir §3).
+- **Point unique recommandé pour le routeur unifié** : un nouveau module pur **`src/capture/classify.js`**
+  (`classifyFile(file|{name,size,mime}) -> {kind, pipeline}`) consommé par (a) `routeFile`, (b) une variante Node
+  partagée pour `archive-folder.mjs`, (c) le futur upload mobile. Voir §7 pour les points d'accroche exacts.
+
+---
+
+## 1. Inventaire des points d'ENTRÉE d'ingestion (qui reçoit un fichier de l'utilisateur)
+
+Tous convergent — sauf l'archive bulk — vers `captureFiles()` de `universalCapture.js`.
+
+| # | Entrée | Fichier:ligne | Appelle | Notes |
+|---|--------|---------------|---------|-------|
+| E1 | Drop fichiers sur le Finder (zone principale) | `src/App.jsx:2507` | `runCapture(e.dataTransfer.files)` | `onDrop` du conteneur |
+| E2 | Drop fichiers sur une TUILE de dossier | `src/App.jsx:2159` | `tileApi.current.runCapture(files, dir)` | dossier cible = la tuile |
+| E3 | Paste (Cmd+V) dans Create | `src/App.jsx:2097-2099` | `runCapture(files)` | via `useClipboardTarget('create', {onPasteImage})` ; le code historique sous le `return` (2102-2122) est **mort** |
+| E4 | Picker « Upload vidéo… » (input file) | `src/App.jsx:2587` | `runCapture([f], folder)` | `accept="video/*"`, déclenché par bouton 2581 |
+| E5 | Drop / paste sur un board Ref | `src/ref/RefBoardHost.jsx:71` | `captureFiles(files, {folder: dir+'/Assets', mode})` | bypasse `runCapture`, appelle `captureFiles` direct |
+| E6 | Picker cover de page (input image) | `src/App.jsx:3119,3131` | `uploadCover()` | chemin SÉPARÉ (pas `captureFiles`) — couverture de page seulement |
+| E7 | **Archive bulk (CLI)** | `scripts/archive-folder.mjs` | — | **NE passe PAS par `captureFiles`** ; tout en `.file.json` |
+| E8 | Upload mobile (iPhone) | **n'existe pas** | — | aucun input/share-sheet dédié mobile ; E1-E4 fonctionnent mais non optimisés ~390px |
+
+`runCapture` (`src/App.jsx:2004`) = wrapper UI autour de `captureFiles` : résout la visibilité du dossier
+(`resolveFolderVis`, défaut **public**), pose la barre de progression, notifie, met à jour l'index recherche +
+l'affichage optimiste, `loadTree()`. Il NE classifie pas ; il délègue tout à `captureFiles -> routeFile`.
+
+---
+
+## 2. Le routeur in-app : `routeFile()` (cœur à unifier)
+
+Fichier : **`src/capture/universalCapture.js`**. API publique exportée : `captureFiles(files, {folder,onProgress,mode,vis})` (ligne 739) -> pool de 4 workers -> `routeFile(file, folder, onProgress, mode, vis)` (ligne 660).
+
+### Ordre de décision de `routeFile` (660-708), par MIME puis extension
+
+| Ordre | Condition | Handler | Pipeline / manifeste produit |
+|------|-----------|---------|------------------------------|
+| 1 | `mime image/*` OU ext ∈ {png,jpg,jpeg,gif,webp,avif,bmp,tiff,heic} | `captureImage` (249) | **`.img.json`** — blob unique (pas de chunk) sur shard `img`, vignette `.webp`, AES-GCM si public |
+| 2 | `mime audio/*` | `captureAudio` (611) | **`.media.json`** chunké 3 Mo chiffré, famille `audio`, + index `audio/manifest.json` |
+| 3 | `mime video/*` OU ext ∈ {mp4,webm,mkv,avi,mov,m4v,ts,flv,wmv} | **branche vidéo** (678) | **HLS** via `captureVideoServerHls` (676) si localhost, sinon refus |
+| 4 | `mime text/markdown` OU ext ∈ {md,txt} OU `text/plain` | `captureText` (650) | **`.md`** brut |
+| 5 | ext ∈ {mp3,m4a,wav,flac,opus,oga,ogg,aac,aiff,aif,wma} (mime vide) | `captureAudio` (694) | comme #2 (mime déduit par ext) |
+| 6 | `application/pdf` OU ext pdf | `captureBinaryMedia(...,'pdf')` (702) | **`.media.json`** chunké chiffré, famille `pdf` |
+| 7 | **fallback : tout le reste** | `captureBinaryMedia(...)` (707) | **`.media.json`** chunké chiffré, famille `doc` |
+
+**Observations clés pour le refactor :**
+- Le **fallback #7 n'est PAS `.file.json`** : in-app, un binaire inconnu (zip, projet) part en `.media.json`
+  chunké 3 Mo CHIFFRÉ (famille `doc`), PAS en chunk archive 19 Mo binaire. Donc le format chunk-binaire-opaque
+  `.file.json` n'est produit QUE par le script bulk (E7), jamais par l'in-app.
+- `routeFile` ignore complètement la taille (sauf vidéo). Aucun seuil 4 Mo.
+- `vis` n'agit que sur l'IMAGE (public = jsDelivr+chiffré / private = legacy `/api/shard`). Audio/pdf/doc sont
+  toujours public chiffré (`uploadBinaryChunksEncrypted`). Vidéo = toujours HLS public.
+- Code LEGACY/DEPRECATED conservé inerte (à NE PAS rebrancher, mais utile à connaître) :
+  `captureVideoNative` (416), `captureVideoTranscode` (441, placeholder buggé retiré), `uploadBinaryChunks`
+  (340, version NON chiffrée privée encore utilisée par le legacy native), `WEB_NATIVE_VIDEO`/`TRANSCODE_OVER_BYTES` (31-32).
+
+### Sous-fonctions de stockage (briques réutilisables)
+
+- `shardApi(payload)` (119) -> `POST /api/upload-shard`.
+- `activeShard(kind, vis, need)` (129) -> `{action:'active-shard'}` ; sans kind/vis = legacy img/private.
+- `putBlob(repo, b64)` (157) — sémaphore global PUT_MAX=6 (143).
+- `commitShard(repo, files, addBytes)` (173) -> `{action:'commit'}`, renvoie `{commit}` (pin jsDelivr).
+- `writeNode(path, markdown)` (180) -> `POST /api/page {action:'save'}` (écrit le manifeste dans zenray-content public).
+- `encryptBytesDeterministic(ab, hashHex)` (93) — IV dérivé du SHA-256 du clair (dédup conservée).
+- `uploadBinaryChunksEncrypted(file, kind, onProgress)` (379) — chunks 3 Mo chiffrés -> `{cdnRepo,cdnCommit,dir,parts,count,size,ivs}`.
+- `addToSearchIndex(paths)` (714) -> `POST /api/page {action:'index-add'}` (1 commit pour tout le lot).
+
+`CHUNK_SIZE = 3145728` (3 Mo, ligne 25) aligné sur le cap body Vercel.
+
+---
+
+## 3. Cas particulier VIDÉO (déjà semi-unifié, à préserver)
+
+`routeFile` branche vidéo (678-688) :
+- `onLocal` (localhost/127.0.0.1) -> `captureVideoServerHls(file, folder)` (476) :
+  `POST /api/transcode-local?dest&name` (corps = le fichier), récupère `jobId`, suit la progression en **SSE**
+  via `EventSource(/api/transcode-events?jobId=)`. Le serveur local transcode en HLS AES-128 (ffmpeg natif /
+  VideoToolbox, `scripts/video-hls-lib.mjs`), pousse segments (jsDelivr) + crée le nœud `.media.json` final.
+- Hors localhost -> `notify` « app locale requise » + `{ok:false, type:'video-skipped'}`.
+- Repli si le serveur natif échoue -> `captureVideoLocalCmd` (504) : génère une commande Terminal copiée au presse-papier.
+
+Le serveur local (`scripts/local-server.mjs`) gère `/api/transcode-local` + `/api/transcode-events` AVANT de
+router vers le catch-all (voir §5). `runJob` lance `scripts/video-hls.mjs` (ou transcode-worker).
+
+---
+
+## 4. Le routeur BULK (le problème) : `scripts/archive-folder.mjs`
+
+Aucune classification par type. Flux (séquentiel, RAM bornée) :
+1. **Inventaire** `walk(SRC)` (168) -> liste plate `{abs, rel, size}`.
+2. **Nommage shard** `zenray-productions-archive-<NomDossier>` (59), suffixe `-NN` si > 5 Go (`SPLIT_AT`, 48 ;
+   `multiShard`, 181). Toujours **public**.
+3. **Pour chaque fichier** (256-312) :
+   - `sha256File` du fichier entier (263).
+   - Versionning : `readExistingManifest(rel)` (150) lit le `.file.json` existant ; si même sha256 -> **skip**, pas de re-chunk.
+   - Sinon : découpe en chunks de **`CHUNK = 19 Mo`** (37) BINAIRES, nommés `aa/bb/<fid>-NNN` (`chunkPath`, 120 ;
+     `fidOf` = SHA-256(rel) tronqué 40, 119). Aucun nom/extension d'origine sur le repo public.
+   - Rollover MID-FILE si shard >= `SHARD_CAP` 4,5 Go (47, 283) -> `parts[]` multi-shards.
+   - Push incrémental git tous les `PUSH_CHUNK` (150 Mo défaut, 41).
+4. **Manifestes** (327-341) : un **`.file.json` v4** par fichier dans `zenray-data` (privé), chemin
+   `${DEST}/${rel}.file.json`. DEST défaut `pages/Archives/<dossier>` (76), ou `pages/Build/DJI/<dossier>` si DJI (66-78).
+5. **Vérif** raw.githubusercontent 200 x16 (343-358), puis **vignettes** sidecar `scripts/archive-thumbs.mjs` (371)
+   -> champs `thumb`/`poster` dans les manifestes. Purge locale JAMAIS auto (375-379).
+
+**Format `.file.json` v4 (à NE JAMAIS casser — 130 Go DJI en ligne)** — objet produit ligne 332-335 :
+```
+{ type:'file', v:4, name, rel, mime, mode:'chunked', size, sha256, chunkSize:19922944,
+  parts:[{repo, commit, chunks:[ "aa/bb/<fid>-000", ... ]}],
+  repo, commit, chunks,          // = parts[0], rétro-compat lecteurs v2/v3 mono-shard
+  versions:[ ...append-only, chaque version a ses propres parts ] }
+```
+Lu côté app par `src/components/FileNodeViewer.jsx` (+ `src/media/chunked.js`). Le refactor doit rester ADDITIF :
+les `.file.json` v4 existants continuent de s'ouvrir/se télécharger tels quels.
+
+Variantes/jumeaux du même flux : `scripts/archive-organize.mjs` (réorganise des `.file.json` déjà uploadés sans
+re-upload), skill `archive-organize`. `scripts/archive-thumbs.mjs` (sidecar vignette).
+
+---
+
+## 5. Routes serveur / API qui ÉCRIVENT les manifestes et le binaire
+
+Dispatch unique : **`api/[...route].js`** (catch-all Vercel, < 12 fonctions Hobby). Le serveur local
+`scripts/local-server.mjs` réimporte ce MÊME fichier (ligne 119) — une seule source de vérité. Gate applicatif
+optionnel `ZENRAY_API_SECRET` (header `x-zr-auth`), routes publiques exemptées (img/stream/media/shard/hls...).
+Body limit 8 Mo (`config`).
+
+Handlers réels dans `server/` :
+
+| Endpoint | Fichier | Rôle dans l'ingestion |
+|----------|---------|----------------------|
+| `/api/upload-shard` | `server/upload-shard.js` | **binaire** : `active-shard` (rollover famille kind/vis, caps 4,3/4,6 Go), `blob`, `commit` atomique. État par famille `pages/.zr-drive*.json`. |
+| `/api/page` | `server/page.js` | **manifeste texte** dans zenray-content : `save` (266, exige/résout sha, gère 409), `index-add` (294), `move`/`move-tree` (330/389, réécrit aussi vignettes), `delete` (304), `read`/`list`/`children`/`tree`. |
+| `/api/transcode-local` + `/api/transcode-events` | `scripts/local-server.mjs` (78-110) | **vidéo** : reçoit le fichier, lance `runJob` (HLS), SSE progression. **Local seulement** (pas sur Vercel). |
+| `/api/img` | `server/img.js` | upload image legacy (dataURl webp) — utilisé par le bloc paste MORT + `uploadCover`. |
+| `/api/media` | `server/media.js` | upload chunk média legacy (chemin `uploadChunked`, bloc mort). |
+| `/api/stream` | `server/stream.js` | LECTURE Range des `.media.json` (fenêtre 4 Mo). |
+| `/api/shard` | `server/shard.js` | LECTURE proxy d'un blob image privé. |
+| `/api/hls*` | `server/hls*.js` | LECTURE/clé HLS + génération scripts de download. |
+| `/api/upload-cmd`, `/api/upload-vid` | `server/upload-cmd.js`, `upload-vid.js` | génèrent la commande Terminal de transcodage (repli vidéo). |
+
+Nommage shard centralisé : **`server/shard-naming.js`** — `shardName(kind,vis,n)`, `parseShard`, `nextShard`,
+`driveStatePath`, regex `shardRe` (accepte nouveau `zenray-<kind>-<vis>-NN`, legacy `zenray-media-NN` =
+img/private, `zenray-vid-NN` = vid/public, ET `zenray-productions-archive-<nom>`). `KINDS = [img,vid,audio,doc,pdf,table,markdown]`.
+Note : l'archive (`kind:'archive'`) est reconnue en lecture par `parseShard` mais N'EST PAS créée par
+`upload-shard.js` (elle est créée par git push direct dans `archive-folder.mjs`).
+
+---
+
+## 6. Côté VIEWER (à unifier en parallèle, §objectif 2)
+
+Registre déclaratif central : **`src/create/node.js`** `typeOfPath(path)` mappe l'extension feuille -> type :
+`.db.json`->db, `.media.json`->media, `.img.json`->image, `.canvas.json`->canvas, `.embed.json`->embed,
+`.file.json`->**file**, `.md`->page, sinon folder.
+
+Dispatch de rendu : **`src/App.jsx:2803-2821+`** sur `typeOfPath(cur.path)` :
+- image -> `ImageNodeViewer` (`src/components/ImageNodeViewer.jsx`)
+- media -> `MediaViewer` (`src/components/MediaViewer.jsx`) qui re-dispatch en interne (video/audio/pdf inline
+  vs réassemblage download) via `fileKind` + `playableInline` (MediaViewer:22)
+- canvas -> `CanvasNodeViewer`, embed -> EmbedNodeViewer
+- **file -> `FileNodeViewer`** (`src/components/FileNodeViewer.jsx`) : viewer ARCHIVE (réassemble les chunks 19 Mo,
+  vérifie sha256, propose download/quicklook).
+
+Vignettes Finder (App.jsx:998, 2683) : `ImgNodeThumb` / `MediaIcon` / `FileNodeThumb` (lit `thumb`/`poster` du
+`.file.json`) / `DbIcon`. Le `.file.json` a donc déjà une vignette mais pas de rendu inline (téléchargement obligatoire).
+
+**Le viewer unifié visé** doit, pour un `.file.json` dont le `mime` est image/video/audio, soit rendre inline
+(idéalement en migrant le nœud vers `.img.json`/HLS), soit garder le viewer chunk pour les vrais binaires.
+
+---
+
+## 7. Points d'accroche pour le REFACTOR D'UNIFICATION
+
+### 7.1 Routeur unifié de classification (objectif 1)
+
+**Créer `src/capture/classify.js`** — module PUR, sans dépendance DOM/fetch, isomorphe (utilisable navigateur ET Node) :
+```
+classify({ name, mime, size }) -> { kind: 'image'|'video'|'audio'|'text'|'pdf'|'binary', pipeline: 'img'|'hls'|'media'|'page'|'chunk' }
+```
+Y déplacer la table de décision actuellement INLINE dans `routeFile` (universalCapture.js:660-708) :
+maps MIME/ext (image, audio, video, text, pdf) + règle « .ogg nu = audio » (déjà documentée 674-677). Le cas
+`binary`/`chunk` = ce qui tombe au fallback ET ce que le bulk doit reconnaître comme « vrai binaire opaque ».
+
+**Rebrancher les appelants :**
+1. **In-app** : `routeFile` (universalCapture.js:660) appelle `classify()` puis branche sur `kind`. Zéro changement
+   de comportement pour l'utilisateur (mêmes handlers `captureImage`/`captureAudio`/HLS/`captureText`/`captureBinaryMedia`).
+2. **Bulk** : `archive-folder.mjs` boucle `for (const f of files)` (256) — AVANT le chunk 19 Mo (270), appeler
+   `classify({name:f.rel, mime:mimeOf(f.rel), size:f.size})`. Si `image` -> router vers la pipeline `.img.json`
+   (réutiliser la logique blob+vignette, version Node) ; si `video`/`audio` -> HLS/media ; SEUL `binary`/`chunk`
+   conserve le chemin actuel `.file.json` 19 Mo. **Garde-fou** : le format `.file.json` v4 reste pour les binaires
+   et tous les manifestes déjà en ligne ; on N'ajoute le routage que pour les NOUVELLES archives.
+   (Note d'archi : le bulk est Node + git push, alors que la pipeline img/media in-app est navigateur + `/api/upload-shard`.
+   Pour partager, soit exposer une variante Node de `captureImage`/`uploadBinaryChunksEncrypted` qui parle à
+   `/api/upload-shard` via `fetch` Node, soit une lib commune `scripts/lib/img-pipeline.mjs` existe déjà —
+   `scripts/lib/img-pipeline.mjs` référencé universalCapture — à étendre.)
+3. **Mobile** (objectif 3) : nouvel input file / share-sheet -> `captureFiles` (déjà le bon point) ; `classify`
+   garantit le même routage. Rien de spécifique mobile dans le routeur, juste l'UI d'entrée.
+
+### 7.2 Constantes / seuils à NETTOYER
+- Supprimer le bloc MORT `src/App.jsx:2100-2122` (après `return`), dont le faux seuil `> 4 * 1024 * 1024` (2105)
+  qui induit en erreur. Confirmé mort.
+- Legacy inerte dans universalCapture.js (31-32, 416-469) : laisser ou retirer en conscience, hors chemin vivant.
+
+### 7.3 Viewer unifié (objectif 2)
+- Point central = `typeOfPath` (`src/create/node.js`) + dispatch `src/App.jsx:2804+`. Le viewer unifié peut soit
+  rester aiguillé par extension de manifeste, soit lire le `mime` interne du `.file.json` et déléguer à
+  `ImageNodeViewer`/`MediaViewer` quand le binaire EST ouvrable (image/video/audio), `FileNodeViewer` sinon.
+
+### 7.4 Mobile ~390px (objectif 3)
+- Aucune entrée mobile dédiée (E8 absent). À ajouter : input `<input type=file accept multiple>` + drag, réutilisant
+  `runCapture`/`captureFiles`. HLS adaptatif déjà présent (`MediaViewer` -> `HlsVideo`). Responsive Finder/viewer/éditeur
+  à traiter dans l'UI (App.jsx grille de tuiles, MediaViewer, éditeur) — hors périmètre du routage mais même session.
+
+---
+
+## 8. Récapitulatif des formats de données (entrée -> stockage -> rendu)
+
+| Type | Manifeste | Stockage binaire | Chunk | Chiffré | Servi par | Viewer |
+|------|-----------|------------------|-------|---------|-----------|--------|
+| Image | `.img.json` (zenray-content public) | shard `img` public (jsDelivr) ou privé legacy | non (1 blob) + thumb webp | AES-GCM si public | jsDelivr@commit / `/api/shard` | ImageNodeViewer |
+| Vidéo | `.media.json` | shards `vid` publics, segments HLS | HLS ladder | AES-128 HLS | jsDelivr@SHA / `/api/hls` | MediaViewer->HlsVideo |
+| Audio | `.media.json` + `audio/manifest.json` | shard `audio` public | 3 Mo | AES-GCM | `/api/stream` Range | MediaViewer->audio |
+| PDF/doc/binaire (in-app) | `.media.json` | shard `pdf`/`doc` public | 3 Mo | AES-GCM | `/api/stream` | MediaViewer (download si non inline) |
+| **Archive bulk (tout type)** | **`.file.json` v4** (zenray-data privé) | `zenray-productions-archive-*` public | **19 Mo binaire opaque** | non (obfusqué par hash) | raw.githubusercontent@commit | **FileNodeViewer (réassemblage obligatoire)** |
+| Texte | `.md` | zenray-content | — | non | `/api/page read` | éditeur Markdown |
+
+Le refactor = faire en sorte que l'archive bulk (dernière ligne) route image->ligne 1, vidéo->ligne 2,
+audio->ligne 3, et ne garde le 19 Mo opaque QUE pour les vrais binaires non ouvrables.
+
+---
+
+## 9. Fichiers clés à ouvrir pour le refactor (ordre de priorité)
+
+1. `src/capture/universalCapture.js` (routeFile 660, captureFiles 739) — extraire `classify`.
+2. `scripts/archive-folder.mjs` (boucle 256, chunk 270, manifeste 327) — point d'injection du routage.
+3. `src/create/node.js` (typeOfPath) + `src/App.jsx:2804` — viewer unifié.
+4. `server/upload-shard.js` + `server/shard-naming.js` — familles de shards (réutiliser pour bulk image/media).
+5. `scripts/lib/img-pipeline.mjs` — lib Node existante du pipeline image (à étendre pour le bulk).
+6. `src/components/FileNodeViewer.jsx`, `MediaViewer.jsx`, `ImageNodeViewer.jsx` — viewers à fédérer.

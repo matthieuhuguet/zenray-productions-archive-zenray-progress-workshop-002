@@ -1,0 +1,37 @@
+# Smart Folders — code UI retiré (restaurable)
+
+Retiré de src/App.jsx le 2026-06-02 (objectif S). Les fonctions meta.js
+(applySmart, readSmartFolders, writeSmartFolders, FIELD, matchRule) sont
+CONSERVÉES intactes — la restauration ne concerne qu'App.jsx.
+
+Le fichier de persistance `pages/.zr-eagle.json` n'est plus lu/écrit après
+le retrait, mais reste sur disque (idempotent à la restauration).
+
+## 1. Import (ligne 8) — ré-ajouter applySmart, readSmartFolders, writeSmartFolders
+import { buildEagleIndex, systemView, applySmart, readSmartFolders, writeSmartFolders } from './eagle/meta.js'
+
+## 2. State + chargement (après le state eagleNonce, ~L886)
+const [smartFolders, setSmartFolders] = useState([]) // C211i smart folders
+const smartSha = useRef(null)
+const [smartActive, setSmartActive] = useState(null)
+useEffect(() => { readSmartFolders().then(({ smart, sha }) => { setSmartFolders(smart); smartSha.current = sha }) }, [])
+
+## 3. Filtrage (juste avant `const tagRank = ...`, ~L1549)
+if (smartActive && eagleIdx) { // C211i : filtre par smart folder (règles sur l'index)
+  const set = new Set(applySmart(eagleIdx, smartActive).map((x) => x.path))
+  shownRaw = browseEntries.filter((e) => set.has(e.contentPath))
+}
+
+## 4. Réintégrer setSmartActive(null) dans le onClick des vues Eagle (~L2133)
+onClick={() => { setEagleView(eagleView === v ? null : v); setSmartActive(null) }}
+
+## 5. Section sidebar (après le .map des vues Eagle, avant la fermeture `</div>`)
+<div style={{ ...sideLabel, marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Smart Folders
+  <button onClick={async () => { const name = (window.prompt('Nom du smart folder ?', 'Favoris 4★') || '').trim(); if (!name) return; const min = parseInt(window.prompt('Note minimum (0-5) ?', '4'), 10) || 0; const sf = { id: 's' + Date.now().toString(36), name, match: 'all', rules: [{ field: 'rating', op: '>=', value: min }] }; const next = [...smartFolders, sf]; setSmartFolders(next); const s = await writeSmartFolders(next, smartSha.current); if (s) smartSha.current = s }} style={{ background: 'none', border: 'none', color: t.textSecondary, cursor: 'pointer', fontSize: 14, padding: 0 }}>+</button>
+</div>
+{smartFolders.map((sf) => (
+  <button key={sf.id} onClick={() => { setSmartActive(smartActive && smartActive.id === sf.id ? null : sf); setEagleView(null) }} className="zr-treeitem" style={{ ...sideItem(smartActive && smartActive.id === sf.id), justifyContent: 'space-between' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><Icon name="star" size={13} />{sf.name}</span>
+    <span onClick={async (e) => { e.stopPropagation(); const next = smartFolders.filter((x) => x.id !== sf.id); setSmartFolders(next); if (smartActive && smartActive.id === sf.id) setSmartActive(null); const s = await writeSmartFolders(next, smartSha.current); if (s) smartSha.current = s }} style={{ color: t.textSecondary, fontSize: 12 }}>×</span>
+  </button>
+))}

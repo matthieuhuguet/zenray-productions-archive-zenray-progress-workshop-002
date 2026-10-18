@@ -1,0 +1,24 @@
+# DEPRECATED — placeholder de transcodage vidéo (retiré du drag-and-drop le 2026-06-02)
+
+## Pourquoi
+Au dépôt d'une vidéo, l'app créait un nœud `.media.json {type:'chunked-media', transcoding:true, progress:0}`
+qui s'affichait comme « Transcodage local en cours · 0% » avec un badge trompeur, et restait **figé à 0%**
+(aucun worker de file actif pour le résoudre). Bug récurrent signalé par Matthieu → DEPRECATED.
+
+## Nouveau comportement (chemin unique Terminal)
+`captureVideoLocalCmd` (src/capture/universalCapture.js) ne crée **plus aucun nœud** au drop. Il génère
+seulement la commande locale (`/api/upload-cmd`) + une notif d'onboarding 2 étapes (place le fichier dans
+`~/Downloads`, colle la commande). Le nœud HLS final est créé par la commande quand elle tourne
+(`scripts/video-hls.mjs --push`). Retour : `{ ok:true, type:'video-cmd', name }` (pas de `nodePath`).
+
+## Code conservé (non appelé) pour restauration éventuelle
+`captureVideoTranscode(file, folder, onProgress)` reste dans universalCapture.js, marqué DEPRECATED.
+Pour le rebrancher, il faut D'ABORD un worker de file actif (scripts/transcode-worker.mjs) qui lit la file
+`pages/.zr-transcode-queue.json` et remplace le placeholder par le manifest HLS final. Sans worker, NE PAS
+rebrancher (le placeholder resterait figé). La fonction crée :
+- un nœud placeholder `.media.json {type:'chunked-media', v:1, name, mime, size, transcoding:true, progress:0, stage:'en file', probe:{}}`
+- une entrée de file via `enqueueTranscode({ nodePath, name, mime, size, status:'a-transcoder-localement', addedAt, dest })`
+- retour `{ ok:true, type:'video-queued', nodePath, name }`
+
+Pour réactiver : dans `routeFile`/`captureVideoLocalCmd`, rappeler `captureVideoTranscode` avant la génération
+de commande, et remettre le filtre toast `video-queued` dans App.jsx.

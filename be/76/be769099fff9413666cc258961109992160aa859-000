@@ -1,0 +1,45 @@
+# Audit partage sans mot de passe — vidéo / galerie / image (2026-07-01)
+
+Confirmation demandée : dans les 3 cas de partage, aucun mot de passe du drive n'est jamais réclamé au destinataire.
+
+## a. Vidéo (/watch?v=...)
+
+Déjà fonctionnel (fix du 2026-06-30). Re-testé :
+- `curl` sans header auth sur `/api/page?action=read` du manifeste `.media.json` réel → **HTTP 200**.
+- Navigateur (`/watch?v=<token>`) : lecteur vidéo affiché, aucun pavé « Code du drive ».
+- `curl` sans auth sur `/api/page?action=tree&dir=pages` (drive entier, non borné) → **HTTP 401** (aucune fuite).
+
+Aucune erreur trouvée sur ce chemin.
+
+## b. Galerie/dossier (/folder?d=...)
+
+Déjà fonctionnel. Re-testé :
+- `curl` sans auth sur `/api/page?action=tree&dir=<dossier partagé>` → **HTTP 200**, liste bornée au sous-dossier.
+- Navigateur (`/folder?d=<token>`) : grille de vignettes affichée, aucun pavé PIN.
+
+Aucune erreur trouvée sur ce chemin.
+
+## c. Image seule — FONCTIONNALITÉ MANQUANTE (la vraie « 3e erreur »)
+
+Il n'existait aucun moyen de partager une image seule : ni bouton dans le menu contextuel, ni route `/view`, ni composant. Seul « Partager ce dossier (lien galerie) » existait. Le partage d'une image obligeait donc à partager tout le dossier — ou, en tentant de bricoler une URL non prévue, on tombait sur le gate serveur qui réclame le mot de passe (le vrai symptôme des « 3 erreurs » signalées).
+
+**Ajouté**, sur le patron exact de `/watch` :
+- `src/components/ShareImagePage.jsx` (nouveau fichier) : page publique `/view?v=<token base64url du chemin .img.json>`. Lit le manifeste via `/api/page?action=read`, déchiffre via `resolveFullUrl` (réutilisé d'`ImageNodeViewer.jsx`), affiche l'image, bouton Télécharger via `downloadMedia`.
+- `src/main.jsx` : route `/view` → `LazyShareImagePage` (React.lazy, même patron que `/watch`/`/folder`).
+- `src/lib/apiAuth.js` : `isSharePage()` inclut désormais `/view` → jamais de `window.prompt("Code du drive")` sur cette page.
+- `src/App.jsx` : item « Partager cette image » dans le menu contextuel (à côté de « Télécharger l'original »), copie `${origin}/view?v=${encodeShare(contentPath)}`.
+
+Serveur : aucun changement requis — `authOk` dans `api/[...route].js` autorise déjà `action=read` sans secret pour tout chemin `\.(media|img)\.json$`, donc `.img.json` était déjà couvert.
+
+## Preuves (curl direct, sans header Authorization, contre zenray-progress.vercel.app)
+
+| Cas | Requête | Résultat |
+|---|---|---|
+| Image | `GET /api/page?action=read&path=pages/Photos/DJI/29 Juin 2026/Photos/DJI_...0001_D.JPG.img.json` | **200** |
+| Vidéo | `GET /api/page?action=read&path=pages/Photos/DJI/29 Juin 2026/Videos/DJI_...0049_D.mp4.media.json` | **200** |
+| Galerie | `GET /api/page?action=tree&dir=pages/Photos/DJI/29 Juin 2026/Photos` | **200** |
+| Drive entier (contrôle) | `GET /api/page?action=tree&dir=pages` | **401** |
+
+Navigateur (dev local, même handler `api/[...route].js` que prod, secret actif) : `preview_snapshot` sur `/view`, `/watch`, `/folder` — aucun pavé « Code du drive » dans l'arbre d'accessibilité dans les 3 cas ; console sans erreur.
+
+`npm run build` : vert.

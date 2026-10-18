@@ -1,0 +1,53 @@
+# Phase B — Affichage déchiffré (display)
+
+Statut : livré. Build vert. Voir docs/media-public-encrypted-design.md §6.2.
+
+## En clair (pour tout le monde)
+
+Sur un dépôt public, l'image est du charabia chiffré. jsDelivr la sert telle quelle ; une balise `<img>`
+ne sait pas l'afficher. Le navigateur doit donc : télécharger le charabia → le déchiffrer avec la clé maître
+et l'IV du manifest → obtenir une URL locale (`blob:`) de l'image en clair → la donner à `<img>`.
+
+Tout se passe dans la RAM du navigateur. Le clair n'est jamais renvoyé sur le réseau ni persisté.
+
+## Détection
+
+Une image est chiffrée si son manifest a `vis === 'public'` ET un champ `iv` (`isEncrypted(m)`).
+Un public sans `iv` (ancien public clair) ou un privé (legacy) reste servi tel quel : rétro-compat totale.
+
+## Fichiers touchés
+
+- `src/components/ImageNodeViewer.jsx` :
+  - `isEncrypted(m)` exporté + `resolveFullUrl(m)` / `resolveThumbUrl(m)` (résolveurs async pour call-sites
+    non-React : collage, refs).
+  - Cache RAM `_decCache` : URL CDN du ciphertext → Promise d'objectURL du clair. Déduplique les
+    déchiffrements concurrents, jamais révoqué (cache RAM voulu, jamais déchargé).
+  - Hooks React `useResolvedFull` / `useResolvedThumb` : déchiffrent gaté au viewport (`inView`).
+  - `useResolvedDirectThumb(url, iv, enabled)` : MODE RECHERCHE — la vignette vient de l'index v2 sous forme
+    `{u, iv}` sans lecture de manifest ; si `iv` présent, `u` est du ciphertext → fetch + déchiffre.
+  - `ImgNodeThumb` accepte une prop `thumbIv` ; en mode direct chiffré, affiche `null` tant que le clair n'est
+    pas prêt, JAMAIS le ciphertext.
+  - Plein écran (`ImageNodeViewer`) : déchiffre via `useResolvedFull`, affiche « déchiffrement… » en attendant.
+  - Vignette plein-survol (`onEnter`) : déchiffre l'image pleine au survol pour les chiffrées.
+  - **P0** : `onMissing` (backfill vignette) DÉSACTIVÉ pour les chiffrées. Sinon on lirait du ciphertext et,
+    pire, on POUSSERAIT une vignette `.webp` en CLAIR sur un dépôt public (violation anti-fuite). Si la vignette
+    chiffrée manque, on retombe proprement sur l'image pleine déchiffrée.
+
+- `src/App.jsx` :
+  - `thumbUrlFor` documenté pour `{u, iv}` ; nouveau `thumbIvFor(p)` lit `e.iv` de l'index.
+  - `searchEntries` porte désormais `thumbIv` ; passé à `<ImgNodeThumb thumbIv=… />`.
+  - Copier-coller d'images (`pasteClip`) : la vignette optimiste passe par `resolveThumbUrl(m)` (objectURL du
+    clair pour les chiffrées) au lieu de `shardThumbUrl` brut → jamais de ciphertext sur une copie.
+  - Import de `resolveThumbUrl`.
+
+## Chemin vignette
+
+Dérivé du chemin image : `cdnPath` avec extension remplacée par `.webp` (même hash). Déchiffré avec son IV
+propre `thumbIv` (séparé de l'IV du binaire). Décision : pas de champ `cdnThumbPath` explicite (cf. phase upload).
+
+## Points de vérification (pour phase F)
+
+- Image legacy privée : affichage inchangé (pas d'`iv` → chemin synchrone d'origine).
+- Image publique chiffrée : vignette + plein écran déchiffrés, recherche déchiffrée, copie déchiffrée.
+- Aucun `<img>` ne reçoit jamais une URL de ciphertext (toujours `null` puis objectURL clair).
+- Aucun push de vignette en clair sur un repo public (backfill coupé pour les chiffrées).

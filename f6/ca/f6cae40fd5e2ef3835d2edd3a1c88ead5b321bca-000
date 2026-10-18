@@ -1,0 +1,57 @@
+# Demandes de Matthieu, notees en 1:1
+
+Fichier **append only**. On ajoute a la fin, on ne reecrit jamais. Ce qui est ici est ecrit avec ses
+mots, pas avec les miens : une reformulation perd toujours quelque chose, et c est justement ce
+quelque chose qui compte quand on relit six mois plus tard.
+
+---
+
+## 2026-08-31, la refonte des gestes de base
+
+> Continue et fini la refactorisations /28 peut etre avant de coder tu devrais finir et je devrais
+> tester mais peut etre dans mes feedbacks tu ne prends pas en compte quelque chose. /simplify et la
+> de nouveaux ... mes images liens depuis les raccourcis ne fonctionnent plus ... en fait je me pose
+> la question pour aller a l'essentiel peut etre refactoriser le code autour de quelque chose de plus
+> simple...
+>
+> En fait le truc c'est que je veux
+>
+> consulter mes images hyper rapidement (ca ca marche quand les images s'affichent) ce qui n'est pas
+> toujours le cas notamment
+> creer des dossiers fluidement qui s'inscrivent sur github et dont je peux envoyer dedans des images
+> dedans... Creer des dossiers le temps de la notif parfois ils disparaissent ce doit etre parfait.
+> que tout soit bien hoster (storage) sur github.
+>
+> Je veux que ce soit simple et efficace. Vise quelque chose de simple mais qui fonctionne sans perdre
+> en feature. Simplifie ou refactorise. le but c'est de calculer aussi en ms le maximum de rapidite
+>
+> MAIS stabilite > vitesse toujours
+
+> N'oublie pas de faire le reste encore un bug impossible de deplacer le fichier globalement
+> actuellement c'est une douleur immense de creer des dossiers / deplacer des fichiers a l'interieur
+> il faut limite trouver une solution plus simple : peut etre via des loaders / des calculs en
+> paralleles je sais pas mais rendre l'UI et l'UX beaucoup plus fluide pour les actions de bases :
+> creer un dossier / deplacer un dossier (qui contient des images) / deplacer une images
+>
+> viser la vitesse maximal actuellement c'est trop lent trop de douleur pour l'user.
+
+### Ce que j en retiens, et qui gouverne la suite
+
+**Trois gestes, et rien d autre.** Consulter ses images vite. Creer un dossier qui tient. Y deplacer
+des images. Tout le reste du produit passe apres ces trois-la, parce que ce sont ceux qu il fait
+cent fois par jour.
+
+**« stabilite > vitesse toujours »**, ecrit en majuscules par lui. Un geste rapide qui echoue une
+fois sur cinq est pire qu un geste lent qui marche toujours : la douleur ne vient pas de l attente,
+elle vient de devoir verifier. Aucune optimisation ne se fait au prix d une incertitude.
+
+**« sans perdre en feature ».** Simplifier ne veut pas dire retirer. La contrainte est de reduire le
+nombre de chemins possibles, pas le nombre de choses faisables.
+
+**Ce qu il ne demande PAS**, et qu il faut se retenir de faire : une refonte d architecture. Il
+propose « peut-etre refactoriser autour de quelque chose de plus simple », au conditionnel, apres
+avoir constate des bugs. La bonne reponse est de supprimer les CAUSES d instabilite une par une,
+puis de mesurer. Une refonte, elle, ajouterait une longue periode ou plus rien ne marche.
+
+**« peut etre dans mes feedbacks tu ne prends pas en compte quelque chose ».** Note pour moi : il a
+raison de poser la question. Ce fichier existe pour que la reponse soit verifiable plutot que promise.

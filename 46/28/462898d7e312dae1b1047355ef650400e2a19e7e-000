@@ -1,0 +1,250 @@
+# Design B — Architecture cible (priorité : UX mobile/stream + routeur unique propre)
+
+Branche : `refactor/unified-ingest`. Refactor ADDITIF, rétrocompat `.file.json` v2/v3/v4 non négociable.
+
+Parti pris de l'architecte B : on accepte de **refactorer plus** pour obtenir (1) un routeur de classification VRAIMENT unique (un seul fichier, zéro branche dupliquée) et (2) la meilleure UX mobile/stream possible. La dette de duplication actuelle (routeFile vs archive-folder, viewer tuile vs plein écran, download full-RAM) est payée maintenant, pas reportée.
+
+---
+
+## 0. Principe directeur
+
+Trois axes, trois points uniques :
+
+1. **Un seul classifieur** : `src/capture/classify.js` (pur, isomorphe Node + navigateur). Personne d'autre ne décide « ce fichier est une image/vidéo/audio/binaire ». Ni routeFile, ni archive-folder, ni le mobile. Ils l'**appellent**.
+2. **Un seul viewer** : `<UnifiedViewer path manifest />` qui dispatch sur le `type` du manifeste résolu, jamais sur l'extension dans deux endroits différents.
+3. **Un seul download** : `src/lib/fetchAsset.js` avec streaming (File System Access API + fallback), partagé image/HLS/media/chunk. Fin du Blob full-RAM dupliqué dans FileNodeViewer + DownloadsView.
+
+La règle métier (le diagnostic du patron) vit dans `classify.js` et NULLE PART AILLEURS : « image → img, vidéo → HLS, audio → media, le reste → chunk binaire ». Changer la règle = éditer un fichier.
+
+---
+
+## 1. ROUTEUR D'INGESTION UNIFIÉ
+
+### 1.1 Le module pur `src/capture/classify.js`
+
+Fonction unique, sans I/O, sans dépendance DOM ni Node, testable seule :
+
+```js
+// classify.js — SEULE source de vérité de la classification par type.
+// Entrée : descripteur minimal (marche pour un File navigateur ET un fs.Stat Node).
+// Sortie : { kind, pipeline, reason }.
+export function classify({ name, mime = '', size = 0 }) {
+  const ext = extOf(name, mime)            // helper partagé (déplacé ici depuis universalCapture)
+  // 1. IMAGE  -> pipeline 'img'   (.img.json, blob hashé, vignette réelle, zéro réassemblage)
+  // 2. AUDIO  -> pipeline 'media' (mime audio/* prime sur ext ; .ogg nu = audio)
+  // 3. VIDEO  -> pipeline 'hls'   (.media.json, HLS adaptatif)
+  // 4. TEXT   -> pipeline 'page'  (md/txt éditable)
+  // 5. PDF    -> pipeline 'media' (famille zenray-pdf-public)
+  // 6. BINARY -> pipeline 'chunk' (.file.json 19Mo) — DERNIER RECOURS uniquement
+  return { kind, pipeline, reason }
+}
+
+export const PIPELINES = ['img', 'hls', 'media', 'page', 'chunk']
+export function extOf(name, mime) { /* déplacé tel quel depuis universalCapture */ }
+```
+
+Détail des règles (copie EXACTE de la cascade `routeFile` L660-708, source de vérité actuelle, pour zéro régression) :
+
+| Ordre | Condition | kind | pipeline |
+|---|---|---|---|
+| 1 | `mime.startsWith('image/')` ou ext ∈ {png,jpg,jpeg,gif,webp,avif,bmp,tiff,heic} | image | img |
+| 2 | `mime.startsWith('audio/')` | audio | media |
+| 3 | `mime.startsWith('video/')` ou ext ∈ {mp4,webm,mkv,avi,mov,m4v,ts,flv,wmv} | video | hls |
+| 4 | `mime` md/txt/plain ou ext ∈ {md,txt} | text | page |
+| 5 | ext audio nu ∈ {mp3,m4a,wav,flac,opus,oga,ogg,aac,aiff,aif,wma} | audio | media |
+| 6 | pdf | doc | media |
+| 7 | défaut | binary | chunk |
+
+**Invariant clé** : `chunk` n'est JAMAIS retourné pour un format ouvrable. C'est ça qui corrige le bug « archiver une image en chunks idiots ».
+
+### 1.2 Le consommateur in-app : `routeFile` devient un simple dispatch
+
+`universalCapture.js` `routeFile` perd toute sa logique de cascade. Il appelle `classify()` puis branche sur `pipeline` :
+
+```js
+async function routeFile(file, folder, onProgress, mode, vis) {
+  const { pipeline } = classify({ name: file.name, mime: file.type, size: file.size })
+  switch (pipeline) {
+    case 'img':   return captureImage(file, folder, onProgress, vis)
+    case 'media': return file.type.startsWith('audio/') || isAudioExt(file)
+                    ? captureAudio(file, folder, mimeOf(file), onProgress)
+                    : captureBinaryMedia(file, folder, mimeOf(file), onProgress, pdfFamily(file))
+    case 'hls':   return onLocal()
+                    ? captureVideoServerHls(file, folder, onProgress)
+                    : notifyVideoNeedsLocal(file)   // inchangé
+    case 'page':  return captureText(file, folder, onProgress)
+    case 'chunk': return captureBinaryMedia(file, folder, mimeOf(file), onProgress) // in-app garde le chunk chiffré 3Mo
+  }
+}
+```
+
+Note importante : **in-app, le « chunk » reste `captureBinaryMedia` (média chunké AES-GCM 3 Mo, `.media.json` famille doc)**, PAS `.file.json`. Le `.file.json` 19 Mo n'est produit QUE par le bulk Node (gros volumes, git push direct). Les deux sont des « chunk binaire » conceptuellement, mais le pipeline physique diffère selon le contexte (navigateur vs Node). `classify` renvoie le `kind` logique ; le consommateur choisit l'implémentation physique adaptée à son environnement. C'est la séparation propre que l'architecte B assume.
+
+### 1.3 Le consommateur bulk : `Scripts/archive-folder.mjs`
+
+Aujourd'hui : chunke TOUT. Cible : importe `classify.js` (déjà isomorphe, donc `import { classify } from '../src/capture/classify.js'`) et, dans la boucle de walk (L256, avant le chunk L270), route :
+
+```js
+for (const file of walk(src)) {
+  const { pipeline } = classify({ name: file.name, mime: mimeFromExt(file), size: file.size })
+  if (pipeline === 'img')   { await ingestImageBulk(file, dest); continue }
+  if (pipeline === 'hls')   { await ingestVideoBulk(file, dest); continue }  // appelle Scripts/video-hls-lib.mjs
+  if (pipeline === 'media') { await ingestMediaBulk(file, dest); continue }  // audio/pdf chunké chiffré
+  // pipeline === 'chunk' : VRAIS binaires seulement -> .file.json 19Mo (code actuel inchangé)
+  await ingestChunkBulk(file, dest)
+}
+```
+
+Les trois nouveaux `ingest*Bulk` sont des **adaptateurs Node** des pipelines existants, pas des réécritures :
+- `ingestImageBulk` → réutilise la logique `captureImage` (hash → blob `ab/cd/<sha>.<ext>` → vignette webp → `.img.json` v1). En bulk public on peut servir le blob **en clair** (cohérent avec HLS bulk déjà en clair), shard img public via git push.
+- `ingestVideoBulk` → appelle directement `Scripts/video-hls-lib.mjs` (`transcodeHls`+`pushHls`), déjà conçu pour Node. C'est le gros gain : les vidéos DJI deviennent streamables.
+- `ingestMediaBulk` → audio/pdf chunké chiffré, manifeste `.media.json`.
+- `ingestChunkBulk` → code `.file.json` ACTUEL, intact (rollover mid-file 4,5 Go, parts[], versions[]).
+
+**Rétrocompat** : aucun `.file.json` existant n'est touché. Le re-archivage d'un dossier qui contenait des images déjà chunkées produira de NOUVEAUX manifestes `.img.json`/`.media.json` à côté ; les anciens `.file.json` restent lisibles. Optionnel (phase 2) : `Scripts/archive-migrate.mjs` qui relit un `.file.json` image/vidéo, réassemble une fois, ré-ingère via le bon pipeline, et marque l'ancien manifeste `superseded` (sans le supprimer — append-only, anti-fuite respecté).
+
+### 1.4 Le consommateur mobile
+
+L'upload mobile (cf. §3) appelle `captureFiles` (pool existant `universalCapture.js:739`), donc passe automatiquement par le nouveau `routeFile` → `classify`. Zéro code de classification spécifique mobile. Seule contrainte : la vidéo exige localhost (ffmpeg) ; sur iPhone en prod, `classify` renvoie quand même `hls`, mais `routeFile` affiche le message « app locale requise » (comportement actuel conservé). Amélioration possible plus tard : upload vidéo brute mobile → file d'attente serveur, hors scope ici.
+
+### 1.5 Factoriser les helpers chunk dupliqués
+
+`chunkRefs`, `versionsOf`, reassemblage : dupliqués dans `FileNodeViewer.jsx` + `DownloadsView.jsx`. → module `src/lib/archiveChunks.js` (pur) importé par les deux. Lecture v2/v3/v4 + `mode:'raw'`/`'chunked'` centralisée ici. C'est le pré-requis du download streamé §2.3.
+
+---
+
+## 2. VIEWER UNIFIÉ
+
+### 2.1 Un seul registre de type : `src/create/node.js`
+
+`typeOfPath(path)` reste le registre unique (image/media/file/page). On y ajoute la garantie qu'**un fichier image n'arrive jamais avec extension `.file.json`** (corrigé à l'ingestion §1.3) — donc le dispatch par extension du manifeste devient correct sans casse.
+
+### 2.2 `<UnifiedViewer>` — point d'entrée unique du rendu
+
+Nouveau composant `src/create/UnifiedViewer.jsx`. Remplace le double dispatch actuel (`App.jsx:2804` grille + clone QuickLook). Signature :
+
+```jsx
+<UnifiedViewer path={path} manifest={m} mode="quicklook|fullscreen|thumb" />
+```
+
+Il résout le `type` du manifeste et délègue aux viewers spécialisés EXISTANTS (réutilisés, pas réécrits) :
+
+| type manifeste | composant délégué | source |
+|---|---|---|
+| `image` (.img.json) | `<ImageNode>` (tuile/plein écran unifiés) | refactor de ImageNodeViewer (fusion ImgNodeThumb + plein écran) |
+| `hls` (.media.json) | `<HlsVideo>` | existant, inchangé |
+| `audio`/`pdf`/inline (.media.json) | `<MediaViewer>` interne | existant (`/api/stream`, iframe PDF) |
+| `file` (.file.json) | `<FileNodeViewer>` | existant, download streamé §2.3 |
+| `page` | éditeur BlockNote | existant |
+
+Le seul travail neuf : **fusionner les deux dispatch en un** (App.jsx finder + QuickLook clone appellent tous `<UnifiedViewer>`). Bénéfice UX : un seul code de plein écran, gestes mobiles cohérents partout.
+
+### 2.3 Download streamé partagé : `src/lib/fetchAsset.js`
+
+Tue le Blob full-RAM (risque OOM mobile, cap 500 Mo actuel). Une fonction :
+
+```js
+// Streaming download, jamais tout en RAM.
+export async function downloadAsset({ manifest, filename }) {
+  if ('showSaveFilePicker' in window) {           // Chrome/Edge desktop : streaming vrai
+    const handle = await showSaveFilePicker({ suggestedName: filename })
+    const ws = await handle.createWritable()
+    for await (const chunk of assetChunks(manifest)) await ws.write(chunk) // déchiffre + concatène au fil de l'eau
+    await ws.close()
+    return
+  }
+  // Fallback (Safari/iOS) : Blob progressif si raisonnable, sinon ouvrir l'URL CDN directe
+  // (image/HLS = déjà 1 URL ; chunk = lien manifeste). Évite l'OOM en streamant via ReadableStream + StreamSaver si dispo.
+}
+
+async function* assetChunks(m) {
+  // image -> 1 fetch ; hls -> N/A (lecture stream) ; .file.json -> chunkRefs() séquentiel déchiffré
+}
+```
+
+`assetChunks` s'appuie sur `src/lib/archiveChunks.js` (§1.5). FileNodeViewer + DownloadsView **suppriment leur copie** et appellent `downloadAsset`. Gain : iPhone télécharge un 4 Go DJI sans crasher (écrit au fil de l'eau).
+
+---
+
+## 3. PLAN MOBILE (iPhone 15 Pro, ~390px)
+
+Priorité de l'architecte B. Quatre chantiers, du plus bloquant au polish.
+
+### 3.1 Upload TRIVIAL (manque n°1) — `src/mobile/MobileUploadButton.jsx`
+
+FAB (bouton flottant rond, coin bas-droite, ≥56px, liquid glass coral) visible quand `IS_PHONE`. Au tap, bottom-sheet avec :
+
+```jsx
+<input type="file" accept="image/*,video/*,audio/*,application/pdf,*/*" multiple
+       capture />            // 'capture' propose la caméra/micro natif iOS
+```
+
+- Un input universel `multiple` → `captureFiles` (route via `classify`). Plus de `accept="video/*"` unique enfoui dans le menu +.
+- Entrée caméra directe (`capture`) pour shooter une photo et l'uploader en 2 taps.
+- **Web Share Target** (PWA) : `manifest.webmanifest` déclare `share_target` → l'iPhone propose « ZenRayProgress » dans la share sheet de Photos/Files. Le partage atterrit sur une route `/share` qui pousse les fichiers dans `captureFiles`. C'est l'upload « au doigt » le plus naturel iOS.
+- `navigator.share` SORTANT depuis un viewer (partager un asset hors de l'app).
+
+### 3.2 Download facile iOS
+
+Safari ignore `a.download` cross-origin (raw.githubusercontent). `downloadAsset` (§2.3) règle ça : pour les assets 1-URL (image/HLS poster), on passe par un blob object-URL local (même origine) ; pour les gros chunks, on streame via StreamSaver/SaveFilePicker ou, en dernier recours iOS, on ouvre la ressource dans un onglet avec en-tête de téléchargement servi par `/api/stream` (déjà gère le Range déchiffré).
+
+### 3.3 Stream sur machine faible
+
+HLS adaptatif déjà en place (raison de plus de sortir les vidéos du chunk via §1.3). `HlsVideo` : vérifier ABR auto (`hls.currentLevel = -1`) par défaut sur connexion mobile, ladder 360/720 priorisé. Contrôles `HlsVideo` passés en **bottom-sheet** sur `IS_PHONE` (menus coin actuels < 44px → cibles ≥44px, plein écran `object-fit: contain`).
+
+### 3.4 Responsive ~390px — `IS_PHONE` + breakpoint 480
+
+Nouvelle constante `IS_PHONE` (≤480px, recalculée au resize, pas figée comme `IS_TOUCH`). Application :
+
+- **Finder grille** : clamp zoom mobile (`cols` App.jsx:840 borné à 2-3 colonnes lisibles, pas 132px géants). 
+- **Viewers** : `MediaViewer` maxWidth → 100vw sur phone ; plein écran safe-area.
+- **Drive/Archives** : grille `minmax(240px,1fr)` → `1fr` colonne unique sur phone ; blocs curl/mono `overflow-x:auto` + `word-break` (ne débordent plus).
+- **Éditeur BlockNote** : padding réduit, toolbar sticky.
+- **Viewport** : `index.html` → `viewport-fit=cover` + `env(safe-area-inset-*)` sur FAB, viewers plein écran, bottom-sheets (notch + barre home iPhone 15 Pro).
+
+---
+
+## 4. CARTE FICHIER PAR FICHIER (récap actionnable)
+
+**Nouveaux fichiers**
+- `src/capture/classify.js` — classifieur pur isomorphe (le cœur).
+- `src/lib/archiveChunks.js` — helpers chunk v2/v3/v4 partagés (dé-duplication FileNodeViewer/DownloadsView).
+- `src/lib/fetchAsset.js` — `downloadAsset` streamé + `assetChunks`.
+- `src/create/UnifiedViewer.jsx` — dispatch viewer unique.
+- `src/mobile/MobileUploadButton.jsx` — FAB upload + bottom-sheet.
+- `public/manifest.webmanifest` + route `/share` — Web Share Target PWA.
+- `Scripts/archive-migrate.mjs` (phase 2, optionnel) — re-ingère images/vidéos déjà chunkées.
+
+**Fichiers modifiés**
+- `src/capture/universalCapture.js` — `routeFile` réduit à un switch sur `classify().pipeline` ; `extOf` déplacé vers `classify.js` (réexport pour compat).
+- `Scripts/archive-folder.mjs` — boucle de walk route via `classify` ; ajout `ingestImageBulk`/`ingestVideoBulk`/`ingestMediaBulk` ; `ingestChunkBulk` = code actuel intact.
+- `src/create/node.js` — `typeOfPath` inchangé (corrigé par l'ingestion).
+- `App.jsx` — double dispatch viewer → `<UnifiedViewer>` ; ajout `IS_PHONE` + clamp zoom + FAB ; suppression du bloc mort `> 4Mo` (App.jsx:2105) et de l'`accept="video/*"` unique.
+- `FileNodeViewer.jsx` + `DownloadsView.jsx` — suppriment leur reassemblage/download local, importent `archiveChunks` + `downloadAsset`.
+- `HlsVideo.jsx` — contrôles bottom-sheet + cibles ≥44px sur `IS_PHONE`.
+- `index.html` — `viewport-fit=cover`, media queries 480, `env(safe-area)`.
+
+**Intacts (rétrocompat)** : format `.file.json` v2/v3/v4, `chunkRefs`/`parts[]`/`versions[]`, `archive-organize.mjs`, `archive-thumbs.mjs`, sidecars, regroupement DownloadsView par ARCHIVE_PARENTS, cache `zrfm5:`, shards ≤5 Go, bulk = git push, index.html no-cache.
+
+---
+
+## 5. ORDRE D'EXÉCUTION (phasé, build vert à chaque étape, commit local seulement)
+
+1. **classify.js** + tests purs (cascade = copie 1:1 de routeFile). routeFile branché dessus. Build vert, comportement in-app identique.
+2. **archiveChunks.js** + `fetchAsset.js`. FileNodeViewer/DownloadsView migrés. Download streamé testé sur un `.file.json` existant (DJI).
+3. **UnifiedViewer.jsx** : fusion des deux dispatch. QuickLook + Finder identiques.
+4. **archive-folder.mjs** route via classify (images/vidéos → bons pipelines). Test sur un petit dossier mixte (1 jpg, 1 mov, 1 zip) : doit produire `.img.json` + `.media.json` HLS + `.file.json`.
+5. **Mobile** : `IS_PHONE`, FAB upload, responsive 480, viewport safe-area, HlsVideo bottom-sheet.
+6. **PWA share target** + `navigator.share`.
+7. (option) `archive-migrate.mjs`.
+
+Chaque phase est isolée et rétrocompatible : on peut s'arrêter après n'importe laquelle sans rien casser en ligne.
+
+---
+
+## 6. Pourquoi ce design (justification architecte B)
+
+- **Routeur vraiment unique** : `classify.js` est le SEUL endroit qui connaît la règle. Les trois consommateurs (in-app, bulk, mobile) l'appellent. Aucune cascade dupliquée ne subsiste. C'est plus de refactor que de poser un seuil de taille, mais ça supprime la divergence à la racine — exactement le but du patron.
+- **UX mobile maximale** : Web Share Target + FAB + caméra = upload trivial natif iOS, pas un bricolage. Download streamé = plus d'OOM. HLS adaptatif déjà là = stream fluide sur machine faible, et le routeur garantit enfin que les vidéos PASSENT par HLS au lieu d'être chunkées.
+- **Stream par défaut** : sortir image/vidéo/audio du chunk binaire rend l'immense majorité des assets servis directement par jsDelivr (1 URL, vignette réelle), le chunk binaire redevient l'exception qu'il aurait dû toujours être.
+- **Risque maîtrisé** : additif, phasé, rétrocompat dure sur `.file.json`. Le format en ligne (130 Go DJI) n'est jamais touché ; au pire on ajoute des manifestes à côté.

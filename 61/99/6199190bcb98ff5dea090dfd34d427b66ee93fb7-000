@@ -1,0 +1,55 @@
+# PLAN — Import Eagle (vidéos + images) & déchargement disque Mac
+
+But : faire monter dans le drive ZenRay tout le contenu Eagle (vidéos + images), VÉRIFIER que chaque
+fichier est copié, récupérable et sauvegardé, PUIS libérer le disque Mac en supprimant les sources locales
+en sécurité. Nettoyer aussi les dossiers tmp/ encombrés d'éléments obsolètes.
+
+Statut : PLAN seulement (à exécuter plus tard, sur demande). Rien n'est lancé.
+
+## Infra existante réutilisable
+- `Scripts/eagle-import-git.mjs` : import depuis Eagle (push Git, canonique — variante API `eagle-import.mjs` archivée le 2026-07-16, `scripts/_archive/`).
+- `Scripts/video-hls.mjs` + `Scripts/video-hls-lib.mjs` : transcode HLS adaptatif (ladder 360→4K, AES-128),
+  segments publics chiffrés servis par jsDelivr (repos zenray-vid-NN), clés AES privées.
+- Shards images publics chiffrés (zenray-img-public-NN) + privés (zenray-img-private-NN), résolveur /api/img,/api/shard.
+- `build-search-index.mjs` : ré-indexer après import (contenu + thumbs v3).
+
+## Phase 0 — Inventaire & garde-fous (AVANT toute suppression)
+1. Lister la bibliothèque Eagle (chemins, tailles, count) -> manifeste CSV horodaté.
+2. Mesurer l'espace disque récupérable (du -sh par dossier source).
+3. RÈGLE D'OR : on ne supprime RIEN tant que la copie distante n'est pas VÉRIFIÉE (hash) ET listée dans un
+   rapport « copié + récupérable ». Triple sécurité : (a) présent sur GitHub shard, (b) lisible via l'app,
+   (c) somme de contrôle source == distante.
+
+## Phase 1 — Images Eagle -> shards publics chiffrés
+1. Convertir en AVIF CRF 25 (sweet spot validé) via `xargs -P16 avifenc`.
+2. Pousser vers shards images publics (rollover 4,3 Go) ; manifestes .img.json dans pages/.
+3. Vérifier : pour chaque image, GET jsDelivr (HTTP 200) + hash. Rapport `import-images-verif.csv`.
+
+## Phase 2 — Vidéos Eagle -> HLS public jsDelivr
+1. Transcode HLS LOCAL (CPU Mac, gratuit) : ladder 360/720/1080/2160, hls_time=2, segments ≤3 Mo, AES-128.
+2. Pousser segments chiffrés vers zenray-vid-NN (public) ; clés AES + manifest .media.json en privé.
+3. Vérifier lecture : manifest + 1 segment servis (200) ; lecture test dans l'app (HlsVideo).
+4. La 4K SOURCE reste INTACTE jusqu'à validation complète (jamais écrasée).
+
+## Phase 3 — Vérification de récupérabilité (bloquant)
+- Script de réconciliation : pour chaque fichier source -> entrée distante correspondante + hash OK.
+- Sortie : `offload-ready.csv` (fichiers sûrs à supprimer) vs `offload-blocked.csv` (à re-traiter).
+- AUCUNE suppression hors de `offload-ready.csv`.
+
+## Phase 4 — Déchargement disque (réversible d'abord)
+1. Déplacer (pas rm) les sources validées vers un dossier `~/.Trash` ou un dossier « à supprimer » daté.
+2. Laisser 48 h (ou validation manuelle Matthieu) avant suppression définitive.
+3. Mesurer l'espace libéré ; mettre à jour PROGRESS.md.
+
+## Phase 5 — Nettoyage tmp/
+- Cibler `/var/folders/*/T/zr_*` (clones d'index, builds), `/tmp/zr_*`, dossiers de travail HLS obsolètes.
+- Garder uniquement ce qui est actif. `du -sh` avant/après. Supprimer les clones d'index/transcode terminés.
+
+## Re-indexation finale
+- Lancer `build-search-index.mjs --apply` pour intégrer les nouveaux médias à la recherche.
+
+## Risques & règles
+- Ne JAMAIS supprimer une source sans 3 confirmations (présence shard + lecture app + hash).
+- 4K source intacte tant que le HLS n'est pas validé bout-en-bout.
+- Repos publics = contenu chiffré (anti-fuite) ; clés AES jamais dans un repo public.
+- Noms de médias jamais en clair dans les commits (règle anti-fuite P0).

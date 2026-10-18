@@ -1,0 +1,52 @@
+# Méthode canonique — intégrer des images dans le drive (à ne plus jamais re-deviner)
+
+> Code réutilisable : `Scripts/lib/img-pipeline.mjs`. Schéma chiffrement : `src/media/crypto.js`,
+> `src/capture/universalCapture.js`. Migration éprouvée : `Scripts/migrate-encrypt-public.mjs`.
+
+## Le modèle en une phrase
+
+Une image finit **chiffrée** (AES-GCM, clé maître) sur un dépôt GitHub **public** `zenray-img-public-NN`,
+servie par le CDN **jsDelivr** (gratuit, illimité, hors quota GitHub) via une URL **pinnée sur le commit**
+(cache immuable). Le manifeste `.img.json` porte `cdnRepo/cdnPath/cdnCommit/alg/iv/thumbIv`. Le serveur
+déchiffre à la volée avec la clé maître (`/api/media-key`). Public = octets lisibles mais inutiles sans la
+clé. Aucun nom humain (P0 anti-fuite) : chemins = hash du contenu `ab/cd/<sha256>.<ext>`.
+
+**Image mentale :** un casier transparent en pleine rue, mais tout est dans des boîtes verrouillées.
+
+## Ce qui est FAUX (erreurs déjà commises)
+
+- ❌ avif **en clair** sur des repos **privés** comme état final. Privé = lent (le serveur va chercher
+  lui-même, quota REST), pas de jsDelivr. Le privé n'est qu'un **staging** temporaire (passe 1).
+- ❌ Pousser via l'**API REST** blob-par-blob : plafond 5000 req/h + secondary rate limit → hang.
+- ❌ Un **git push unique de plusieurs Go** : git hang (0 % CPU, attente). Toujours par incréments.
+
+## Les passes
+
+| Passe | Quoi | Script |
+|---|---|---|
+| 1. Ingestion | image → AVIF CRF25 (+ vignette .webp) → clair sur shard **privé** + manifeste `.img.json` | `eagle-img-gitpush.mjs` (git push, canonique — `eagle-pngjpg-backup.mjs` en API REST archivé le 2026-07-16, `scripts/_archive/`) |
+| 2. Publication | lire le clair → **chiffrer** → git push **public** + jsDelivr → réécrire manifeste `vis:public` | `migrate-encrypt-public.mjs --apply` |
+| 3. Index | régénérer `pages/.zr-search-index.json` (chemins + carte thumbs jsDelivr) | `build-search-index.mjs --apply` |
+
+> **Évolution recommandée :** fusionner 1+2 en ingérant **directement en public chiffré** (chiffrer puis
+> git push sur `zenray-img-public-NN` + `buildPublicImgManifest()`). Évite le détour privé.
+
+## Règles dures
+
+- **Cap 4,3–4,5 Go par shard** (< 5 Go GitHub) avec rollover sur `NN+1`. Critique anti-ban.
+- **git push incrémental** : ~600 fichiers / < 1 Go par commit. `GIT_TERMINAL_PROMPT=0` (jamais de hang) +
+  timeout 240 s + retries.
+- **Clé maître** lue (jamais générée) : env `ZENRAY_MEDIA_KEY` ou `.zenray-media-key`. La régénérer rend
+  tout indéchiffrable.
+- **IV déterministe** = 12 premiers octets du SHA-256 du clair → idempotent (GitHub dédoublonne).
+- **Non destructif** : on ajoute le public, on réécrit le manifeste, AVANT toute purge. La purge du binaire
+  privé orphelin est séparée (action serveur `purge-binary`, refcount, jamais de delete brut).
+- **Vider le cache Create** après une migration (sinon l'app sert les anciennes URLs en cache).
+
+## Vérifier qu'une image est VRAIMENT publiée
+
+1. Le manifeste `.img.json` a `vis:'public'` + `cdnRepo` + `cdnCommit`.
+2. `https://cdn.jsdelivr.net/gh/matthieuhuguet/<cdnRepo>@<cdnCommit>/<cdnPath>` résout **200**.
+3. Le chemin est dans `pages/.zr-search-index.json` (recherche par nom).
+
+Ces 3 conditions réunies = backup confirmé. **C'est seulement à ce moment** qu'on peut purger la source.

@@ -1,0 +1,92 @@
+# Phase E — Index de recherche, refs CDN chiffrées
+
+Statut : **TERMINÉ**, build vert. Date : 2026-06-02. Agent : builder-2.
+Fichiers touchés : `scripts/build-search-index.mjs` ET `server/page.js` (UNIQUEMENT le `thumbEntry` du `index-add`).
+
+## En une phrase
+
+La recherche affiche une petite image (vignette) par résultat. Quand cette vignette vit chiffrée sur
+un repo public (modèle "public + chiffré + jsDelivr"), l'index doit livrer non seulement son adresse
+mais aussi sa clé de lecture (l'IV). Sinon le navigateur afficherait du charabia. On ajoute donc l'IV
+de la vignette dans l'index, et c'est tout.
+
+## Le problème résolu
+
+Avant cette phase, une entrée de vignette dans l'index avait deux formes :
+- **publique** : `{ "u": "<url jsDelivr du .webp>" }` — URL servie telle quelle à `<img src>`.
+- **privée/legacy** : `{ "r": "<repo>", "p": "<chemin .webp haché>" }` — le client bâtit `/api/shard`.
+
+Avec le chiffrement (phase A), le `.webp` poussé sur le repo public est désormais du **ciphertext**.
+L'URL `u` pointe donc sur des octets illisibles. Si on les met dans `<img>`, vignette cassée.
+
+Pour déchiffrer (AES-GCM), le client a besoin de l'**IV de la vignette** = champ `thumbIv` du manifest
+`.img.json` (IV distinct de celui du binaire plein). L'index doit donc transporter cet IV.
+
+## Le changement
+
+`thumbEntry(m)` (la fonction qui transforme un manifest en entrée de vignette) émet maintenant, pour
+un thumb public **chiffré**, une troisième forme :
+- **publique chiffrée** : `{ "u": "<url jsDelivr du .webp chiffré>", "iv": "<thumbIv>" }`.
+
+Règle exacte : si `m.vis === 'public'` ET `m.cdnRepo/cdnPath/cdnCommit` présents :
+- si `m.thumbIv && m.alg` (vignette chiffrée) → `{ u, iv: m.thumbIv }`
+- sinon (public en clair, legacy migré sans chiffrement) → `{ u }` (inchangé)
+
+Le reste est strictement identique : privé/legacy reste `{ r, p }` ; manifest inconstructible → omis.
+
+L'URL `u` est le `.webp` dérivé de `cdnPath` (même `ab/cd/<sha>` que le binaire, extension `.webp`),
+construit via `buildJsDelivrUrl`, pinné sur `cdnCommit` (cache immuable jsDelivr).
+
+## Deux implémentations synchronisées (invariant search-8)
+
+Le même `thumbEntry` existe en **deux** exemplaires côté index — les deux ont été mis à jour ensemble :
+
+1. **`scripts/build-search-index.mjs`** — rebuild complet hors-ligne de `pages/.zr-search-index.json`
+   (clone git sparse, lecture disque, zéro quota API).
+2. **`server/page.js`** (action `index-add`) — ajout **incrémental** d'une vignette dès qu'un nouveau
+   nœud est déposé, pour que la recherche montre la vignette tout de suite sans attendre un rebuild v2.
+   Sans la mise à jour ici, une image fraîchement uploadée chiffrée afficherait une vignette cassée
+   (ciphertext) jusqu'au prochain rebuild complet.
+
+(Un troisième `thumbEntry` existe côté lecture : `shardThumbUrl` dans `ImageNodeViewer.jsx`. Il relève
+de la phase B et n'est PAS touché ici.)
+
+## Frontière avec la phase B (coordination team-lead, respectée)
+
+**Tout le déchiffrement client de vignette appartient à la phase B**, pour qu'il n'existe qu'UN seul
+chemin crypto (pas de duplication). Concrètement :
+- l'index (phase E) **publie l'IV** : c'est fait, des deux côtés.
+- `App.jsx thumbUrlFor` (~ligne 1550) et la prop `iv` de `SmartThumb` sont modifiés par la phase B,
+  pas par moi. **Phase E ne touche PAS `App.jsx`.**
+
+Le client (`searchIndexClient.js`) stocke la carte `thumbs` de façon **opaque** (verbatim en mémoire +
+IndexedDB). La forme `{u, iv}` y transite donc sans aucune modification de ce fichier : `iv` arrive
+intact jusqu'à `thumbUrlFor`, que B câblera vers `SmartThumb`.
+
+## Rétro-compat
+
+- Index v1 (champ `thumbs` absent) → traité `{}` côté client → fallback lecture manifest (inchangé).
+- Public **en clair** (legacy migré sans chiffrement, pas de `thumbIv/alg`) → `{u}` seul → URL directe.
+- Privé/legacy → `{r, p}` → `/api/shard` (inchangé).
+- Chiffré sans vignette (`iv` présent mais pas de `thumbIv`) → `{u}` seul (rien à déchiffrer côté thumb).
+
+## P0 respectés
+
+- **Zéro appel API REST** pour les vignettes : tout passe par jsDelivr (`u`) pinné commit. Objectif §7 tenu.
+- **Aucun nom de média humain** : `u` est un chemin hashé `ab/cd/<sha>.webp`, jamais de nom lisible.
+- **Clé jamais publiée** : seul l'IV part dans l'index. L'IV n'est PAS secret (sa seule contrainte est
+  l'unicité par chiffrement sous la même clé) ; le publier ne révèle rien. La clé maître reste hors repo.
+
+## Vérification
+
+- `node --check scripts/build-search-index.mjs` → OK.
+- `node --check server/page.js` → OK.
+- Test fonctionnel inline de `thumbEntry` sur 4 cas (chiffré / public clair / legacy privé / chiffré
+  sans vignette) → sorties conformes.
+- `npm run build` → vert (3,05 s).
+
+## Points ouverts
+
+- Validation bout-en-bout (uploader une image publique → la chercher → voir la vignette déchiffrée dans
+  la grille de résultats) dépend de la phase B (`SmartThumb` + `thumbUrlFor`) et relève du test navigateur
+  de la phase F. Côté données d'index, le contrat `{u, iv}` est livré et testé.

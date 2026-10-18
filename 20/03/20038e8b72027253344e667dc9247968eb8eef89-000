@@ -1,0 +1,131 @@
+# Audit ZenRayProgress 2026-07-15 — Synthèse finale (Tick 7/7)
+
+Lecture séquentielle complète du code (6 ticks, un sous-système par tick). Lecture seule, aucun code modifié.
+Détail brut : `docs/AUDIT-2026-07-15-findings.csv` (131 lignes). Cette synthèse en est le résumé exécutif, pas un doublon.
+
+## Résumé chiffré
+
+**Périmètre couvert : 206 fichiers, ~35 800 lignes, 100 %.**
+
+| Catégorie | Constats |
+|---|---|
+| Anti-bug | 38 |
+| Longévité | 35 |
+| Performance | 26 |
+| Sécurité | 17 |
+| Simplification | 15 |
+| **Total** | **131** |
+
+| Sévérité | Constats |
+|---|---|
+| Critique | 2 |
+| Haute | 28 |
+| Moyenne | 52 |
+| Faible | 49 |
+
+| Effort | Constats |
+|---|---|
+| XS | 41 |
+| S | 43 |
+| M | 34 |
+| L | 8 |
+| XL | 5 |
+
+Répartition par tick : App.jsx seul (31), scripts A→M (29), composants A→N (26), composants P→Z (20), scripts N→Z+lib (14), reste — audio/create/search/table/capture/lib/api (11).
+
+## Top risques (regroupés par thème, pas par tick)
+
+### 1. Sécurité — exposition de secrets et contrôle d'accès (le seul point Critique + 4 Haute)
+Le composant Docs (`src/App.jsx:4636-4646`) expose en lecture toute l'arborescence du repo Memory via `/api/tree`/`/api/doc`, **y compris potentiellement `Identity/Matthieu1.md`** (toutes les clés API/mots de passe du projet) — aucun contrôle d'accès dédié au-delà du PinGate générique. **CRITIQUE.**
+Complété par : `onPasteImage` (App.jsx:2677-2683) force la visibilité publique en collant une image, même dans un dossier privé. Les 3 pages de partage public (`ShareVideoPage.jsx`:17-18, `ShareImagePage`, `SharedFolderPage`) reposent sur un encodage base64url **réversible et permanent** du chemin — pas un vrai jeton, aucune révocation possible. `scripts/migrate-media-git.mjs` reste présent et exécutable alors qu'il publie des images privées en clair sur repo public — modèle explicitement abandonné par le projet, nom dangereusement proche de son remplaçant sûr (`migrate-encrypt-public.mjs`).
+
+### 2. Anti-bug — écritures GitHub concurrentes qui recréent un bug déjà corrigé
+`trashSelected` (App.jsx:2792-2802) et `pasteClip` mode cut (App.jsx:2990-2996) envoient jusqu'à 4 commits move en **parallèle sur la même branche** — exactement le pattern de conflits HEAD que `moveMany` (même fichier) a déjà dû corriger en passant séquentiel. Le correctif n'a jamais été généralisé aux deux autres chemins d'écriture qui font la même chose.
+
+### 3. Anti-bug — pertes de données silencieuses sur le pipeline shards (les plus graves de tout l'audit)
+`scripts/reorg-public-shards.mjs:134-165` (**CRITIQUE**) : si des images sont uploadées sur le shard source pendant une réorganisation, le script se contente d'un avertissement puis force-push quand même un commit vide qui vide ce shard — perte définitive une fois GitHub GC. `scripts/rebuild-shard-clean.mjs:58-61` enchaîne `gh repo delete` puis `gh repo create` sans transaction : un échec entre les deux laisse le shard supprimé et non recréé, 404 sur toutes ses images. `scripts/archive-organize.mjs:36-47` apparie manifeste et fichier Mac **par nom seul** (pas de sha256) — un nom de caméra/drone cyclique (`DJI_0001.MP4`) peut faire pointer un manifeste vers le mauvais fichier physique. `scripts/build-shelf-books.mjs` régénère un ID `Math.random()` à chaque exécution et écrase les notes/scores déjà saisis dans l'app. `scripts/zenray-uploader.mjs:46-72` retient les fichiers déjà vus par chemin et ne les retire jamais après succès : un fichier renommé à l'identique (numérotation caméra cyclique) est ignoré pour toujours, silencieusement.
+
+### 4. Anti-bug — sauvegardes qui perdent ou déforment des données côté app
+`PageEditorBN.jsx:126-133` : l'upload d'image dans une note n'a ni limite de taille ni notification d'échec — si le POST rate, un data-URI base64 complet (plusieurs Mo) est committé pour toujours dans la page. `Notifications.jsx:93` : un bug `Math.min` plafonne **systématiquement** l'auto-dismiss à 3 secondes, y compris pour les erreurs pensées pour durer 14 s — l'utilisateur rate le message avant de le lire. `tagSelected` (App.jsx:1674-1679) perd les tags en sélection multiple à cause d'une fermeture (closure) obsolète.
+
+### 5. Longévité — App.jsx monolithique, connu depuis juin, aggravé et pas traité
+4877 lignes, plus de 30 composants, le seul composant Pages en occupe 2750. **Déjà signalé à 3282 lignes** le 2026-06-06 (AUDIT-2026-06-06.md) — le fichier a grossi de ~1600 lignes depuis sans découpage. La liste des extensions "feuille" reste dupliquée en dur à 5 endroits alors qu'un oubli de ce type a déjà causé un bug livré le 2026-07-01. `nonEmptyDirs` et deux autres dérivés continuent de s'appuyer sur `paths`, une source documentée comme tronquée au-delà de ~30k entrées, alors que FinderPathPanel/MoveToDialog ont déjà reçu le correctif (union avec l'index de recherche) — jamais généralisé.
+
+### 6. Longévité — 4 générations de pipeline vidéo qui se contredisent
+`video-hls-lib.mjs` (se déclare legacy), `video-dash-lib.mjs` (se déclare "définitif"), `video-raw-lib.mjs` (affirme remplacer le DASH), mais `transcode-worker.mjs` (upload UI live) tourne toujours sur DASH par défaut et `zenray-uploader.mjs` (worker de login) tourne encore sur le HLS legacy — aucun document ne tranche. En parallèle, `video-mse.mjs` et `video-transcode.mjs` réimplémentent chacun leur propre copie de la logique déjà buggée-puis-corrigée dans `video-mse-lib.mjs` : un correctif de robustesse déjà payé peut réapparaître intact si l'un de ces deux scripts est relancé.
+
+### 7. Simplification — fragmentation des lecteurs vidéo, retrouvée indépendamment par 3 ticks différents
+Tick 2 (MediaViewer.jsx) : 5 chemins de lecture coexistent (VideoPlayer/StreamVideo/StreamVideoMSE/VideoPlayer2/GmapsViewer). Tick 3 (StreamVideo/StreamVideoMSE/VideoPlayer) : le composant Menu (pistes/qualité/vitesse) est copié-collé à l'identique dans les 3 fichiers, `fmt()`/`SPEEDS` aussi. Tick 3 encore : VideoPlayer2 se déclare "lecteur unifié" dans son propre commentaire, mais StreamVideoMSE (525 lignes) réimplémente en parallèle toute la barre de contrôle pour le cas multi-pistes audio. Trois angles différents, un seul problème structurel.
+
+### 8. Simplification — duplication Databases/DatabaseTable
+`DatabaseTable.jsx` et `Databases.jsx` réimplémentent chacun séparément `matchFilter`/`opsFor` et le rendu Board/Gallery (y compris un calendrier dupliqué avec des noms de fonctions renommés pour éviter la collision) — deux vues de base de données maintenues en double.
+
+### 9. Performance — coût réseau/CPU à chaque frappe, pattern connu mais pas généralisé
+`mut()` (App.jsx:242) fait un `structuredClone()` complet de l'état applicatif à chaque frappe dans une note. `saveState` (App.jsx:239) déclenche un save réseau à chaque changement d'état sans debounce. `Articles.jsx:79` a exactement le même bug sur l'éditeur BlockNote d'article. Ironie : `PropertiesBlock` (même fichier App.jsx) a déjà ce débounce (800 ms) — le correctif existe dans la codebase mais n'a jamais été copié vers les 3 autres chemins d'écriture qui en ont besoin.
+
+### 10. Performance — scan REST en boucle sur les gros lots d'upload (règle projet déjà connue, 4 scripts pas migrés)
+`upload-img-all.mjs`/`upload-blob-all.mjs`/`upload-vidraw-all.mjs`/`upload-vidraw-list.mjs` vérifient "déjà en ligne ?" par un GET REST par fichier avant même de commencer l'upload — le pattern documenté comme ayant déjà épuisé le quota GitHub 2 fois (mémoire `zenray-data-bulk-writes-git-only`), alors que `upload-img-list-git.mjs` (zéro REST) existe déjà comme patron à suivre pour ces 4 scripts.
+
+### 11. Performance — caches mémoire non bornés, plusieurs occurrences
+`ImageNodeViewer.jsx` : les caches `_decCache`/`_cache`/`_bfDone` ne sont jamais évincés (commentaire l'assume explicitement : "we NEVER revoke these objectURLs") — sur une bibliothèque de 100k+ images, la mémoire de l'onglet grossit sans plafond pendant toute la session.
+
+## Quick wins (Haute/Critique + Effort XS/S — meilleur ratio impact/coût, 12 items)
+
+| Fichier | Constat | Effort |
+|---|---|---|
+| `scripts/reorg-public-shards.mjs:134-165` | Force-push destructeur si orphelins non migrés | S |
+| `src/App.jsx:2677-2683` | Cmd+V force la visibilité publique | S |
+| `src/App.jsx:239` | saveState sans debounce = 1 commit/caractère | S |
+| `src/App.jsx:2792-2802` | trashSelected : commits parallèles même branche | S |
+| `src/App.jsx:2990-2996` | pasteClip cut : même bug de concurrence | S |
+| `src/App.jsx:1637-1647` | clearCreateCaches ne purge pas les 5 caches media | S |
+| `src/components/Articles.jsx:79` | save() sans debounce sur l'éditeur d'article | S |
+| `src/components/Notifications.jsx:93` | Bug Math.min : ttl toujours plafonné à 3 s | XS |
+| `scripts/eagle-import-git.mjs:65-70` | Échec de 2e push non catché = import cassé | S |
+| `scripts/migrate-media-git.mjs` | Script obsolète et non sécurisé, encore exécutable | S |
+| `scripts/rebuild-shard-clean.mjs:58-61` | delete+create repo sans transaction | S |
+| `scripts/zenray-uploader.mjs:46-72` | Cache "seen" par chemin, jamais nettoyé au succès | S |
+
+## Chantiers structurels (Effort L/XL, 13 items)
+
+**Découpage App.jsx** — le plus gros chantier, prérequis à beaucoup d'autres correctifs :
+- Extraire Pages (2750 lignes) en hooks dédiés (`useFinderSelection`, `useFinderDnD`, `useFinderSearch`, `useFinderClipboard`…) — XL.
+- Répartir les 30+ composants du fichier vers `src/components/`/`src/create/` — XL.
+- Remplacer `structuredClone()` global par une mutation immutable ciblée (ou Immer) — L.
+- Virtualiser la vue liste comme la grille icônes l'est déjà — L.
+
+**Consolidation vidéo** (recoupe les thèmes 6 et 7 ci-dessus) :
+- Faire converger les 5 lecteurs vers un seul composant paramétré par source (MediaViewer.jsx) — XL.
+- Fusionner le moteur MSE dans VideoPlayer2 comme 4e engine (VideoPlayer2.jsx / StreamVideoMSE.jsx) — XL.
+
+**Consolidation bases de données** :
+- Extraire une bibliothèque partagée de vues (filtres, Board, Gallery, Calendar) pour DatabaseTable.jsx et Databases.jsx — XL.
+
+**Autres refactors de fond** :
+- Extraire résolveurs d'URL/déchiffrement/caches d'ImageNodeViewer.jsx dans un module dédié — L.
+- Plafonner (LRU) les caches ImageNodeViewer avec révocation des objectURL — L.
+- Virtualiser PosterGrid dans Shelf.jsx (réutiliser Masonic, déjà présent) — L.
+- Extraire un module partagé pour les 6 scripts quasi-identiques de fetch de posters — L.
+- Mémoïser `formula.js` par cellule au lieu d'un `computeAll()` systématique — L.
+
+## Déjà connu / recoupe un audit antérieur
+
+| Constat 2026-07-15 | Référence antérieure | Statut |
+|---|---|---|
+| App.jsx monolithique (4877 lignes, 30+ composants) | `AUDIT-2026-06-06.md` L792-797 (déjà 3282 lignes) | Connu, aggravé, jamais traité |
+| Marquee (rubber-band) recompute non throttlé à chaque mousemove | `AUDIT-2026-06-06.md` L19-29, `AUDIT-2026-06-06-todo.md` L21-26, `audit-backlog.md` P4 | Connu, toujours pas corrigé |
+| GITHUB_TOKEN utilisé dans plusieurs contextes sans validation de scope | `AUDIT-2026-06-06.md` L333-379 | Connu (angle différent cette fois : token en clair dans l'URL du remote git sur disque, cf CSV Tick4 ligne 82) |
+| Pipeline vidéo HLS fragile (segments orphelins, reprise, double comptage) | `AUDIT-2026-06-03.md` L35-222 (audit dédié `scripts/video-hls-lib.mjs`) | Connu pour le HLS seul ; la contradiction entre 4 générations (DASH/raw ajoutés depuis) est un angle nouveau |
+| `/api/media-key` renvoie la clé maître AES en clair sans garde-fou | `AUDIT-2026-06-03.md` L42-51 | Connu, non re-signalé ce tick (toujours ouvert, à vérifier séparément) |
+| shownEntries non mémoïsé, IconTile sans React.memo | `audit-backlog.md` P3-P4, `AUDIT-2026-06-06-todo.md` (3 entrées dupliquées) | Probablement déjà corrigé — non re-trouvé dans ce nouvel audit |
+| PropertiesBlock sauvegarde sans debounce | `AUDIT-2026-06-06-todo.md` L63-65 | Corrigé (débounce 800 ms confirmé présent) — mais le même bug réapparaît ailleurs (saveState L239, Articles.jsx save()), voir thème 9 |
+| Gallery.addFiles séquentiel, sans parallélisme | `audit-backlog.md` P2/P15, `AUDIT-2026-06-06-todo.md` L18-20 | Connu, non re-signalé ce tick (déjà backlogué, statut de correction à vérifier séparément) |
+| Sandbox iframe `allow-scripts allow-same-origin` (EmbedNodeViewer, EmbedBlock) | Aucune occurrence dans les audits antérieurs | **Nouveau** |
+| Lien de partage permanent non révocable (encodeShare/decodeShare) | Aucune occurrence dans les audits antérieurs | **Nouveau** |
+| 4 générations de pipeline vidéo contradictoires (scripts) | Aucune occurrence — DASH/raw n'existaient pas encore lors de l'audit 06-03 | **Nouveau** |
+| Duplication de scripts quasi-jumeaux (eagle-import, fetch-posters, upload-*-all) | Aucune occurrence dans les audits antérieurs | **Nouveau** |
+| reorg-public-shards.mjs : force-push destructeur sur orphelins | Aucune occurrence — script écrit après les audits antérieurs | **Nouveau, le plus grave de tout l'audit** |
+
+## Suite
+
+Ceci est un audit en lecture seule. Aucun correctif n'a été appliqué. La décision d'engager le refactor (quick wins, chantiers structurels, ou statu quo) appartient à Matthieu.

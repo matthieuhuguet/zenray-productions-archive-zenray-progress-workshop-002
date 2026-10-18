@@ -1,0 +1,776 @@
+# Plan Feature - Paste Link Notion-like
+
+Date: 2026-05-31
+Statut: plan d'implementation uniquement, sans code dans ce thread.
+Scope strict: feature de collage/copie de lien dans l'editeur ZenRay, avec trois modes: Mention, Embed, Bookmark.
+
+## 1. Objectif exact
+
+Créer une experience de collage de lien inspiree de Notion dans `PageEditorBN`.
+
+Quand l'utilisateur colle une URL seule dans une page:
+
+1. Le collage natif est intercepte.
+2. Le texte URL ne s'insere pas immediatement.
+3. Un menu flottant apparait a cote du curseur.
+4. Le menu propose trois choix:
+   - `Mention`
+   - `Embed`
+   - `Bookmark`
+5. L'utilisateur choisit le mode.
+6. Le bloc correspondant est insere dans l'editeur.
+
+Le comportement doit ressembler a l'interface Notion montree dans la reference: petit menu blanc, titre "Paste as", options empilees, hover gris, coins arrondis, ombre douce, position contextuelle pres du lien colle.
+
+## 2. Non-scope
+
+Ce plan ne couvre pas:
+
+- une refonte complete de BlockNote;
+- une migration de tout l'editeur;
+- une feature Ref/Miro;
+- une feature Articles;
+- un nouveau CMS;
+- le pipeline video HLS;
+- le telechargement video;
+- une integration Notion officielle;
+- l'utilisation de logos ou assets proprietaires Notion.
+
+On reproduit l'interaction UX, pas une integration Notion.
+
+## 3. Etat actuel du code
+
+Fichier principal:
+
+- `src/components/PageEditorBN.jsx`
+
+Etat actuel:
+
+- L'editeur utilise BlockNote via `useCreateBlockNote`.
+- Le contenu est sauvegarde en double:
+  - `pages/x.blocknote.json`: source lossless;
+  - `pages/x.md`: markdown derive.
+- Le collage d'URL seule est deja intercepte.
+- Etat actuel: `pasteUrl`.
+- Menu actuel: petite barre sticky en bas de l'editeur.
+- Options actuelles:
+  - `Lien`
+  - `Embed`
+  - `Bookmark`
+  - `Mention`
+- `Embed` insere seulement une image si l'URL pointe vers une image; sinon fallback lien.
+- `Bookmark` utilise deja `/api/unfurl`.
+- `Mention` insere actuellement un lien inline simple.
+
+Fichier unfurl:
+
+- `server/unfurl.js`
+
+Etat actuel:
+
+- fetch OpenGraph;
+- retourne `title`, `description`, `image`, `favicon`, `url`;
+- refuse protocoles non HTTP(S);
+- refuse hosts prives basiques;
+- cache CDN 24h.
+
+Fichiers potentiellement touches par l'implementation future:
+
+- `src/components/PageEditorBN.jsx`
+- `src/components/NotionPasteMenu.jsx`
+- `src/components/LinkMentionInline.jsx` si extraction UI necessaire;
+- `src/components/BookmarkBlock.jsx` si rendu custom;
+- `src/components/EmbedBlock.jsx` si rendu custom;
+- `server/unfurl.js`
+- eventuellement `src/components/Icon.jsx` pour icones manquantes.
+
+## 4. Comportement cible
+
+### 4.1 Detection du collage
+
+Intercepter seulement les cas suivants:
+
+- clipboard `text/plain`;
+- texte trimme;
+- une seule URL;
+- protocole `http` ou `https`;
+- pas de saut de ligne;
+- pas de selection multiple complexe.
+
+Ne pas intercepter:
+
+- collage d'image;
+- collage de fichier;
+- collage de texte multi-ligne;
+- collage dans un input/commentaire;
+- collage quand l'utilisateur veut explicitement garder le texte brut avec raccourci alternatif si decide plus tard.
+
+### 4.2 Position du menu
+
+Le menu doit apparaitre pres du caret, pas en sticky bottom.
+
+Plan technique:
+
+- au moment du paste, capturer la position du bloc courant;
+- utiliser `editor.getTextCursorPosition()`;
+- recuperer l'element DOM du bloc courant si possible;
+- ancrer le menu:
+  - sous la ligne courante si le caret est visible;
+  - sinon au centre de l'editeur comme fallback;
+- fermer le menu sur:
+  - Escape;
+  - click exterieur;
+  - choix d'une option;
+  - changement de page;
+  - nouveau paste;
+  - scroll important si l'ancre devient invalide.
+
+### 4.3 UI du menu
+
+Structure visuelle:
+
+```text
+Paste as
+Mention
+Embed
+Bookmark
+```
+
+Style:
+
+- largeur environ 300-380 px selon viewport;
+- fond blanc en light mode;
+- fond `#252525` ou equivalent en dark mode;
+- bord `1px solid rgba(0,0,0,.08)`;
+- radius 10-12 px;
+- ombre douce type Notion;
+- padding 6-8 px;
+- titre `Paste as`:
+  - gris;
+  - font-size 13-14;
+  - padding 8 12;
+- options:
+  - hauteur 40-46 px;
+  - font-size 16-18;
+  - line-height confortable;
+  - hover gris clair;
+  - option active au clavier en gris;
+  - pas de bouton colore.
+
+Interaction clavier:
+
+- fleche haut/bas change l'option active;
+- Enter valide;
+- Escape ferme;
+- Tab peut valider ou fermer selon implementation choisie, mais doit rester predictible;
+- la premiere option active par defaut: `Mention`.
+
+## 5. Les trois modes
+
+### 5.1 Mode Mention
+
+But:
+
+Inserer une mention inline compacte de l'URL.
+
+Resultat visuel:
+
+- une ligne de texte normale;
+- lien inline;
+- favicon ou icone fournisseur si disponible;
+- label lisible plutot que URL brute si unfurl disponible.
+
+Exemples:
+
+```text
+🔴 Claude Before we ship a Claude model...
+```
+
+ou, sans unfurl:
+
+```text
+youtube.com/watch?v=...
+```
+
+Plan technique:
+
+- appeler `/api/unfurl` en background;
+- inserer rapidement une mention inline avec l'URL ou le domaine;
+- si l'unfurl arrive vite, utiliser `title`;
+- si l'unfurl echoue, garder domaine/URL;
+- stocker comme link inline BlockNote natif pour compatibilite.
+
+Representation recommandee V1:
+
+- inline content BlockNote `link`;
+- `href = url`;
+- `content = title || hostname || url`;
+
+Representation V2 possible:
+
+- custom inline mention avec favicon;
+- preservé en JSON BlockNote;
+- rendu markdown fallback `[title](url)`.
+
+Acceptance Mention:
+
+- coller YouTube puis choisir Mention insere un lien inline;
+- le lien est cliquable;
+- il reste sauvegarde/recharge;
+- markdown derive reste propre;
+- echec unfurl ne bloque pas.
+
+### 5.2 Mode Embed
+
+But:
+
+Inserer un vrai embed interactif quand le provider est supporte.
+
+Providers V1:
+
+- YouTube;
+- Vimeo optionnel;
+- image directe;
+- Spotify optionnel si deja utile;
+- fallback: Bookmark si provider non supporte.
+
+YouTube:
+
+- detecter `youtube.com/watch?v=...`;
+- detecter `youtu.be/...`;
+- convertir en URL embed safe:
+
+```text
+https://www.youtube-nocookie.com/embed/<id>
+```
+
+Resultat visuel:
+
+- bloc large;
+- ratio 16:9;
+- iframe lazy;
+- placeholder thumbnail si possible;
+- bouton play ou iframe directe selon complexite;
+- titre en dessous ou au-dessus si unfurl disponible.
+
+Securite:
+
+- jamais persister du HTML iframe brut;
+- provider allowlist;
+- sandbox iframe;
+- `loading="lazy"`;
+- `referrerPolicy`;
+- pas d'URL arbitraire dans iframe.
+
+Plan technique V1:
+
+- creer une fonction `classifyUrl(url)`;
+- si image directe: utiliser block image BlockNote existant;
+- si YouTube: inserer un bloc custom `embed`;
+- si custom block trop lourd pour V1: inserer un paragraphe marqueur + rendu React externe, mais ce choix est moins propre;
+- si provider inconnu: fallback Bookmark.
+
+Representation recommandee:
+
+```json
+{
+  "type": "zenrayEmbed",
+  "props": {
+    "url": "https://www.youtube.com/watch?v=...",
+    "provider": "youtube",
+    "providerId": "...",
+    "embedUrl": "https://www.youtube-nocookie.com/embed/...",
+    "title": "...",
+    "thumbnail": "..."
+  }
+}
+```
+
+Markdown fallback:
+
+```md
+@[embed](https://www.youtube.com/watch?v=...)
+```
+
+Acceptance Embed:
+
+- YouTube devient un embed video;
+- image directe devient une image;
+- URL non embedable devient Bookmark;
+- sauvegarde/reload conserve l'embed;
+- aucun HTML brut n'est stocke.
+
+### 5.3 Mode Bookmark
+
+But:
+
+Inserer une carte de lien riche.
+
+Resultat visuel:
+
+- carte rectangulaire;
+- titre;
+- description;
+- domaine;
+- favicon;
+- image preview a droite si disponible;
+- bord gris;
+- radius 8-10 px;
+- hover leger;
+- clic ouvre le lien.
+
+Cela correspond a l'option Notion `Bookmark`.
+
+Plan technique:
+
+- utiliser `/api/unfurl`;
+- afficher un skeleton pendant le fetch si insertion immediate;
+- inserer un bloc custom `bookmark`;
+- fallback vers Mention si unfurl echoue totalement;
+- ne pas inserer une image separee + paragraphes comme actuellement, car ce n'est pas une vraie carte sauvegardable.
+
+Representation recommandee:
+
+```json
+{
+  "type": "zenrayBookmark",
+  "props": {
+    "url": "https://...",
+    "title": "...",
+    "description": "...",
+    "image": "...",
+    "favicon": "...",
+    "siteName": "youtube.com"
+  }
+}
+```
+
+Markdown fallback:
+
+```md
+[Title](https://...)
+
+> Description
+```
+
+ou:
+
+```md
+<bookmark url="https://..." title="..." />
+```
+
+Le choix depend de la strategie markdown actuelle. Pour compatibilite simple, preferer le lien + description.
+
+Acceptance Bookmark:
+
+- carte visuelle proche Notion;
+- titre/description/image depuis OpenGraph;
+- fallback propre si pas d'image;
+- reload conserve la carte;
+- markdown lisible.
+
+## 6. Architecture proposee
+
+### 6.1 Extraction UI
+
+Créer un composant dedie:
+
+```text
+src/components/NotionPasteMenu.jsx
+```
+
+Props:
+
+```ts
+{
+  url: string,
+  anchor: { x: number, y: number } | null,
+  theme: 'light' | 'dark',
+  onPick: (mode: 'mention' | 'embed' | 'bookmark') => void,
+  onClose: () => void
+}
+```
+
+Responsabilites:
+
+- rendu menu;
+- keyboard nav;
+- click outside;
+- positionnement viewport-safe;
+- dark mode;
+- aucun appel reseau;
+- aucune mutation editor.
+
+### 6.2 Logique d'insertion
+
+Créer des helpers:
+
+```text
+src/components/linkPaste/
+  classifyUrl.js
+  insertMention.js
+  insertEmbed.js
+  insertBookmark.js
+  sanitizeUrl.js
+```
+
+Ou garder ces helpers pres de `PageEditorBN` au debut si Claude veut limiter le scope.
+
+Responsabilites:
+
+- `sanitizeUrl`: valide HTTP(S), normalise URL.
+- `classifyUrl`: detecte YouTube/image/provider.
+- `insertMention`: inline link.
+- `insertEmbed`: custom embed ou fallback.
+- `insertBookmark`: unfurl + custom card.
+
+### 6.3 Unfurl
+
+Renforcer `server/unfurl.js`:
+
+- timeout court;
+- taille HTML limitee;
+- SSRF protection plus stricte;
+- resolution URL absolue pour image/favicon;
+- provider metadata:
+  - `provider`;
+  - `providerId`;
+  - `hostname`;
+  - `siteName`;
+- YouTube detection sans appeler API YouTube.
+
+Ne pas faire:
+
+- pas de scraping lourd;
+- pas d'execution JS;
+- pas de fetch video;
+- pas de proxy image obligatoire en V1.
+
+## 7. Integration BlockNote
+
+### 7.1 Strategie V1 robuste
+
+Option recommandee:
+
+- Mention: inline link natif BlockNote.
+- Image embed: block image natif BlockNote.
+- YouTube embed: custom block BlockNote si possible.
+- Bookmark: custom block BlockNote si possible.
+
+Pourquoi:
+
+- la source JSON `.blocknote.json` garde la structure;
+- le markdown derive peut rester lisible;
+- la carte bookmark n'est pas decomposee en image + paragraphes;
+- reload fiable.
+
+### 7.2 Fallback si custom blocks trop risques
+
+Si custom BlockNote est trop long:
+
+- Mention: link inline natif;
+- Embed: paragraph link + preview React externe detecte via markdown marker;
+- Bookmark: paragraph link + blockquote description;
+
+Mais ce fallback ne reproduit pas Notion 1:1. Il doit etre considere temporaire.
+
+## 8. Plan de developpement par PR
+
+### PR 1 - Remplacer le menu sticky par popover Notion-like
+
+Fichiers probables:
+
+- `src/components/PageEditorBN.jsx`
+- `src/components/NotionPasteMenu.jsx`
+
+Taches:
+
+- remplacer `pasteUrl` simple par `pasteChoice`:
+
+```js
+{
+  url,
+  anchor,
+  createdAt
+}
+```
+
+- ancrer le menu pres du curseur;
+- menu `Paste as`;
+- trois options seulement:
+  - Mention;
+  - Embed;
+  - Bookmark;
+- keyboard nav;
+- Escape/click outside;
+- dark mode.
+
+Acceptance:
+
+- coller URL seule ouvre le menu au bon endroit;
+- menu ressemble a la reference Notion;
+- Mention est selectionne par defaut;
+- Enter choisit Mention;
+- Escape ferme sans insertion;
+- pas de barre sticky bottom.
+
+### PR 2 - Mention fiable
+
+Fichiers probables:
+
+- `PageEditorBN.jsx`
+- `linkPaste/insertMention.js`
+- `server/unfurl.js`
+
+Taches:
+
+- inserer link inline;
+- utiliser titre unfurl si disponible;
+- fallback hostname/URL;
+- garder sauvegarde markdown propre.
+
+Acceptance:
+
+- YouTube -> mention inline lisible;
+- site sans OG -> URL/hostname;
+- sauvegarde/reload OK.
+
+### PR 3 - Bookmark card
+
+Fichiers probables:
+
+- `PageEditorBN.jsx`
+- `BookmarkBlock.jsx`
+- `linkPaste/insertBookmark.js`
+- `server/unfurl.js`
+
+Taches:
+
+- creer rendu carte;
+- utiliser titre/description/image/favicon;
+- fallback sans image;
+- loading skeleton si necessaire;
+- click ouvre URL.
+
+Acceptance:
+
+- carte proche Notion;
+- image a droite si presente;
+- titre + description;
+- domaine/fav icon;
+- reload conserve;
+- markdown fallback lisible.
+
+### PR 4 - Embed provider allowlist
+
+Fichiers probables:
+
+- `EmbedBlock.jsx`
+- `linkPaste/classifyUrl.js`
+- `linkPaste/insertEmbed.js`
+
+Taches:
+
+- detecter YouTube;
+- convertir vers `youtube-nocookie`;
+- iframe safe;
+- image directe -> image block;
+- provider inconnu -> Bookmark.
+
+Acceptance:
+
+- YouTube s'insere en embed video;
+- URL image s'insere en image;
+- provider inconnu devient Bookmark;
+- aucun HTML brut persiste.
+
+### PR 5 - Polish Notion 1:1
+
+Taches:
+
+- dimensions menu;
+- hover gris;
+- ombre;
+- position viewport-safe;
+- transition tres subtile;
+- font sizing proche screenshot;
+- ne pas deborder mobile;
+- test dark mode.
+
+Acceptance:
+
+- screenshot compare satisfaisant;
+- le menu ne chevauche pas incoheremment;
+- utilisable a la souris et au clavier.
+
+## 9. Details UI a reproduire
+
+Menu:
+
+- label haut: `Paste as`;
+- options sans icones dans le menu;
+- option active: fond gris clair;
+- texte noir/gris selon theme;
+- hauteur option environ 44 px;
+- padding horizontal environ 14-16 px;
+- box-shadow douce;
+- radius environ 10-12 px;
+- position au-dessus du contenu si manque de place en bas;
+- max-width adaptee mobile.
+
+Modes:
+
+- `Mention`: inline, pas une grosse card.
+- `Embed`: gros bloc interactif.
+- `Bookmark`: card preview.
+
+Important:
+
+Ne pas ajouter un quatrieme mode visible si le scope demande trois modes. Si un fallback raw URL est necessaire techniquement, le garder interne ou ajouter plus tard.
+
+## 10. Tests de validation
+
+Cas URL:
+
+- `https://www.youtube.com/watch?v=CG7Rcl49C2w`
+- `https://youtu.be/CG7Rcl49C2w`
+- image directe `.jpg`
+- site avec OpenGraph complet;
+- site sans image;
+- URL invalide;
+- URL localhost/private.
+
+Tests Mention:
+
+- insertion inline;
+- sauvegarde;
+- reload;
+- click lien.
+
+Tests Embed:
+
+- YouTube iframe charge;
+- provider inconnu fallback Bookmark;
+- image directe devient image;
+- reload;
+- pas de HTML brut.
+
+Tests Bookmark:
+
+- carte avec image;
+- carte sans image;
+- erreur unfurl fallback Mention;
+- title/description tronques proprement;
+- click ouvre URL.
+
+Tests UX:
+
+- menu positionne pres caret;
+- keyboard nav;
+- Escape ferme;
+- click outside ferme;
+- paste dans input commentaire non intercepte;
+- mobile ne deborde pas.
+
+## 11. Revue adversariale
+
+### P0 - Custom blocks BlockNote peuvent casser la persistence
+
+Risque:
+
+Un bookmark/embed custom mal declare peut etre perdu au reload ou casser `blocksToMarkdownLossy`.
+
+Mitigation:
+
+- tester save/reload avant toute UI polish;
+- garder fallback markdown;
+- ne pas stocker de JSX/HTML brut.
+
+### P0 - Embed iframe dangereux
+
+Risque:
+
+Permettre des iframes arbitraires ouvre XSS/clickjacking/tracking.
+
+Mitigation:
+
+- provider allowlist;
+- URL canonicalisee;
+- `youtube-nocookie`;
+- iframe sandbox/referrerPolicy;
+- pas de HTML brut.
+
+### P1 - SSRF via unfurl
+
+Risque:
+
+`/api/unfurl` fetch une URL utilisateur.
+
+Mitigation:
+
+- garder/reforcer blocage IP privees;
+- refuser localhost;
+- timeout;
+- limite taille;
+- pas de redirects vers IP privees;
+- pas de schemas non HTTP(S).
+
+### P1 - Menu intercepte trop de collages
+
+Risque:
+
+L'utilisateur colle du texte normal et se retrouve bloque par le menu.
+
+Mitigation:
+
+- intercepter seulement une URL unique;
+- ne pas intercepter multi-ligne;
+- ne pas intercepter dans inputs/commentaires;
+- Escape ferme sans insertion.
+
+### P1 - "Notion 1:1" vs design ZenRay
+
+Risque:
+
+Copier trop litteralement peut jurer avec ZenRay.
+
+Mitigation:
+
+- reproduire interaction/layout;
+- adapter couleurs/dark mode aux tokens ZenRay;
+- ne pas utiliser assets Notion.
+
+### P2 - Unfurl lent
+
+Risque:
+
+Bookmark prend trop longtemps.
+
+Mitigation:
+
+- insertion skeleton;
+- timeout 5s;
+- fallback Mention;
+- cache serveur.
+
+## 12. Definition of Done
+
+La feature est terminee quand:
+
+- coller une URL seule affiche un menu flottant `Paste as`;
+- le menu propose uniquement Mention, Embed, Bookmark;
+- Mention insere un lien inline lisible;
+- Embed insere YouTube en embed et image directe en image;
+- Bookmark insere une carte riche;
+- les trois modes sauvegardent/rechargent correctement;
+- markdown derive reste lisible;
+- aucune iframe arbitraire n'est stockee;
+- unfurl lent ou en erreur ne casse pas l'editeur;
+- le menu ressemble visuellement a la reference Notion;
+- le menu fonctionne au clavier;
+- le menu fonctionne en dark mode;
+- l'ancien menu sticky n'existe plus.
+
+## 13. Phrase de spec pour Claude
+
+Implementer uniquement la feature de collage de lien Notion-like dans `PageEditorBN`: quand une URL unique est collee, afficher un popover "Paste as" pres du caret avec trois options Mention, Embed, Bookmark. Mention insere un lien inline, Embed insere un embed provider-safe, Bookmark insere une carte unfurl. Ne pas coder d'autre feature.

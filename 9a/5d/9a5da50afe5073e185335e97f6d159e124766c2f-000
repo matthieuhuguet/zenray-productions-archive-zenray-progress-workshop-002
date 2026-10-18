@@ -1,0 +1,351 @@
+# ZenRayProgress — Spec maître 1:1 (Finder · Notion · Spotify · Publish · Clipboard)
+
+Document maître des features manquantes ou partielles, sectionné par domaine. Chaque feature porte un statut (missing / partial / done), une priorité (P0→P3), une complexité (S/M/L/XL) et une piste d'implémentation concrète ancrée dans le code réel.
+
+> Correction d'inventaire (vérifiée dans le code, 2026-05-30) : en mode note, l'ordre actuel réel dans `App.jsx` est déjà **titre (L758) → PropertiesBlock (L759) → corps (L761)**. Le titre N'EST PAS sous les propriétés. Les deux vrais défauts sont : (1) les **commentaires sont rendus EN BAS du corps** dans `PageEditorBN.jsx` (L175-191), pas sous les propriétés ; (2) le **titre/propriétés vivent dans un conteneur `maxWidth:760` (App.jsx L757) distinct du conteneur du corps** (`PageEditorBN.jsx` L166), d'où le risque de bord gauche non aligné. C'est ce qui est corrigé dans les Quick Fixes.
+
+---
+
+## 1. Finder / Create
+
+La vue Create (`Pages` dans `App.jsx`) est un navigateur de pages déjà avancé : 2 modes (Gallery icônes + List), fil d'Ariane cliquable, sidebar Favoris/Tags, vignettes média, tags 7 couleurs, drag dans l'arbre, corbeille restaurable. Manque tout le système de tri, la sélection, le menu contextuel, le renommage inline, Quick Look, les vues Colonnes et Galerie.
+
+### Déjà fait (à ne pas refaire)
+Vue Icônes, vue Liste (basique), switch de vue, path bar bas, fil d'Ariane, bouton remonter/historique, sidebar Tags couleur, vignettes média (PageThumb), icônes dossier/doc, compteur d'éléments, corbeille restaurable, créer dossier/sous-page.
+
+### Manquant / partiel
+
+**Tri configurable (nom / date / taille / numéro / tag)** — P0, M, missing
+`entriesOf()` trie en dur par `name.localeCompare` (App.jsx L620/L653). Ajouter un state `{sortKey, sortDir}` ; fonction de comparaison appliquée sur `shownEntries` avant rendu. Tri numéro = `localeCompare(..., {numeric:true})` pour page2 < page10. Tri tag = ordre `TAG_COLORS`. Prérequis du tri date/taille : enrichissement métadonnées (commit date via API GitHub ou champ dans `.props.json`).
+
+**Ordre asc / desc** — P0, S, missing
+Flèche ▲/▼ qui flip `sortDir` ; `reverse()` si desc dans la fonction de tri.
+
+**Colonnes triables en vue Liste** — P1, S, missing
+Entêtes Nom/Type/Éléments (L715-717) actuellement statiques. Les convertir en boutons qui set `{sortKey,sortDir}` + indicateur ▲/▼. Ajouter colonnes Date modif et Taille.
+
+**Menu de tri (toolbar)** — P1, M, missing
+Dropdown « Trier par » à côté de ViewSwitch (L675), réutilise le pattern `<select>` (ex Freelance L413).
+
+**Sélection simple + multiple** — P0, M, missing
+Aucune sélection : un clic ouvre directement. Ajouter state `selected:Set<dir>`. Clic = sélectionne (highlight), double-clic = `openEntry` (L662), Cmd-clic ajoute, Shift-clic étend, marquee (rectangle) sur mousedown du fond. Prérequis de Quick Look, suppression multiple, drag multiple, raccourcis clavier.
+
+**Menu contextuel clic droit** — P0, M, missing
+`onContextMenu` sur tuile/ligne → menu flottant `{x,y,target}`. Actions branchées sur fonctions existantes : `openEntry`, `del` (L569), `addChild` (L546), `setTag`, + rename (nouveau). Un `<div>` absolu + clic-dehors, aucune lib.
+
+**Renommer inline** — P0, M, missing
+Aucun renommage d'existant (création via `window.prompt`). `<input>` qui remplace le label au double-clic/Entrée dans tuile (L706) et ligne (L724). Backend : l'action `move` (page.js L83) renomme déjà le fichier ; lever côté API la limite « refuse si sous-pages » pour le rename pur (même dossier).
+
+**Quick Look (barre espace)** — P1, M, missing
+Modale overlay déclenchée par keydown `' '` sur l'élément sélectionné : `<Markdown>` du contenu + grand PageThumb. Dépend de la sélection.
+
+**Glisser-déposer dans la grille/liste** — P1, L, partial
+Le drag-move n'existe que dans l'arbre latéral (TreeItem L466-503, `movePage` L555). Rendre les tuiles (L701) `draggable` avec `application/zenray-page` (format déjà utilisé L490) ; dossiers-tuiles = cibles `onDrop` appelant `movePage`. Lever la limite sous-arbre côté API.
+
+**Vue Colonnes (Miller columns)** — P1, L, missing
+Nouveau mode `'columns'` : array de niveaux, `entriesOf(level)` par colonne, flex horizontal scrollable, dernière colonne = aperçu (PageThumb + PropertiesBlock lecture).
+
+**Vue Galerie grand aperçu (cover flow)** — P2, M, missing
+Nouveau mode `'cover'` : grand aperçu du sélectionné + bande horizontale de mini-tuiles + panneau méta (PropertiesBlock).
+
+**Group By** — P2, M, missing
+State `groupBy` ; construire `{label: entries[]}` (réutiliser la logique de groupement par mois d'Archive, App.jsx L340-356), rendre titre de groupe + grille/liste.
+
+**Switch de vue mémorisé par dossier** — P0, S, partial
+Étendre `ViewSwitch` options à `['list','gallery','columns','cover']` et persister la vue par dossier dans `.zr-viewprefs.json` (même mécanisme que `.zr-tags.json` L530).
+
+**Sidebar Favoris épinglables** — P1, M, partial
+Aujourd'hui 1 seul item fixe « ★ Create » (L682). Stocker `favorites[]` dans `.zr-favorites.json` ; bouton épingler au clic droit/survol ; rendu + drag pour réordonner.
+
+**Recherche avec scoping (dossier courant vs tout)** — P1, M, partial
+Champ recherche (L674) filtre globalement et aplatit (L583/L652). Ajouter un toggle de scope ; si `scope='dossier'`, filtrer `entriesOf(folder)` au lieu du global.
+
+**Assigner un tag depuis la grille** — P1, S, partial
+`TagDots` ne s'expose que depuis l'en-tête d'une page ouverte (L753). L'exposer dans le menu contextuel et au survol de tuile.
+
+**Contrôle de taille des icônes** — P2, S, missing
+State `iconSize` (S/M/L/XL) → pilote `minmax()` (L697) + tailles FolderIcon/DocIcon/PageThumb. Slider dans la path bar bas.
+
+**Bouton suivant (forward)** — P1, S, partial
+`goUp`/`goBack` existent ; ajouter une pile `forward` symétrique à `histRef`.
+
+**Raccourcis clavier (flèches / Entrée / Suppr / Cmd-A)** — P2, M, missing
+Listener `keydown` au niveau conteneur Pages (L665), dépend de la sélection. Mapper sur `openEntry`, `goUp`, `del`, select-all.
+
+**Sidebar Locations** — P3, S, missing
+Bloc statique sous Favoris listant les racines (pages, databases, gallery, references, audio) avec switch de scope.
+
+---
+
+## 2. Notion / Note
+
+Éditeur BlockNote + bases de données. Persistance jumelle `.md`/`.blocknote.json` robuste. Database views (table/board/gallery/list/calendar) déjà complètes. Manquent les types de propriétés réels, cover/icône, modes Peek/Split, commentaires riches, menu au collage de lien, sort+filter persistants par vue.
+
+### Quick-fix structurels (voir section Quick Fixes)
+Ordre note (commentaires sous propriétés), alignement titre/corps, titre éditable.
+
+### Manquant / partiel
+
+**Titre éditable inline (placeholder + autosave)** — P0, M, partial
+Le titre est un `<div>` non éditable dérivé du nom de fichier (App.jsx L758). Le remplacer par `<textarea>`/contentEditable. Persister un champ `title` dans `.props.json` (slug fichier stable) OU déclencher `move` (api/page.js L83) pour renommer. Recommandé : champ `title` dans `.props.json`.
+
+**Types de propriétés réels (date/select/multi/number/checkbox/url/person/relation)** — P0, L, partial
+`PropertiesBlock` (App.jsx L789-843) ne fait que du texte libre (+ date). Le moteur de typage existe DÉJÀ dans `Databases.jsx` (`TYPES` L12, `cell()` L97-113). Extraire `cell()` en composant partagé `TypedCell` réutilisé par PropertiesBlock ET Databases. Modèle `.props.json` : `custom:[{id,name,type,value,options?}]`. Ajouter sélecteur de type au « + Add a property » (L839).
+
+**Propriété relation** — P1, L, partial
+Réutiliser le mécanisme relation de `Databases.jsx` (`relCache` L28) dans `TypedCell`. Stocker `{target, ids:[]}`. Bidirectionnalité (backlink) en phase 2.
+
+**Cover de page (bandeau image)** — P1, M, missing
+Champ `cover` dans `.props.json` (url + objectPosition). Upload via `/api/img` (déjà branché dans `uploadFile` L58-62). `<div>` pleine largeur ~30vh en tête avant le titre, drag pour repositionner.
+
+**Icône de page (emoji/image)** — P1, S, missing
+Champ `icon` dans `.props.json`. Gros emoji ~54px entre cover et titre, picker simple. Réutiliser comme thumbnail Finder (prime sur DocIcon).
+
+**Mode Peek (panneau latéral glissant)** — P1, L, missing
+State `peekPath` dans Pages. `<aside>` fixed à droite ~480px, second PageEditorBN en lecture. Ctrl/Alt+clic = peek, clic normal = plein écran. Slide-in `translateX`.
+
+**Mode Split permanent (gauche dossiers / droite éditeur)** — P1, XL, missing
+Refondre le layout Pages : colonne gauche fixe ~260px = arbre TreeNode/TreeItem (existant L505-513) toujours montée, droite = Finder ou note. Toggle plein/split. Réutiliser `buildTree` (L447). Responsive (collapse mobile).
+
+**Commentaires riches (fil / résoudre / réactions / mentions / ancrés au texte)** — P1, XL, partial
+Actuel = liste plate `{id,text,ts}` signée « Matthieu » en dur (PageEditorBN L29-55). Modèle cible : `comments:[{id, anchor?:{blockId,from,to}, thread:[{id,author,text,ts,reactions}], resolved}]`. **Phaser** : phase 1 = fil + résoudre + réactions sur commentaires globaux ; phase 2 = ancrage au texte (surlignage + popover via block.id/sélection BlockNote). Mentions = réutiliser le picker de pages (L27).
+
+**Menu au collage de lien (Mention / Embed / Bookmark / URL)** — P1, M, missing
+Intercepter le paste BlockNote ; si presse-papier = URL seule, menu inline 4 options. Bookmark = nouvel endpoint `/api/unfurl` (OpenGraph : titre, description, image, favicon) + bloc custom `bookmark` (`createReactBlockSpec`). Embed = bloc iframe. Mention si URL = page interne.
+
+**Slash menu de blocs personnalisé** — P2, M, partial
+BlockNote fournit un slash menu par défaut. Ajouter via `getDefaultReactSlashMenuItems` + items custom : « Lien vers une page » (picker L27), « Sous-page », « Bookmark », « Base de données ».
+
+**Sort + Filter persistant par vue, distinct par page** — P0, L, partial
+`Databases.jsx` a un sort non persisté (reset à l'ouverture L34) et AUCUN filtre. Modèle DB cible : `views:{table:{sort,filters,visibleCols}, board:{...}, ...}` persisté via `persist()` (L46). Barre Filter/Sort façon Notion avec chips actifs (op =, !=, contains, >, <, is empty selon type). Pastille active/inactive. Appliquer dans le calcul `rows` (L76-82).
+
+**Database views nommées multiples** — P2, M, done(base)→extend
+Les 5 vues existent. Passer de `view` (string) à `views:[{id,name,type,sort,filters,groupBy,visibleCols,coverCol}]` avec onglets en haut. `groupBy` déjà géré pour board (L92), à généraliser.
+
+**Propriétés réordonnables + masquer vides** — P2, M, partial
+`custom[]` réordonnable (drag handle HTML5 déjà utilisé au board L158). Bouton « Hide empty properties ». Menu par propriété (renommer/type/supprimer/masquer).
+
+**Backlinks (« Mentionné dans »)** — P2, M, partial
+Liens internes existent (#page:, [[slug]]) mais pas de backlinks. Au chargement, scanner les pages (déjà chargées L65-67) pour celles contenant `#page:<nom>`/`[[nom]]` de la page courante. Section réutilisant le style « Pages liées » (L192-202). Option index `.backlinks.json` au save.
+
+**Cover/icône réutilisés comme thumbnail Finder** — P3, S, partial
+Dans `PageThumb` (L420-444) et tuiles Finder (L703), lire d'abord `.props.json` (icon/cover) avant la 1re image du corps. Petit cache.
+
+---
+
+## 3. Audio / Spotify
+
+L'onglet Audio est une coquille Spotify mono-vue, sans intégration réelle, sans lecteur persistant. Cible = 3 sous-menus (Spotify OAuth réel + player persistant / Music clone MusicBee / SFX manager Soundly) avec un PlayerContext hissé au niveau App.
+
+> **Clés à provisionner (à demander à Matthieu) :** `VITE_SPOTIFY_CLIENT_ID` (public, OK front, flow Authorization Code + PKCE sans secret), `VITE_SPOTIFY_REDIRECT_URI`. Dans developer.spotify.com : créer l'app, ajouter 2 redirect URIs (prod `https://<app>.vercel.app/spotify-callback` + `http://localhost:5173/spotify-callback`), cocher Web Playback SDK. **Compte Spotify PREMIUM obligatoire** pour la lecture in-app (SDK), sinon fallback iframe embed. Scopes : streaming, user-read-email, user-read-private, user-read-playback-state, user-modify-playback-state, user-read-currently-playing, playlist-read-private, user-library-read.
+
+### Manquant / partiel
+
+**PlayerContext global persistant** — P0, L, missing
+Aujourd'hui `<audio>` + état vivent DANS Audio.jsx (L14-21) : changer `view` démonte le composant, la musique s'arrête. Créer `src/audio/PlayerContext.jsx` (Provider monté autour de `<main>`, App.jsx L86) avec UN `<audio>` ref unique + l'instance Spotify SDK. Exposer `{queue,current,playing,play,toggle,next,prev,seek,vol,setVol,source}`. **C'est le blocage central.**
+
+**Barre lecteur globale (mini-player)** — P0, M, partial
+Extraire la barre (Audio.jsx L99-124) dans `src/audio/PlayerBar.jsx`, rendue dans App.jsx en `position:fixed` bottom, alimentée par `usePlayer()`. Bouton « aller à l'onglet Spotify » si `source==='spotify'`.
+
+**Sous-menus internes (Spotify / Music / SFX)** — P0, S, missing
+State `subTab` + segmented control (style ViewSwitch). Rendre `<SpotifyView/>`/`<MusicView/>`/`<SfxView/>`.
+
+**OAuth Authorization Code + PKCE** — P0, L, missing
+`src/audio/spotifyAuth.js` : générer `code_verifier` + `code_challenge` (SHA-256 base64url via `crypto.subtle`), rediriger vers `accounts.spotify.com/authorize`, POST token depuis le front (PKCE autorise, pas de secret). Stocker access+refresh+expiry dans localStorage (`spotify:auth:v1`).
+
+**Route /spotify-callback (SPA)** — P0, S, missing
+`vercel.json` renvoie déjà tout le non-/api vers index.html. Au mount d'App : si `pathname==='/spotify-callback'` && `?code=`, `handleCallback(code)` puis `history.replaceState('/')` + `setView('audio')`.
+
+**Refresh automatique du token** — P0, M, missing
+`getValidToken()` : si expiré, POST `grant_type=refresh_token` (PKCE, sans secret), réécrire localStorage, timer 50min. Note sécurité : localStorage acceptable pour app perso ; sinon proxy serveur.
+
+**Web Playback SDK (lecture in-app)** — P0, L, missing
+EXIGE Premium. Charger `sdk.scdn.co/spotify-player.js`, `new Spotify.Player({name:'ZenRay', getOAuthToken})`, `connect()`, écouter `player_state_changed`. PUT `/v1/me/player/play?device_id=`. Instancier le Player DANS le PlayerContext pour survie aux changements d'onglet.
+
+**Fallback iframe embed (non-Premium)** — P1, S, missing
+`<iframe src="open.spotify.com/embed/...">`. Détecter `product` via `/v1/me` ; si !== premium, basculer en mode embed/contrôle-device.
+
+**Spotify : recherche / playlists / bibliothèque** — P1, L, missing
+`src/audio/spotifyApi.js` : wrappers `GET /v1/me/playlists`, `/v1/me/tracks`, `/v1/search`, `/v1/playlists/{id}/tracks`. Rendu dans `<SpotifyView>` avec la grille MusicBee actuelle.
+
+**Music : clone MusicBee** — P1, M, partial
+La vue actuelle EST ce clone (lit `audio/manifest.json`, joue via `/api/img`). Déplacer le JSX (L59-97) dans `src/audio/MusicView.jsx`, brancher sur `usePlayer()`. Ajouter tri colonnes, playlists réelles, file d'attente, drag d'ordre. Manifest enrichi `tracks:[{path,title,artist,album,cover,dur,tags,playlists}]`.
+
+**SFX : file manager Soundly** — P1, L, missing
+`src/audio/SfxView.jsx`. Manifest `sfx/manifest.json`. Ajouter `sfx/` au `safe()` de api/page.js (L14) et au filtre GET de api/img.js (L21). Liste dense filtrable par tags, preview via player local.
+
+**Waveform SFX (wavesurfer.js)** — P2, M, missing
+`npm i wavesurfer.js`. Option perf : pré-générer les peaks (audiowaveform CLI `-P16`) stockés dans le manifest.
+
+**File d'attente + lecture continue cross-source** — P1, M, partial
+`next`/`prev` bouclent juste sur l'array local. Dans PlayerContext : `queue`, `queueIdx`, `enqueue`, `playNext`. Router selon `track.source` (spotify→SDK, local→`<audio>`). `onEnded → playNext`.
+
+**Upload / import audio (drag-drop)** — P2, M, missing
+Étendre `api/img.js` POST pour `dir 'audio'|'sfx'` + dataUrl audio (refuse non-image L39). Réutiliser la zone drag-drop de Gallery.jsx (L60-65). Durée extraite côté client via `<audio>` caché.
+
+**Extraction métadonnées (durée/cover/tags)** — P2, M, missing
+À l'upload : `music-metadata-browser` (ID3) OU pipeline CLI `ffprobe -P16` régénérant le manifest.
+
+**Modes shuffle / repeat** — P2, S, missing
+`shuffle:bool`, `repeat:'off'|'all'|'one'` dans PlayerContext. SDK : PUT `/v1/me/player/shuffle` et `/repeat`.
+
+**Persistance état de lecture (reprise après reload)** — P2, S, missing
+Sérialiser `{trackId,position,queue,source,vol}` dans localStorage (`player:state:v1`, débounce). Restaurer au mount sans auto-play (autoplay policy).
+
+**Volume / mute persistants** — P3, S, partial
+Déplacer `vol` dans PlayerContext, persister, appliquer à `<audio>` ET `player.setVolume()`. Bouton mute.
+
+**Indicateur onglet actif + shortcut retour Spotify** — P1, S, missing
+Dans Sidebar (App.jsx L116-147), si `playing`, point coloré + équaliseur animé sur « audio ». Hotkey global (ex Cmd+Shift+S) → `setView('audio')`.
+
+**Gestion erreurs / reconnexion** — P2, S, missing
+Wrapper `spotifyApi` : sur 401 → refresh + retry une fois ; sinon état déconnecté + bouton reconnexion. Écouter SDK `authentication_error`/`account_error`/`playback_error`.
+
+**Optionnel : proxy token serveur** — P3, M, missing
+`api/spotify.js` garde le refresh_token côté Upstash (déjà dispo via api/state.js). Front reçoit un access_token court.
+
+**Backend audio** — done (étendre pour SFX). `/api/img` sert déjà les MIME audio, autorise `audio/` ; ajouter `sfx/`.
+
+---
+
+## 4. Publish / Articles
+
+Pipeline de publication d'articles depuis ZenRayProgress vers ZenRayWebsite (`/reels/<slug>`). Le site = React/Vite SANS react-router, routing custom dans un `App.jsx` de 8837 lignes ; un reel = un objet du littéral inline `const PROJECTS = [...]` (L5579). L'URL dérive de `slugify(title)`.
+
+> **Décision d'archi la plus importante (à valider avant tout code) :** extraire le tableau `PROJECTS` de `App.jsx` (ZenRayWebsite) vers un fichier data séparé `src/projects.data.js` (export const PROJECTS), une fois. Ensuite l'API n'écrit plus que ce fichier (insertion propre, pas de regex fragile sur 8800 lignes). Branche par défaut du site = **MASTER**.
+
+### Manquant / partiel
+
+**Variable d'env WEBSITE_GITHUB_TOKEN** — P0, S, missing
+Le token actuel a le scope zenray-content. Créer un fine-grained PAT limité à `matthieuhuguet/ZenRayWebsite` (Contents RW, Pull requests RW), ajouté en var Vercel séparée (cloisonnement des droits).
+
+**Onglet Publish/Articles** — P0, S, missing
+Ajouter `{key:'articles'}` au NAV (App.jsx L116) + `{view==='articles' && <Articles/>}` (L90-104). Créer `src/components/Articles.jsx` (liste brouillons + « Nouvel article »).
+
+**Sauvegarde / stash de brouillons** — P0, S, partial
+Ajouter `articles/` à `safe()` (api/page.js L14). Chaque brouillon = `articles/<slug>.article.json` (title, blocks BlockNote, theme, font, ratio, media[], status). Réutiliser le finder pour lister. Stash = `status:'draft'`.
+
+**Éditeur d'article riche** — P0, L, partial
+Forker `PageEditorBN.jsx` en `ArticleEditor.jsx`. Garder `useCreateBlockNote` + `BlockNoteView`. Toolbar custom (ratio/thème/font) + blocs custom InDesign-like (`createReactBlockSpec`).
+
+**Mapping éditeur → objet PROJECT (export)** — P0, L, missing
+Le site rend `description` en TEXTE BRUT (pre-line, pas de markdown parsé). **Décision** : (A) mapper vers `{description, sections}` (compat site actuel mais perd la mise en forme) OU (B, recommandé) ajouter au site un champ `body` + un `ArticleRenderer` générique data-driven (évite les composants Slides hardcodés par id). `marked` est dispo dans Progress, à ajouter au site si (B).
+
+**Publication = branche + commit sur ZenRayWebsite** — P0, XL, missing
+COEUR. Étape 0 (one-shot validé) : extraire PROJECTS. Puis `api/publish.js` via `WEBSITE_GITHUB_TOKEN` : (a) crée branche `article/<slug>` depuis master, (b) insère l'objet `{id:maxId+1, title, slug, description, image, sections}` dans `projects.data.js`, (c) PUT le fichier + médias dans `public/articles/<slug>/`, (d) optionnel ouvre une PR. Vercel crée un Preview Deployment par branche.
+
+**URL finale /reels/<nom-custom>** — P1, M, missing
+Ajouter champ `slug` optionnel à PROJECT. Modifier `pathToActive` (L8392) et `activeToPath` (L8380) pour `p.slug || slugify(p.title)`. Input « URL : /reels/[____] » avec validation d'unicité avant publish.
+
+**Prévisualisation live (WYSIWYG = rendu site)** — P1, M, missing
+Panneau Preview à droite (comme CardPanel L291) rendant l'article avec les styles du site via le même `ArticleRenderer` (single source = vrai WYSIWYG). Toggle Édition/Aperçu.
+
+**3 thèmes Dark / Grey / White** — P1, S, missing
+`ARTICLE_THEMES={dark,grey,white}` dans ArticleEditor, choix stocké dans le draft, appliqué via variables CSS. Au publish, mapper vers `color`/`accent` de PROJECT.
+
+**Choix de font Anthropic + taille** — P1, S, missing
+3 fonts déjà chargées des deux côtés. Sélecteur (Serif/Sans/Mono + slider 14-22px), stocké dans le draft, appliqué via `--bn-font-family`.
+
+**Médias gif/vidéo <100Mo avec trim** — P1, XL, missing
+Trim navigateur via WebCodecs + `@ffmpeg/ffmpeg`, ou trim léger MediaRecorder + range slider. Upload via `api/media.js`. **Attention** limite body serverless Vercel 4.5Mo : pour >4.5Mo, GitHub blobs API chunké. Brique la plus risquée, à séquencer en dernier ; commencer par gif + vidéo <4Mo.
+
+**Presets de ratio 1:1 / 4:5 / 16:9 / 9:16** — P2, M, missing
+Boutons preset → `aspect-ratio` CSS sur l'aperçu + masque de recadrage canvas. Export social via `canvas.toBlob`.
+
+**Bilingue EN/FR** — P2, S, missing
+Le site rend `description[lang]`. Deux onglets EN/FR ; au publish écrire `description:{en,fr}`. Si une seule langue, dupliquer (ou pré-remplir via le skill translate).
+
+**Partage social Twitter / Instagram / LinkedIn** — P2, M, missing
+Boutons web intent : Twitter `intent/tweet?text=&url=`, LinkedIn `sharing/share-offsite?url=`. Instagram : pas d'URL web → download du visuel au ratio (canvas) + copie texte. Append dans `social-media-posts.md`.
+
+**Open Graph / SEO par article** — P2, M, missing
+Le site est une SPA (og:* statiques) → preview sociale cassée. Option (a) `/api/og` + `@vercel/og` injectant les meta par slug ; (b) pré-rendu statique `public/reels/<slug>.html`. Rend le partage réellement efficace (signal externe).
+
+**Rangement post-publication (Calendar + Published)** — P1, S, partial
+Au publish réussi, `addCard(null,'Published',today)` avec `title`, `images=[thumb]`, `note=lien`. Filtre/vue « Published » distinct d'« Archived ».
+
+**Sécurité anti-perte / rollback** — P2, M, missing
+Toujours publier sur branche (jamais master direct) → Preview URL. Merge vers master = action explicite séparée (« Mettre en ligne »). `api/publish` ne fait QUE des ajouts. Vérifier `vite build` sur la branche avant merge.
+
+---
+
+## 5. Clipboard (presse-papiers universel)
+
+RIEN n'existe côté clipboard système (aucun listener `paste`/`copy`). Toute la plomberie du COLLER existe déjà : `fileToWebp()` compresse un Blob, `/api/img` héberge, BlockNote a `uploadFile`. Un Blob image collé suit EXACTEMENT le chemin d'un fichier déposé.
+
+### Manquant / partiel
+
+**Bus de contexte de collage (clipboard router)** — P0, M, missing
+Pilier. `src/clipboard/ClipboardProvider.jsx` : context `{registerTarget(id,{kind,onPasteImage,onPasteText,onCopy}), setActiveTarget(id)}`. Monté autour de `<main>`. Chaque écran `registerTarget` au mount + `setActiveTarget` au focus/click/dragenter. UN seul `window.addEventListener('paste'/'copy')` dans le provider, délègue au target résolu (priorité focus > hover > onglet actif).
+
+**Coller image depuis presse-papiers système** — P0, M, missing
+LE cœur. Dans le listener `paste` : `clipboardData.items` → filtrer `kind==='file' && type.startsWith('image/')` → `getAsFile()` → `fileToWebp(blob)` → `/api/img`. `preventDefault()`. Multi-images + fallback dataURL si upload échoue.
+
+**Coller image dans note (BlockNote inline au curseur)** — P0, S, partial
+BlockNote gère déjà le paste image via `uploadFile` branché `/api/img`. Vérifier/fiabiliser l'insertion au bloc courant (`editor.getTextCursorPosition()`). Aucun nouvel endpoint.
+
+**Coller dans une carte Board (CardPanel)** — P1, S, missing
+`registerTarget({kind:'card', onPasteImage:blob=>addImages(card.id,[blob])})`. `addImages` (L70) accepte déjà File/Blob.
+
+**Coller dans la Gallery active** — P1, S, missing
+`registerTarget({kind:'gallery', onPasteImage:blob=>allowUpload && addFiles([blob])})`. References read-only → refus.
+
+**Coller sur tuile/dossier Finder → nouvelle page image** — P1, M, missing
+`onPasteImage(blob)` : webp → `/api/img` → créer `pages/{folder}/img-{ts}.md` avec `![](url)` via action `save`. Vignette suit via PageThumb.
+
+**Copier une page comme référence (#page:slug)** — P0, M, missing
+`ClipboardItem({'text/plain':`[[slug]]`, 'text/html':lien, 'web application/zenray-page+json':JSON})` + `navigator.clipboard.write`. Re-collage interne via `editor.insertInlineContent` (logique L157). Fallback `writeText`.
+
+**Copier un média image (référence + binaire PNG)** — P1, M, missing
+`fetch('/api/img?path=')` → blob → canvas → `toBlob('image/png')` → `ClipboardItem({'image/png':png,'text/plain':url})`. (Le système n'accepte pas webp partout.)
+
+**Re-collage interne riche d'une référence de page** — P2, S, missing
+Lire `web application/zenray-page+json` → `editor.insertInlineContent([{type:'link',href:#page:...}])` (quasi copié de L171).
+
+**Coller texte / markdown proprement** — P2, M, partial
+Si `text/plain` ressemble à du markdown (`#`, `-`, `![]()`) → `editor.tryParseMarkdownToBlocks` (déjà utilisé L89) → `insertBlocks`. Sinon BlockNote natif.
+
+**Garde-fous (permissions, focus, async)** — P1, M, missing
+Privilégier `ClipboardEvent.clipboardData` (synchrone, sans permission) pour le coller. `navigator.clipboard.write` (ClipboardItem) pour le copier, fallback `writeText`. Ignorer l'event si `activeElement` est INPUT/TEXTAREA hors zone éditeur (sauf collage image).
+
+**Indicateur visuel de cible active** — P2, S, missing
+Provider expose `activeTargetId` ; outline `PALETTE.primary` sur le target actif. Réutilise le halo des zones de drop existantes.
+
+**Toast de feedback** — P2, S, missing
+`src/clipboard/ClipboardToast.jsx`, fixed bottom, fade 2.5s. Message après chaque paste/copy.
+
+**Coller dans Projects (read-only) — refus explicite** — P3, S, missing
+`onPasteImage:()=>toast('Projects est en lecture seule')`. Copier titre+href reste utile.
+
+**Coller dans Audio (non-image → ignore)** — P3, S, missing
+`registerTarget({kind:'audio', onPasteImage:null})` → no-op + toast neutre.
+
+---
+
+## 6. Dette technique transverse (codebase)
+
+Risques à traiter en parallèle des features, car ils bloquent ou fragilisent plusieurs domaines.
+
+**Concurrence d'écriture (sha staleness)** — P1, M, missing
+Chaque composant garde le sha en useRef ; si le fichier change entre-temps, GitHub renvoie 409 et l'écriture est silencieusement perdue (pas de re-fetch/retry). Centraliser un helper `saveWithRetry` dans api.js : sur `error==='conflict'`, re-read le sha frais, re-appliquer, re-save. Critique avant tout usage multi-device/multi-onglet (`.zr-tags.json`, `.props.json`, manifests).
+
+**PropertiesBlock save sans debounce** — P1, S → quick fix
+`save()` à chaque frappe = 1 commit GitHub par caractère (rate limit + bruit). Ajouter debounce 800ms (comme `Databases.persist`). Idem Freelance notes.
+
+**`.props.json` non géré par Trash/move** — P2, S → quick fix
+`del()` et `Trash.variants()` listent `.md`/`.blocknote.json`/`.comments.json` mais PAS `.props.json` → propriétés perdues à la corbeille. Ajouter `.props.json` à la liste des variantes (côté client ET api move `pairs`).
+
+**allowlist `list` limitée** — P2, M
+`page.js?action=list` n'accepte que pages/databases/build. Étendre `safe()`/`list` pour audio/references/freelance/sfx/articles à mesure des features.
+
+**Auth applicative** — P1, M, missing
+Aucune auth dans le code (repose sur le login Vercel). Vérifier la protection Vercel active. Idéalement token GitHub à scope minimal séparé par usage (read-only Memory/.claude vs write drive vs write Website).
+
+**Manifest unique non shardé (Gallery/References)** — P2, M
+Les 110k AVIF Eagle dans un seul `manifest.json` = fichier énorme chargé d'un coup. Sharder (`manifest-001.json`...) avant l'import Eagle.
+
+**Redis non branché** — P1, M, partial
+`store='local'` partout. Brancher Upstash (vars `UPSTASH_REDIS_REST_URL/TOKEN`) pour la progression cross-device.
+
+**App.jsx monolithique (1097 lignes)** — surface de conflit
+Extraire Board/Pages/Freelance/PropertiesBlock en composants avant d'y empiler des features, pour réduire les conflits.

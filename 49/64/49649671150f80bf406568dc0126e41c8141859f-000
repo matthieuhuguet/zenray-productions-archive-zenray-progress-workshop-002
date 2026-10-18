@@ -1,0 +1,108 @@
+# Widget audio YouTube (façon YouTube Music) — implémentation 2026-07-04
+
+## Contexte
+
+Matthieu reposte ses fichiers audio directement sur YouTube (non répertorié) au lieu de les stocker dans
+ZenRayShards. Objectif : un lecteur qui affiche l'audio SANS la grande vidéo 16:9, comme YouTube Music,
+en réutilisant TEL QUEL le moteur YouTube déjà en place (controls:1 natifs — voir la leçon du 2026-07-03 dans
+VideoPlayer2.jsx : ne jamais remonter un bandeau de contrôles custom par-dessus l'iframe YouTube, ça casse).
+
+## Fichiers modifiés
+
+- `src/lib/youtubeLink.js`
+- `src/components/VideoPlayer2.jsx`
+- `src/App.jsx`
+
+Aucun nouveau fichier, aucune nouvelle dépendance npm.
+
+## 1. Schéma — `src/lib/youtubeLink.js`
+
+- `buildYoutubeManifest(rawUrl, opts = {})` : si `opts.audioOnly` est vrai, le manifest construit inclut
+  `audioOnly: true` (sinon le champ est absent, comportement vidéo strictement inchangé).
+- `createYoutubeLinkNode(rawUrl, folder, opts = {})` : propage `opts` à `buildYoutubeManifest`.
+- `createYoutubeLinkNodesBatch(text, folder, onProgress, opts = {})` : nouveau 4e paramètre, propagé à chaque
+  nœud du lot (un batch = un seul mode, audio OU vidéo, jamais mélangé).
+
+Le manifest `.media.json` reste un nœud `{type:'youtube'}` ordinaire — `audioOnly` est juste un champ
+optionnel en plus. La tuile Finder, la page de partage `/watch` et le dispatch de `MediaViewer.jsx` continuent
+de fonctionner sans aucune modification (ils lisent déjà `m.type === 'youtube'`).
+
+## 2. Lecteur — `src/components/VideoPlayer2.jsx`
+
+- Nouveau flag dérivé : `isAudioOnly = isYoutube && manifest.audioOnly === true`.
+- Quand `isAudioOnly` est vrai, le composant retourne un rendu ENTIÈREMENT différent (return anticipé avant le
+  rendu vidéo 16:9 habituel), mais réutilise strictement les mêmes states/handlers (titre/auteur éditables,
+  partage, commentaires) — aucune duplication de logique métier, juste une mise en page différente.
+
+### Rendu exact du widget compact
+
+Une barre "now playing" (fond `t.cardBg`, bordure `t.border`, `borderRadius: 14`, `padding: 14`, `display:flex`) :
+
+1. **Pochette carrée** (68×68px, `borderRadius: 10`) : `manifest.poster` (vignette YouTube `hqdefault.jpg`)
+   utilisée comme cover, fond noir si absente.
+2. **Titre + auteur** au centre, une ligne chacun, ellipsis si trop long (`flex:1`).
+3. **Mini-lecteur YouTube réel** (112×63px, `borderRadius: 8`) : contient le `<div id={ytDivId}>` sur lequel
+   `YT.Player` est monté — EXACTEMENT le même effet de montage que le mode vidéo (`controls:1`,
+   `modestbranding:1`, `rel:0`, etc.), zéro changement de logique de lecture.
+
+En dessous : les actions Éditer / Partager / Ouvrir sur YouTube / Commentaires, strictement identiques au mode
+vidéo (mêmes handlers `saveMeta`, `share`, `sendComment`).
+
+### Pourquoi le mini-lecteur reste VISIBLE (96-112px) et pas invisible en 1px
+
+La consigne proposait soit un petit cadre cliquable visible, soit un cadre réduit à 1px avec
+`position:absolute; overflow:hidden` (mais jamais `display:none`/`visibility:hidden`, qui coupent le son sur
+certains navigateurs). Choix retenu : cadre VISIBLE de 112×63px à côté de la pochette, plutôt qu'un cadre
+quasi invisible. Raison : c'est la solution la plus fiable pour ne jamais couper le son (l'iframe YouTube reste
+dans le flux normal du DOM, pleinement rendue, sans transformation CSS agressive qui pourrait interagir avec le
+throttling des iframes hors-écran de certains navigateurs). Le compromis (pas 100% invisible) est assumé —
+conforme à la consigne "privilégie la solution la plus fiable, quitte à ce que ce ne soit pas 100% invisible".
+
+Le mode vidéo standard (`isYoutube` sans `audioOnly`) n'est pas touché : le `return` du widget compact est
+conditionné strictement à `isAudioOnly`, donc toute vidéo YouTube sans `audioOnly:true` suit exactement le même
+chemin de code qu'avant (cadre 16:9, `<div id={ytDivId}>` en pleine taille).
+
+## 3. Menu "New" — `src/App.jsx`
+
+- Nouvel état `ytAudioMode` (bool), à côté des états existants `ytModalOpen`/`ytLinksText`/`ytBusy`/`ytProgress`.
+- Nouvel item de menu **"New > Liens audio YouTube…"** (icône `music.note`), juste sous "Liens YouTube…".
+  Il fait `setYtAudioMode(true)` puis ouvre la MÊME modale (`setYtModalOpen(true)`) — aucune duplication de
+  composant modal, juste un flag qui bascule titre/description/appel.
+- "Liens YouTube…" (vidéo) fait explicitement `setYtAudioMode(false)` avant d'ouvrir la modale, pour repartir
+  toujours du bon mode même si l'utilisateur a basculé juste avant.
+- La modale existante affiche un titre/texte adaptés (`ytAudioMode ? 'Liens audio YouTube' : 'Liens YouTube'`,
+  etc.) et `submitYoutubeLinks` appelle désormais
+  `createYoutubeLinkNodesBatch(text, folder, setYtProgress, { audioOnly: ytAudioMode })`.
+
+## 4. Indicateur visuel sur la tuile Finder — `src/App.jsx` (`VideoMediaTile`)
+
+Point d'insertion trouvé rapidement (< 10 min) : `VideoMediaTile` lit déjà le manifest complet via
+`/api/page?action=read` pour construire son `info` en cache. Ajouts :
+
+- `info.audioOnly` calculé à la lecture (`m.type === 'youtube' && m.audioOnly === true`).
+- Un petit badge rond (20×20px, fond noir translucide, icône `music.note` blanche) affiché en HAUT-GAUCHE de
+  la vignette 16:9 quand `isYtAudio` est vrai (le badge durée existant reste en bas-droite, inchangé).
+
+La vignette reste au format 16:9 (vraie miniature YouTube `hqdefault.jpg`), seul un badge distingue visuellement
+une tuile "audio" d'une tuile "vidéo" dans la grille.
+
+## Comment tester manuellement
+
+1. Lancer le dev server ZenRayProgress (`npm run dev`, ou via le lanceur Claude Preview configuré sur ce
+   projet) et ouvrir Create.
+2. Aller dans un dossier quelconque (ex. `pages`), cliquer **New > Liens audio YouTube…**.
+3. Coller un lien YouTube non répertorié ou public contenant de l'audio (ex. une piste musicale reuploadée),
+   un par ligne, cliquer **Ajouter**.
+4. Une nouvelle tuile apparaît dans la grille avec le badge note de musique en haut-gauche de la vignette.
+5. Double-cliquer la tuile pour ouvrir le lecteur : vérifier que le widget compact "now playing" s'affiche
+   (pochette + titre/auteur + mini-lecteur YouTube ~112×63px), PAS le grand cadre 16:9.
+6. Lancer la lecture depuis le mini-lecteur (contrôles natifs YouTube, clic sur le petit cadre) : le son doit
+   jouer normalement, sans écran de pause imposé cassé (même comportement fiable que le mode vidéo).
+7. Vérifier Éditer / Partager / Ouvrir sur YouTube / Commentaires en dessous du widget : identiques au mode
+   vidéo.
+8. Contrôle négatif : ajouter un lien via **New > Liens YouTube…** (mode vidéo standard) et vérifier que rien
+   n'a changé — cadre 16:9 avec le lecteur YouTube complet comme avant.
+
+## Build
+
+`npm run build` : vert (aucune erreur, seuls les warnings habituels de taille de chunk, préexistants).

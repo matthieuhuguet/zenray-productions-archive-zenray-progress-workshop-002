@@ -1,0 +1,30 @@
+# ZenRay Audio
+
+## Prompt canonique actif du 2026-07-16
+
+Ce document ancre la demande utilisateur dans le dépôt. Il en conserve les exigences fonctionnelles et UX sans jamais versionner un secret, un token ou un identifiant confidentiel. Les valeurs de configuration restent uniquement dans `.env.local` et les variables Vercel.
+
+> Appelle la vue **ZenRay Audio**, jamais Music. Ce n'est pas une nouvelle application séparée : c'est une vraie vue intégrée à Create, depuis laquelle on peut revenir immédiatement aux dossiers.
+>
+> Le lecteur doit fonctionner pour chaque source locale ZenRayShards : lecture, pause, piste suivante, piste précédente et seek instantané. Les chunks réseau restent streamés, avec préchargement prudent de la piste actuelle et des suivantes. Aucun état Service Worker volatile ne doit empêcher le premier play.
+>
+> La vue reproduit l'organisation Spotify desktop : trois colonnes redimensionnables et réarrangeables, sans casser le ratio. À gauche choisir la bibliothèque et les filtres. Au centre agir sur l'album, la playlist ou les titres. À droite comprendre le morceau, l'album, l'artiste et la file. Le player est un seul composant transversal, fixé sous les trois colonnes.
+>
+> Conserver le **Liquid Glass Normal** : surfaces translucides, frosted, liseré lumineux, ombre diffuse, contraste texte noir sur verre clair ou texte clair sur verre sombre. Jamais une grande surface grise opaque. La pochette peut teinter le héros concerné, jamais toute l'application. Les grandes transitions utilisent EaseOutExpo (`cubic-bezier(0.16, 1, 0.3, 1)`) sur 0,3 seconde ; les micro-interactions 0,15 seconde.
+>
+> Reprendre Apple Music pour la clarté du player et Spotify pour les fonctions : albums, titres, artistes, ajouts récents, playlists, recherche, file, favori, shuffle, repeat, volume, vitesse locale, clic droit, drag-and-drop, ajout depuis fichier, YouTube, Spotify, ZenRayShards et médias déjà présents dans Create. Les liens Spotify sans SDK utilisable ont un embed et ne doivent jamais simuler une lecture qui échoue.
+>
+> Les données restent portables dans `pages/` sous manifestes `.media.json` et playlists. Le marquage `.zrmusic.json` voyage avec le dossier : renommer ou déplacer une bibliothèque ne doit jamais casser son ouverture dans ZenRay Audio. Le chemin historique `pages/Music` demeure un repli de compatibilité, pas le nom affiché.
+
+## Critères de livraison
+
+1. Double-clic sur un média audio ou clic sur le player ouvre ZenRay Audio dans Create et cible le bon titre.
+2. Le play local utilise HTTP Range de manière déterministe, puis play/pause/seek/next/prev restent cohérents sur une file locale ou mixte.
+3. Le drag-and-drop importe les formats audio admis vers ZenRayShards puis recharge la bibliothèque.
+4. Le clic droit expose ses actions sans hover destructeur ; les sous-menus se naviguent uniquement par clic.
+5. Le thème garde le verre Normal réel en light et dark, une accentuation de lecture unique et un contraste lisible.
+6. Les tests de transport, le build et une vérification navigateur valident les flux avant déploiement.
+
+## Référence source
+
+Le texte intégral fourni par Matthieu demeure dans l'attachement local Codex `ddc4e286-3fc9-434c-adff-623d3a546c6d/pasted-text.txt`. Les secrets présents dans cette source ne sont volontairement pas recopiés dans Git, dans `PROGRESS.md` ni dans Memory.

@@ -1,0 +1,1097 @@
+# Audit ZenRayProgress — 2026-06-06 (findings récupérés)
+
+**158 findings** extraits des transcripts du workflow (run coupé par la limite de spawn avant Synthesize/Implement). Source brute : `docs/AUDIT-2026-06-06-findings.json`.
+
+## Compteurs
+
+- Par tag : SAFE-AUTO 68 · PROPOSE-REVIEW 70 · CONSULT-UI 10 · CONSULT-PRODUCT 10
+- Par sévérité : high 34 · medium 92 · low 32
+
+## render-perf  (21)
+
+### [HIGH] Gallery.addFiles processes images sequentially with no parallelization  ·  `SAFE-AUTO` · effort M · conf 0.9
+`src/components/Gallery.jsx L55-75`
+
+**Problème :** Gallery.jsx L55-75 processes dropped image files one by one in a for loop with await on each file (await fileToWebp, await POST, setImages optimistically after each file). Uploading 20 images = 20 sequential encode-and-POST operations, which is slow (each file locks the next). The code also setImages([...images, ...added]) inside the loop iterations before the final saveJsonWithRetry, causing multiple state updates and re-renders during the process. Network/CPU are severely under-utilized.
+
+**Correctif :** Use Promise.all or a bounded pool (4-6 parallel) to process files concurrently. Create a queue like `const results = await Promise.all(imgs.map(f => processImage(f)))` then accumulate results before the single saveJsonWithRetry call. Update status/progress once per batch (e.g., every 3 images) not per file. This divides upload time by ~4x for typical drag-drop batches.
+
+### [HIGH] Marquee selection (rubber-band) fires recompute on every mousemove without throttling  ·  `SAFE-AUTO` · effort M · conf 0.85
+`src/App.jsx L2029-2064`
+
+**Problème :** App.jsx L2029-2064 defines the marquee selection handler. On every mousemove (L2062), it calls recompute() which calls setMarquee and setSelected (L2041). This happens at 60+ fps during a drag, causing React state updates on every frame. The recompute is not debounced or throttled; setSelected is called with a newly computed Set on every single mousemove. This causes massive re-renders of the IconTile grid during a marquee drag, even though most tiles haven't changed selection status.
+
+**Correctif :** Throttle or debounce the recompute function: use requestAnimationFrame to limit recompute to once per frame (already partially done via rAF, but setMarquee/setSelected should batch). Or batch state updates: collect all selected IDs in a local array during drag and only update state once per rAF tick, not on every mousemove listener call.
+
+### [HIGH] Marquee selection (rubber-band) fires recompute on every mousemove without batching  ·  `SAFE-AUTO` · effort M · conf 0.85
+`src/App.jsx L2029-2064`
+
+**Problème :** App.jsx L2029-2064 defines the marquee selection handler. On every mousemove (L2062), it calls recompute() which calls setMarquee and setSelected (L2041). This happens at 60+ fps during a drag, causing React state updates on every frame. setSelected creates a newly computed Set on every single mousemove without batching. This causes massive re-renders of the IconTile grid during a marquee drag, even though most tiles haven't changed selection status. With 100+ visible tiles, each set is 100+ DOM checks + reconciliation per frame.
+
+**Correctif :** Batch state updates: collect selected IDs in a local array/ref during drag and only update state once per rAF tick (already partially done via rAF in recompute, but the function is called on EVERY move). Or debounce setSelected calls to once per 16ms and defer the final selection until dragend.
+
+### [HIGH] Databases table view renders all rows/cells without virtualization  ·  `PROPOSE-REVIEW` · effort L · conf 0.8
+`src/components/Databases.jsx L120+ (table view rendering, not in excerpt)`
+
+**Problème :** Databases.jsx implements table/board/gallery/list views but the table view (not visible in excerpt, but implied from structure) likely renders all rows in the rows array without virtualization (react-window or similar). For a database with 1000+ rows, the DOM grows to thousands of <tr>/<td> elements, each with event handlers and style recalculations. Scrolling and filtering cause re-renders of all rows even though only ~20 are visible at any time. This is a known scalability cliff for traditional table components.
+
+**Correctif :** Implement table virtualization using react-window's FixedSizeList or Masonry for table layout. Render only the visible rows + overscan (3-4), reducing DOM size to ~30-50 nodes instead of 1000+. Ensure each row/cell is memoized to avoid re-rendering cells whose data hasn't changed during sort/filter operations.
+
+### [HIGH] Databases table view renders all rows without virtualization  ·  `PROPOSE-REVIEW` · effort L · conf 0.8
+`src/components/Databases.jsx L104+`
+
+**Problème :** Databases.jsx implements table/board/gallery/list views. The table view (code not in excerpt but implied from L104+ rows array used in rendering) likely renders all 'rows' in the DOM without react-window or similar virtualization. For a database with 500+ rows, this creates 500+ <tr> elements with handlers and styles, causing layout thrash on scroll and slow filter/sort operations. Scrolling performance degrades linearly with row count. This is a known anti-pattern for large lists.
+
+**Correctif :** Implement virtualization using react-window FixedSizeList for table layout (height=24px per row, overscan=5). Render only visible rows + overscan, reducing DOM to ~30-50 elements instead of 500+. Ensure row components are memoized and cell renders avoid inline styles/handlers.
+
+### [MEDIUM] Shelf.PosterCard re-renders on parent state changes despite stable items  ·  `SAFE-AUTO` · effort S · conf 0.85
+`src/components/Shelf.jsx L360, L351`
+
+**Problème :** PosterCard component (Shelf.jsx L360) lacks React.memo despite being rendered in a .map() inside PosterGrid (L351). Every parent re-render (status filter change, opening DetailPanel, drag state updates with dragActive) re-renders ALL visible PosterCard instances even though their props (item, onOpen, t, drag) haven't changed. On Shelf with ~100-200 items visible per status section, this causes unnecessary reconciliation of hundreds of cards during frequent state updates (dragActive flag during drag operations).
+
+**Correctif :** Wrap PosterCard export with React.memo and implement a shallow comparison function for drag prop (since drag object is recreated). Example: `React.memo(PosterCard, (a,b) => a.item.id === b.item.id && a.onOpen === b.onOpen && a.t === b.t && a.idx === b.idx)` or extract drag handlers to useCallback at parent level.
+
+### [MEDIUM] Shelf filtered list re-computed without useMemo on every parent render  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/Shelf.jsx L274-281, L215-219`
+
+**Problème :** In Shelf.jsx L274-281, the STATUS_ORDER.map() that renders StatusSection components does NOT memoize the derived `filtered` list (line 217 has useMemo for filter, but that's per-query). Every parent re-render (sel changes, dragActive toggles, exportOpen flips) causes the entire filtered/sorted dataset to be recomputed and all StatusSection children to re-render. With potentially thousands of items across 4 status sections, this is wasteful. The filtered array derivation (L215-219) is memoized, but the STATUS_ORDER mapping and list-per-status filtering (L275 filter call) is not.
+
+**Correctif :** Memoize the per-status filtered lists: `const filteredByStatus = useMemo(() => STATUS_ORDER.map(g => ({g, list: filtered.filter(x => x.status === g)})), [filtered])` and use that in the map. StatusSection can then be wrapped with React.memo since its list prop won't change reference unnecessarily.
+
+### [MEDIUM] Audio component re-renders filtered music list without memoization on state changes  ·  `SAFE-AUTO` · effort S · conf 0.75
+`src/components/Audio.jsx L75-101, L38-39, L83`
+
+**Problème :** Audio.jsx L75-101 renders the filtered music track list (.map() at L83) without any memoization of the filter step or row component. Every parent re-render (sub tab change, q search input, msort state change) re-computes the entire filtered array and re-renders all visible rows. With the Music manifest potentially containing hundreds of tracks, filtering + rendering happens on every keystroke in the search field (L71). The filtered array creation is inlined (L38) without useMemo, and Row components are not memoized.
+
+**Correctif :** Memoize the filtered list: wrap L38-39 in `useMemo(() => { const list = tracks || []; return q.trim() ? list.filter(...) : list }, [tracks, q])`. Extract the row render logic into a memoized RowComponent with useCallback handlers for play/heart actions. This avoids re-rendering 100+ rows on every keystroke.
+
+### [MEDIUM] Databases component recomputes filtered/sorted rows inline without useMemo  ·  `SAFE-AUTO` · effort S · conf 0.85
+`src/components/Databases.jsx L104-109`
+
+**Problème :** Databases.jsx L104-109 defines `rows` as a function IIFE that filters and sorts the dataset on every render. This runs on every parent state change (sort toggle, cell edit, view change from table to board). For a DB with 500+ rows and multiple filters, the filter loop (L106) + optional sort (L107 with String.localeCompare or numeric comparison) runs repeatedly. There's no useMemo wrapping, so the entire rows array is recreated and all dependent views re-derive their data.
+
+**Correctif :** Wrap rows derivation in useMemo: `const rows = useMemo(() => { let rs = filters.length ? db.rows.filter(...) : db.rows; if (sort) rs = [...rs].sort(...); return rs }, [db.rows, filters, sort, db.columns])`. This ensures the rows array only re-computes when the actual filter/sort params change, not on every state update.
+
+### [MEDIUM] App.jsx shownEntries useMemo depends on many values, re-computes on unrelated changes  ·  `SAFE-AUTO` · effort M · conf 0.75
+`src/App.jsx L1734-1753`
+
+**Problème :** App.jsx L1734-1753 memoizes shownEntries (the final sorted/filtered entries for Finder) with dependency array [browseEntries, tagFilter, tags, eagleView, eagleIdx, qDebounced, sort.key, sort.dir]. The `tags` object is recreated frequently (every time a tag is set), and `eagleIdx` Map is derived from a state that changes on folder navigation. This causes shownEntries to re-compute on every tag assignment or eagle view state change, even if the sort order hasn't changed. The sort via .sort() and [...raw].slice() creates new arrays on every re-compute.
+
+**Correctif :** Stabilize the dependencies: memoize the tags Map (use a per-path getter instead of a full object), stabilize eagleIdx via useMemo, and ensure sort.key/sort.dir are only updated when explicitly changed (not recreated on parent renders). Or split shownEntries into two layers: base filtering (browseEntries + tagFilter) memoized separately from sorting.
+
+### [MEDIUM] Shelf PosterCard defines drag/drop handlers inline without useCallback  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/Shelf.jsx L380-386`
+
+**Problème :** PosterCard (Shelf.jsx L380-386) defines onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop as inline arrow functions. If PosterCard is memoized, these new function references on each render will break the memo comparison (if the comparator checks function identity). Even without memo, the functions are recreated every render and cannot be optimized by event delegation or batching. During a drag operation over many cards, this adds GC pressure (hundreds of function allocations per frame).
+
+**Correctif :** Move drag handlers to useCallback memoized functions: `const handleDragStart = useCallback((e) => { setDragging(true); drag.start(item.id, e) }, [item.id, drag])`. Ensure the custom comparator for PosterCard memo (if added) ignores function reference changes or uses wrapper ref.
+
+### [MEDIUM] App.jsx shownEntries useMemo has too many dependencies, re-computes frequently  ·  `SAFE-AUTO` · effort M · conf 0.75
+`src/App.jsx L1734-1753`
+
+**Problème :** App.jsx L1734-1753 memoizes shownEntries with dependency array [browseEntries, tagFilter, tags, eagleView, eagleIdx, qDebounced, sort.key, sort.dir]. The `tags` object (a plain object, not a Map) is recreated every time a tag is set anywhere (L2017 setTag call), and `eagleIdx` Map changes on folder navigation. This causes shownEntries to re-compute and ALL dependent effects (prefetch, grid re-render) to fire even when the actual visible entries haven't changed. On a typical session with tags being assigned frequently, shownEntries recomputes dozens of times per minute.
+
+**Correctif :** Stabilize dependencies: instead of passing the entire `tags` object, pass a derived value like `tags[folder]` or memoize a selector. For eagleIdx, ensure it's only recreated when the actual index data changes, not on navigation. Split the memo into two: one for filtering (browseEntries + tagFilter) and one for sorting (+ sort params).
+
+### [MEDIUM] App.jsx shownEntries useMemo has excessive dependencies, re-computes frequently  ·  `SAFE-AUTO` · effort M · conf 0.75
+`src/App.jsx L1734-1753`
+
+**Problème :** App.jsx L1734-1753 memoizes shownEntries with dependency array [browseEntries, tagFilter, tags, eagleView, eagleIdx, qDebounced, sort.key, sort.dir]. The `tags` object (a plain JS object) is recreated every time a tag is set anywhere (L2017), and `eagleIdx` Map changes on folder navigation. This causes shownEntries to re-compute and all dependent effects/renders to fire even when visible entries haven't changed. On a typical session with tags being assigned frequently, shownEntries recomputes dozens of times per minute.
+
+**Correctif :** Stabilize dependencies: instead of passing the entire `tags` object, derive a stable selector like tags count or memoize the tags Map itself. For eagleIdx, ensure it's only recreated when actual index data changes, not on navigation. Consider splitting memo into separate concerns: filtering vs sorting.
+
+### [MEDIUM] Shelf filtered list re-computed without memoization on every parent render  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/Shelf.jsx L274-281`
+
+**Problème :** Shelf.jsx L274-281 maps STATUS_ORDER to render StatusSection components. The per-status filtered lists (L275 filter call) are computed inline on every parent re-render (sel changes, dragActive toggles, exportOpen flips). The base filtered array (L215-219) is memoized, but the per-status split is not, causing all StatusSection children to re-render even when their list data hasn't changed.
+
+**Correctif :** Memoize the per-status split: `const filteredByStatus = useMemo(() => STATUS_ORDER.map(g => ({g, list: filtered.filter(x => x.status === g)})), [filtered])`. StatusSection can then use React.memo since its list prop won't change reference unnecessarily.
+
+### [MEDIUM] SfxView component (Audio) re-renders entire list on unrelated state changes  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/components/Audio.jsx L136+`
+
+**Problème :** SfxView (Audio.jsx starting L136) has multiple useState hooks (sfx, sha, tag, over, status, q, prog, editing, draft, tagFor, newTag, preview) that trigger re-renders of the entire component including the .map() list of all SFX items (line ~180+, not visible in excerpt but implied from structure). Changes to `preview`, `over`, `editing` state cause the full component to re-render, re-computing the filtered SFX list and re-rendering all items even though most haven't changed. This is a classic case of monolithic state.
+
+**Correctif :** Refactor SfxView to separate visual/transient state (over, preview, editing) from data state (sfx, sha). Use multiple smaller components or split state into data context + UI context. Or extract the SFX list render into a memoized sub-component `<SfxList items={...} onPlay={...} />` that only re-renders on sfx/q/tag changes, keeping preview/editing state local to detail popovers.
+
+### [MEDIUM] SmartThumb component mounted in galleries likely creates multiple IntersectionObserver instances  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/components/Gallery.jsx L27-35, L8`
+
+**Problème :** SmartThumb (imported in Gallery.jsx L8 and used in Thumb L32, and also in App.jsx IconTile rendering) uses useInView hook which creates an IntersectionObserver. In Masonry galleries with 10k+ items mounted (even though only visible slice is rendered, the useInView hook still registers observers for overscan rows), this can create hundreds of Observer instances. The hook is supposed to be shared (comment L7 says 'lazy partagé de Create'), but each SmartThumb instance still creates a ref and registers with the shared observer via useInView, which may not batch efficiently.
+
+**Correctif :** Verify that useInView (media/useImageThumb.js) uses a single global IntersectionObserver instance shared across all SmartThumb instances (typical for such patterns). If it creates one per component, refactor to register all instances on mount and unregister on unmount with a single global observer. For Masonry, ensure overscan is kept small (3-4 rows max, not unbounded) to limit the number of observer registrations.
+
+### [MEDIUM] SfxView component state is monolithic, unrelated changes cause full re-renders  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/components/Audio.jsx L136+`
+
+**Problème :** SfxView (Audio.jsx L136+) bundles data state (sfx, sha) with UI state (over, status, editing, draft, preview, tagFor, newTag) in the same component. Changes to `preview` state (hovering a row to preview sound) or `editing` state (renaming a file) trigger a re-render of the entire list including all unaffected rows, losing the benefits of any row memoization. This is a classic case of over-centralization causing unnecessary component tree updates.
+
+**Correctif :** Split SfxView into smaller components: separate the SFX list render (<SfxList>) from detail/editing UI (<SfxEditPanel>). Or use multiple useState hooks more granularly: keep SfxList as a memoized sub-component that only depends on [sfx, q, tag], leaving preview/editing state local to detail popovers. This isolates re-renders to the affected UI sections.
+
+### [MEDIUM] SfxView component state is monolithic, causing full re-renders on unrelated state changes  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/components/Audio.jsx L136+`
+
+**Problème :** SfxView (Audio.jsx L136+) bundles data state (sfx, sha) with UI state (over, status, editing, draft, preview, tagFor, newTag) in the same component. Changes to `preview` state (hovering a row) or `editing` state (renaming a file) trigger a re-render of the entire list including all unaffected rows, losing benefits of any row memoization. This is a classic over-centralization anti-pattern.
+
+**Correctif :** Split SfxView into smaller components: separate the SFX list render (<SfxList>) from detail/editing UI (<SfxEditPanel>). Keep SfxList as memoized sub-component that only depends on [sfx, q, tag], leaving preview/editing state local to detail popovers. This isolates re-renders to affected UI sections only.
+
+### [LOW] IconTile React.memo comparator excludes eagleSrc and copiedThumb from identity checks  ·  `SAFE-AUTO` · effort S · conf 0.6
+`src/App.jsx L835-841, L1977-1978`
+
+**Problème :** App.jsx L835-841 defines `areEqualTile` comparator that checks identity of most props but includes eagleSrc and copiedThumb in the !== comparison at L837-838. However, copiedThumbRef.current[e.dir] (L1978) is a mutable ref that may be the same value across renders, potentially preventing necessary re-renders when a thumb is copied. More subtly: eagleSrc is derived from eagleIdx Map lookup (L1977) which may be referentially different even when the actual src URL is the same if eagleIdx is recreated.
+
+**Correctif :** For copiedThumb, compare the actual URL string (copiedThumbRef.current[e.dir]) instead of trusting reference equality. For eagleSrc, stabilize the Map or use a derived selector function that returns the same object reference when the URL hasn't changed.
+
+### [LOW] VirtualIconGrid onWindow effect re-fires on every column/cols recalculation  ·  `SAFE-AUTO` · effort S · conf 0.65
+`src/App.jsx L807-811, L799`
+
+**Problème :** App.jsx L807-811 has a useEffect that fires onWindow callback whenever start, lastRow, or cols change. However, cols is recalculated on every render based on width and zoom (L799), and even if width hasn't changed, cols can be computed anew. This causes the onWindow hook to fire and trigger prefetch recalculation (via _imgKey, L1767) even when the actual visible window hasn't moved. It's a minor inefficiency but adds to render churn.
+
+**Correctif :** Memoize cols computation or detect actual changes: `const cols = useMemo(() => Math.max(1, Math.floor((width + GAP) / (zoom + GAP))) || 1, [width, zoom])`. This ensures the dependency array in the onWindow effect only includes truly changed values.
+
+### [LOW] VirtualIconGrid onWindow effect re-runs on viewport changes, triggering expensive prefetch  ·  `SAFE-AUTO` · effort S · conf 0.65
+`src/App.jsx L1767-1775, L799`
+
+**Problème :** App.jsx L1767 creates _imgKey by joining visible image paths, and L1768-1775 useEffect triggers prefetchFullImages whenever this key changes. However, onWindow callback (L809) from VirtualIconGrid fires on every cols recalculation (L799), even if the actual visible rows haven't moved. This causes prefetch to re-run and cancel previous prefetch (ctrl.abort()) every time the grid width or zoom changes, wasting bandwidth and creating Cancel waterfalls.
+
+**Correctif :** Memoize VirtualIconGrid's cols calculation and ensure onWindow only fires when the actual start/lastRow values change (not just cols). Or debounce the prefetch effect to avoid thrashing on rapid width changes: `const id = setTimeout(() => prefetchFullImages(...), 300)` to collect multiple wheel/resize events before prefetching.
+
+## load-perf  (14)
+
+### [HIGH] marked library (14 KB) bundled in entry chunk, blocking first paint for Markdown rendering  ·  `SAFE-AUTO` · effort M · conf 0.85
+`src/safeMarked.js line 17, imported from App.jsx line 51`
+
+**Problème :** src/safeMarked.js imports `{ Marked } from 'marked'` at the module level (line 17), making it a synchronous dependency of App.jsx. The 'marked' library (~14 KB gzipped) is used only for rendering Markdown previews in the Finder/Notes, which are not critical-path for initial page load. When the user first navigates to a Markdown view, the library is already downloaded but unused until needed. This bloats the entry chunk.
+
+**Correctif :** Lazy-load the marked library: convert safeMarked.js to a factory function that imports marked dynamically. In App.jsx, where safeMarkedParse is used (search results, article previews, page notes), wrap the call in lazy-loaded import('~/safeMarked.js'). For immediate content (dashboard), use a lightweight text renderer or pre-render safe HTML. Alternatively, configure Vite rollupOptions to split marked into its own chunk and use dynamic import at usage sites.
+
+### [HIGH] tldraw (v5, ~900 KB) imported directly in RefBoard.jsx, not lazy-loaded despite being optional view  ·  `SAFE-AUTO` · effort M · conf 0.9
+`src/ref/RefBoard.jsx lines 2-3`
+
+**Problème :** src/ref/RefBoard.jsx imports at the module top (lines 2-3): `import { Tldraw, ... } from 'tldraw'` and `import 'tldraw/tldraw.css'`. Tldraw is a heavy canvas library (~900 KB gzipped) used only when the user opens the Ref board view. App.jsx DOES lazy-load RefApp via React.lazy (line 39), but RefApp itself eagerly imports RefBoard, which eagerly imports tldraw. This breaks the lazy boundary: the moment the Ref chunk is downloaded, tldraw is loaded synchronously. Users navigating to Dashboard/Create/Gallery/Audio pages load tldraw code they will never run.
+
+**Correctif :** Move tldraw import inside RefBoard to dynamic import at component mount time. Pattern: const [Tldraw, setTldraw] = useState(null); useEffect(() => { import('tldraw').then(m => setTldraw(() => m.Tldraw)) }, []); render Tldraw lazily. Alternatively, wrap RefBoard itself in React.lazy() inside RefApp.jsx to defer module evaluation. Saves ~900 KB from the initial render-critical path for 14 out of 16 views.
+
+### [HIGH] hls.js dynamic import exists but is called on every HLS play, no caching of the module  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/HlsVideo.jsx line 113`
+
+**Problème :** src/components/HlsVideo.jsx line 113 uses `await import('hls.js')` inside the useEffect that sets up HLS playback. This is good (lazy), but the import statement is repeated every time an HLS video plays (each time the component mounts). There is no module-level cache or singleton pattern. For a user who opens multiple HLS videos in succession, hls.js is re-fetched and re-parsed multiple times. The 'hls.js' library is ~300 KB gzipped and parsing is O(n) in code size.
+
+**Correctif :** Create a singleton lazy-loaded hls.js module: export const getHlsModule = (() => { let mod; return async () => { if (!mod) mod = await import('hls.js'); return mod } })(); Call this in HlsVideo.jsx instead of importing directly. Ensures hls.js is downloaded/parsed exactly once, then reused. Also consider preloading hls.js with <link rel=prefetch> when the user hovers over a video thumbnail or navigates to the Videos view, for perceived faster playback startup.
+
+### [HIGH] BlockNote dependencies (@blocknote/core, @blocknote/react, @blocknote/mantine) bundled in the entry chunk, needs verification  ·  `SAFE-AUTO` · effort M · conf 0.7
+`package.json, src/App.jsx line 31 (app entry point import analysis needed)`
+
+**Problème :** App.jsx line 31 imports `{ focusPageBody }` from './components/focusPageBody.js' synchronously, at module scope. The purpose is to be a 'lightweight bridge without BlockNote' to keep PageEditorBN lazy. However, other components (Databases, BuildBoard, Audio, Views) may indirectly pull BlockNote code if they import shared utilities. BlockNote (@blocknote/core + @blocknote/react + @blocknote/mantine) is ~500 KB gzipped. If any of these components import from PageEditorBN or shared BlockNote setup, the lazy boundary is broken.
+
+**Correctif :** Run `npm run build` and inspect the generated chunks in dist/assets/. Verify that all @blocknote/* libraries are in the same chunk as PageEditorBN, not in the entry chunk. If they appear in the entry chunk, trace the import chain: likely a shared hook or utility is importing from PageEditorBN. Move that utility into focusPageBody.js or into a chunk loaded with PageEditorBN. Use Vite's manualChunks config to enforce separation: `rollupOptions: { output: { manualChunks: { 'blocknote': ['@blocknote/core', '@blocknote/react', '@blocknote/mantine'] } } }`.
+
+### [HIGH] BlockNote dependencies (@blocknote/core, @blocknote/react, @blocknote/mantine) bundled in the entry chunk via import of focusPageBody.js, though PageEditorBN itself is lazy  ·  `SAFE-AUTO` · effort M · conf 0.7
+`package.json, src/App.jsx line 31 (app entry point import analysis needed)`
+
+**Problème :** App.jsx line 31 imports `{ focusPageBody }` from './components/focusPageBody.js' synchronously, at module scope. focusPageBody.js is a lightweight bridge (~1 KB), but the comment on line 31 reveals its purpose: 'pont focus titre→corps (module léger, sans BlockNote, pour que le React.lazy ci-dessus reste paresseux)'. However, App.jsx ALSO has a large number of dependencies (see imports of Databases, BuildBoard, Audio, Views, etc.) that may indirectly pull BlockNote code into the bundle. BlockNote (@blocknote/core + @blocknote/react + @blocknote/mantine) is ~500 KB gzipped. If any of these components import from PageEditorBN or shared BlockNote setup, the lazy boundary is broken. A search shows that App.jsx has no direct PageEditorBN imports, but the bundle should be verified with `npm run build` to confirm BlockNote is in a separate chunk.
+
+**Correctif :** Run `npm run build` and inspect the generated chunks in dist/assets/. Verify that all @blocknote/* libraries are in the same chunk as PageEditorBN, not in the entry chunk. If they appear in the entry chunk, trace the import chain: likely a shared hook or utility is importing from PageEditorBN. Move that utility into focusPageBody.js or into a chunk loaded with PageEditorBN. Use Vite's manualChunks config to enforce: `rollupOptions: { output: { manualChunks: { blocknote: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine'] } } }`.
+
+### [HIGH] ffmpeg.wasm core (~20 MB on disk, ~3 MB gzipped) downloaded on-demand, no preload hint or progress feedback  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+`src/media/ffmpegCore.js line 30`
+
+**Problème :** src/media/ffmpegCore.js loads ffmpeg.wasm dynamically via `import('@ffmpeg/ffmpeg')` inside FFmpeg init (line 30). The vite.config.js correctly excludes it from prebundling (line 11) to preserve ESM imports. However, there is no preload `<link rel=prefetch>` in index.html, and no progress indication while the WASM is being downloaded and compiled. For a 3 MB gzipped download on 4G, this is 3-5 seconds of silence. Users drag a video, see nothing for 5s, think it is broken.
+
+**Correctif :** Add `<link rel=prefetch as=fetch href=/node_modules/@ffmpeg/core/...wasm.wasm>` to index.html (only if the video upload feature is reachable from the entry page; otherwise skip). In universalCapture.js captureVideoTranscode, show a `notifyProgress({title: 'Téléchargement ffmpeg…'})` while downloading the core, then update it to show transcoding progress. Users see clear feedback that the system is working. Also consider preloading on user action (mousedown on upload, not page load) to avoid slowing down the initial navigation.
+
+### [MEDIUM] Gallery.jsx imported as const Gallery = ... in App.jsx, not lazy-loaded despite large masonic dependency  ·  `SAFE-AUTO` · effort S · conf 0.9
+`src/App.jsx line 15`
+
+**Problème :** src/App.jsx line 15 imports Gallery synchronously: `import Gallery from './components/Gallery.jsx'`. Gallery.jsx imports masonic (line 2: `import { Masonry, List } from 'masonic'`), a virtualization library (~30 KB). Gallery is only used when view === 'gallery', which is not the default view (default is 'board'). This adds unnecessary code to the initial chunk for users who never open the gallery in their first session.
+
+**Correctif :** Change App.jsx line 15 to: `const LazyGallery = React.lazy(() => import('./components/Gallery.jsx'))` (following the pattern already used for PageEditor, Articles, DriveDashboard, etc.). Wrap the render at App.jsx line ~650 in `<Suspense fallback={<Loader/>}><LazyGallery .../></Suspense>`. Masonic defers to the chunk loaded only when the user clicks the Gallery tab. Saves ~30 KB from the entry chunk.
+
+### [MEDIUM] No critical CSS extraction; all CSS deferred via JS, causing layout shift and style flashing on cold load  ·  `SAFE-AUTO` · effort S · conf 0.8
+`index.html <head> section`
+
+**Problème :** index.html loads React app inline (main.jsx), which dynamically injects all CSS via @vitejs/plugin-react. During the window between JS parse and CSS load, the page renders unstyled or with default browser styles, then jumps to Anthropic theme/layout. This causes Cumulative Layout Shift (CLS) and a perceptible flash. For a LCP-optimized app, the critical path styles (layout, theme colors, font-face rules) should be inlined in the HTML head.
+
+**Correctif :** Extract critical CSS (grid/layout variables, @font-face, color palette, zr-glass frosted effect base) into a <style> tag in index.html head, before the <script>. Vite doesn't ship a built-in critical CSS extractor, so either: (a) manually copy the essential rules from src/index.css (a few KB) into index.html; (b) use a Vite plugin like vite-plugin-critical-css, or (c) post-process the build output to inline critical rules. Eliminates the flash and reduces CLS on cold loads.
+
+### [MEDIUM] Web fonts (AnthropicSerif, AnthropicSans, AnthropicMono) not preloaded; FOUT/FOIT on all text  ·  `SAFE-AUTO` · effort S · conf 0.9
+`index.html <head> section (before <script>)`
+
+**Problème :** index.html does not include `<link rel=preload>` for any of the three Anthropic font files. They are loaded via @font-face in src/fonts.css with font-display:swap (good), but the browser doesn't know they exist until it parses the CSS, which happens after JS and CSS load (3 round-trips). The serif font is used in the main App title and page headings; users see Georgia/system serif jump to Anthropic serif 1-2 seconds after page load. This is especially noticeable on slow connections.
+
+**Correctif :** Add to index.html <head>, after <meta charset>: `<link rel=preload as=font type=font/woff2 crossorigin href=/fonts/AnthropicSerif-Romans.woff2>` and repeat for AnthropicSans-Regular.woff2 and AnthropicMono-Regular.woff2. This signals the browser to begin downloading fonts immediately in parallel with JS, eliminating most FOUT. The 3 font files are ~100 KB total uncompressed, ~30 KB gzipped; preloading is a net win.
+
+### [MEDIUM] Gallery manifest is a single file (gallery/manifest.json) for all images; at scale (~99k AVIF), the manifest itself becomes a bottleneck  ·  `PROPOSE-REVIEW` · effort L · conf 0.75
+`src/components/Gallery.jsx line 49, docs/ARCHITECTURE.md section 7`
+
+**Problème :** Gallery.jsx line 49 fetches `gallery/manifest.json` as one document, which should be sharded for scalability. The ARCHITECTURE.md section 7 mentions ~110k images (Eagle gallery). A single manifest.json with 110k image entries is 10-50 MB of JSON (depending on metadata), compressed to ~3-5 MB over the wire. Fetching this file on every gallery open blocks rendering until the parse is complete. Also, the file is so large that any mutation (add/remove an image) requires re-writing the entire file.
+
+**Correctif :** Shard gallery/manifest.json into manifest-001.json, manifest-002.json, ... (e.g., 1000 images per shard). Gallery component fetches all shards in parallel with Promise.all, then merges. This is a one-time refactor before importing the ~110k Eagle images. Store the current shard count in a root manifest-config.json. Alternatively, implement a server-side paginated API /api/gallery?offset=0&limit=100 that fetches manifests on demand, using a virtual scroller (masonic already has this via useInfiniteLoader).
+
+### [MEDIUM] Vite build likely shows chunk size warnings for PageEditorBN and other lazy-loaded views due to combined bloat  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`vite.config.js build config section (missing rollupOptions)`
+
+**Problème :** The lazy chunks (PageEditorBN ~500 KB with BlockNote, MediaViewer with HLS readers, etc.) are large. Vite's default warning threshold is 500 KB per chunk. Without seeing the actual `npm run build` output, it's likely that one or more chunks exceed this. The root cause is that each lazy component has its own set of dependencies that don't overlap cleanly; there is no shared 'utils' chunk. This causes duplication and large individual chunks.
+
+**Correctif :** Run `npm run build` and note any 'warning: chunk X is N KB (exceeds 500 KB)' messages. For each large chunk, use Vite's manualChunks to extract common dependencies. Example: `{ output: { manualChunks: { 'react-core': ['react', 'react-dom'], 'blocknote': ['@blocknote/core', '@blocknote/react', '@blocknote/mantine'], 'vendors': [...heavy-node-modules] } } }`. Also consider increasing the warning threshold in vite.config.js if the chunks are legitimately large (Vite: `build: { chunkSizeWarningLimit: 1000 }`) — but first explore splitting.
+
+### [LOW] No preconnect hints for GitHub/jsDelivr API; DNS and TLS handshake adds 500+ ms latency on first fetch  ·  `SAFE-AUTO` · effort S · conf 0.8
+`index.html <head> section`
+
+**Problème :** All API calls go to /api/* (same origin, no issue) but media fetch via jsDelivr CDN (/api/img proxies GitHub contents via jsDelivr) adds DNS + TLS delay. index.html has no `<link rel=preconnect href=https://cdn.jsdelivr.net>` or `<link rel=dns-prefetch href=https://api.github.com>`. For a user opening the app, the first image load waits for jsDelivr TLS handshake (300-500 ms extra).
+
+**Correctif :** Add to index.html <head>: `<link rel=preconnect href=https://cdn.jsdelivr.net crossorigin>` and `<link rel=dns-prefetch href=https://api.github.com>`. These are cheap (a few bytes in HTML) and save the user 300-500 ms on the critical image path. Also consider adding `<link rel=prefetch>` for the user's most-viewed gallery or latest page, but that requires personalization.
+
+### [LOW] shownEntries sorted and copied on every render without memoization; O(n log n) sort waste on status/uploadProgress changes  ·  `SAFE-AUTO` · effort S · conf 0.9
+`src/App.jsx line 1634`
+
+**Problème :** src/App.jsx line 1634 computes shownEntries = keepRelevanceOrder ? shownRaw : shownRaw.slice().sort(sortFn), which runs on every render. During upload, setUploadProgress fires ~10 renders/sec, each causing a re-sort of potentially thousands of file entries. The sort is O(n log n); for 10k entries this is ~130k comparisons per render. Cumulatively wasteful even if JS is fast enough to hit 60 FPS.
+
+**Correctif :** Wrap shownEntries computation in useMemo with deps [shownRaw, keepRelevanceOrder, sortFn]: `const shownEntries = useMemo(() => keepRelevanceOrder ? shownRaw : shownRaw.slice().sort(sortFn), [shownRaw, keepRelevanceOrder, sortFn])`. The sort is recomputed only when shownRaw, sortKey, or sortDir changes, not on every status/progress update. This is a standard React optimization and costs nothing.
+
+### [LOW] renderIconTile called in a map on every Pages render; React.memo missing, causes full tile list re-render on status/drag changes  ·  `SAFE-AUTO` · effort S · conf 0.85
+`src/App.jsx line 1852 (renderIconTile definition)`
+
+**Problème :** src/App.jsx line 1852 renders a map over shownEntries, calling renderIconTile inline in the JSX. renderIconTile is a function, not a memoized component. Every time uploadProgress or status changes (or setMarquee during a drag), the entire map re-executes: thousands of renderIconTile calls re-generate JSX for unchanged tiles. Virtualization limits the mounted DOM but not the JS overhead.
+
+**Correctif :** Extract renderIconTile into a memoized child component `const IconTile = React.memo(({ dir, thumbUrl, ...props }) => { return /* tile JSX */ }, (prev, next) => prev.dir === next.dir && prev.selOn === next.selOn)`. This is a standard React optimization. Alternatively, extract the render logic into a separate function component and wrap it. Prevents re-rendering of tiles that have not changed, reducing frame drops during upload/drag.
+
+## drive-jsdelivr  (24)
+
+### [HIGH] jsDelivr URL construction fails silently when cdnCommit is null  ·  `PROPOSE-REVIEW` · effort M · conf 0.95
+
+**Problème :** buildJsDelivrUrl() at src/capture/shardNaming.js:42 returns null if commit is missing. Several callsites (ImageNodeViewer.jsx:55,62,76,89) fetch the result without validation. If commit is null (upload failed mid-push), the URL silently degrades rather than falling back to /api/shard proxy. Line 323 in universalCapture.js writes cdnCommit: commit || null without validating commit succeeded.
+
+**Correctif :** Add explicit validation: (1) in buildJsDelivrUrl, require commit to be a valid SHA hex. (2) In callsites, when buildJsDelivrUrl returns null, explicitly fallback to /api/shard proxy. (3) In uploadBinaryChunksEncrypted, verify commitShard returned a commit before writing manifest. (4) Add manifest validation: vis=='public' requires cdnCommit to be non-null.
+
+### [HIGH] Authorization header in raw.githubusercontent fetches prevents Vercel edge cache  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+
+**Problème :** server/shard.js:25-28 fetches private shards with Authorization token. Vercel's edge cache does not cache responses with Authorization headers, so every /api/shard request bypasses edge cache and hits origin. This defeats the 'raw does not count against REST limit' advantage and increases Vercel compute + bandwidth. Second risk: token exposure in Authorization headers increases leakage surface if the token scope is overly broad.
+
+**Correctif :** (1) For private /api/shard, use token ONLY to verify permissions, not in outbound fetch headers to raw.githubusercontent. Strip Authorization before returning to client. (2) Verify GITHUB_TOKEN scope is minimal and read-only for shards. (3) Consider fine-grained PAT limited to each shard repo separately.
+
+### [HIGH] Manifest written with cdnCommit=null if upload fails after chunks pushed  ·  `PROPOSE-REVIEW` · effort M · conf 0.9
+
+**Problème :** In uploadBinaryChunksEncrypted (universalCapture.js:360-409), if commitShard() fails after chunks already exist on shard, function returns cdnCommit:null. Manifest is written with vis:'public', cdnRepo, cdnCommit:null. Client cannot fetch via jsDelivr (URL becomes @null). Fallback (m.repo+m.path) does not exist for public manifests. Result: dead reference, orphaned chunks, permanent user-visible 404 with no diagnostic.
+
+**Correctif :** (1) Do NOT write manifest if commitShard() fails. Return {error:'commit failed'} and let caller retry. (2) Alternatively, write manifest ONLY after commitShard succeeds AND jsDelivr verification ping confirms file is reachable. (3) Add pre-write validation: if vis==='public' && !cdnCommit throw error. (4) Log all null cdnCommit to monitoring endpoint.
+
+### [HIGH] jsDelivr URL construction fails silently when cdnCommit is null — serves @latest cache-busting  ·  `PROPOSE-REVIEW` · effort M · conf 0.95
+
+**Problème :** buildJsDelivrUrl() at src/capture/shardNaming.js:42 returns null if any of (repo, commit, path) are missing. But several callsites (ImageNodeViewer.jsx:55,62,76,89; downloadChunkedMedia:419) fetch the result without validation — fetch(null) silently rejects, and callers catch() → nothing displays. Worse: if commit is null (upload failed mid-push), the URL silently degrades to a missing resource rather than falling back to /api/shard proxy. The architectural promise is 'pinned commit = immutable cache', but there's no explicit detection of commit==null → fallback to private mirror. Line 323 in universalCapture.js writes cdnCommit: commit || null without validation that commit succeeded.
+
+**Correctif :** Add explicit validation: (1) in buildJsDelivrUrl, require commit to be a valid SHA hex (≥7 chars), return null only if truly invalid. (2) In all callsites (especially downloadChunkedMedia), when buildJsDelivrUrl returns null, explicitly fallback to /api/shard proxy via m.repo+m.path instead of silently failing. (3) In uploadBinaryChunksEncrypted (L409), verify commitShard returned a commit before writing the manifest; if commit is null, the manifest must include a fallback repo+path or be rejected. (4) Add a manifest validation before writing: vis=='public' requires cdnCommit to be non-null and non-empty.
+
+### [HIGH] Authorization header leaks to raw.githubusercontent.com fetches — breaks Vercel edge cache and exposes token scope  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+
+**Problème :** server/shard.js:25-28 uses rawFetch() to pull files from raw.githubusercontent.com (for private image shards) with Authorization token in headers. This is correct for private repos. However, Vercel's edge cache respects the Authorization header as a cache-key dimension: responses with Authorization headers are NOT cached at the edge (they are cached locally in the browser only). This means every request to /api/shard for a private image (which represents the majority of browsing) bypasses the edge cache and hits the origin fetch every time. For public jsDelivr content, this is a non-issue (no auth token used). But the architecture comment at L20-24 claims 'raw.githubusercontent does not count against the REST limit' — while true, every /api/shard request still consumes Vercel compute and origin bandwidth. Second risk: if the token's scope is wider than necessary (e.g., repo-level write access), exposure in Authorization headers to raw.githubusercontent (even with HTTPS) increases token leakage surface.
+
+**Correctif :** (1) For /api/shard serving private media, add explicit Cache-Control: private (not public) and remove Authorization from the outbound request to raw.githubusercontent — use the token ONLY to verify permissions, not to fetch. Alternatively, proxy the fetch server-side and strip the Authorization before returning to client, letting the browser cache the response without Authorization. (2) Verify GITHUB_TOKEN scope in vercel.json or .env.example is strictly 'repo:matthieuhuguet/zenray-data read-only' + write-only for specific repos. (3) Consider using a fine-grained PAT limited to each shard repo separately.
+
+### [HIGH] Manifest written with cdnCommit=null if upload fails after chunks pushed — creates dead reference  ·  `PROPOSE-REVIEW` · effort M · conf 0.9
+
+**Problème :** In uploadBinaryChunksEncrypted (universalCapture.js:360-409), if commitShard() fails after all chunks are already on the shard (line 405), the function returns cr.commit which is null. The manifest is then written (line 618) with vis:'public', cdnRepo, cdnCommit:null. Client code never distinguishes between 'commit failed' (cdnCommit null) and 'commit succeeded but we haven't fetched it yet'. Result: the manifest becomes unfetchable via jsDelivr (URL is `https://cdn.jsdelivr.net/gh/...@null/...`), but the manifest itself is committed. buildJsDelivrUrl correctly returns null for commit=null, but the fallback (checking m.repo && m.path) does not exist for public manifests. The dead reference is permanent: orphaned chunks on the shard consume quota, the manifest is unplayable, and the user sees a silent 404 with no diagnostic.
+
+**Correctif :** (1) In uploadBinaryChunksEncrypted, DO NOT write the manifest if commitShard() fails. Return {error:'commit failed'} instead and let the caller decide whether to retry or prompt the user. (2) If the manifest must be written (e.g., for resumability), include BOTH cdnCommit AND a fallback repo+path pointing to a private mirror of the same chunks, so the client can serve via /api/shard if jsDelivr fails. (3) Add pre-write validation: `if (vis === 'public' && !cdnCommit) throw new Error('manifest requires cdnCommit')`. (4) Log every null cdnCommit to a monitoring endpoint (Vercel logs) so failures are visible.
+
+### [MEDIUM] jsDelivr cache retention (7 days) breaks immutability after GitHub commit cleanup  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+
+**Problème :** buildJsDelivrUrl pins files to commit SHA, but jsDelivr caches @<commit> for 7 days. If the commit is orphaned/deleted from GitHub history after 7 days, jsDelivr may serve stale content or 404. Additionally, if manifest is written BEFORE shard commit propagates on GitHub, jsDelivr may 404 for ~30 seconds. No retry logic exists in client (ImageNodeViewer has .catch but no backoff).
+
+**Correctif :** (1) Document 7-day cache limitation in ARCHITECTURE.md. (2) Add exponential backoff retry (3 attempts) in downloadChunkedMedia and decryptedObjectUrl for transient 404s (covers GitHub propagation). (3) Include both cdnCommit AND fallback repo+path in manifest; use /api/shard on jsDelivr 404. (4) Optionally, ping jsDelivr after commit completes to warm cache synchronously.
+
+### [MEDIUM] jsDelivr-served public media has no explicit s-maxage — no CDN cache guarantee  ·  `PROPOSE-REVIEW` · effort M · conf 0.65
+
+**Problème :** /api/shard sets Cache-Control on response (L89: public, max-age=31536000, immutable). But actual jsDelivr fetch from raw.githubusercontent.com is governed by GitHub/jsDelivr's caching policy (~7 days documented). If jsDelivr cache expires and file is moved/deleted, URL 404s even though SHA is immutable. Design assumes 100% jsDelivr uptime and no commit orphaning.
+
+**Correctif :** (1) Include both cdnCommit (jsDelivr pin) AND repo+path (private fallback) in manifest. (2) Client tries jsDelivr first, falls back to /api/shard on 404/timeout. (3) Implement client-side cache validation: after 7 days, ping jsDelivr HEAD before serving cached URL. (4) Document 7-day window as known limitation.
+
+### [MEDIUM] Manifest written to zenray-data with cdnCommit pointing to shard commit that races propagation  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+
+**Problème :** Upload flow: (1) chunks pushed to shard, (2) commitShard() returns SHA, (3) manifest written to zenray-data. Manifest commit is separate from shard commit. If shard commit hasn't fully replicated on GitHub when manifest is committed (GitHub eventually consistent, ~1-2s), jsDelivr may 404 on first request. If commitShard fails after manifest is already committed (race), manifest is orphaned. Code does 4 retries but no verification ping to jsDelivr after manifest commit.
+
+**Correctif :** (1) Reverse order: write manifest ONLY AFTER commitShard succeeds AND HEAD ping to jsDelivr confirms file reachable. (2) Add 'pending' vs 'public' state to manifest; convert after verification. (3) If verification fails, reject upload and ask retry. (4) Client: on jsDelivr 404, retry after 2s (GitHub propagation window) before falling back to /api/shard.
+
+### [MEDIUM] No checksum validation on jsDelivr-fetched media — stale/corrupted cache undetected  ·  `PROPOSE-REVIEW` · effort L · conf 0.6
+
+**Problème :** Files from jsDelivr rely on filename SHA matching content, but no runtime validation. If jsDelivr serves stale cached version or shard is corrupted, fetch succeeds (HTTP 200) but content is wrong. For encrypted media, decryptBytes may fail silently. For video, cryptic playback error. Filename is the only integrity signal, never verified against actual bytes.
+
+**Correctif :** (1) After fetching from jsDelivr, compute SHA-256 of response body and validate against filename hash. If mismatch, reject and fallback to /api/shard. (2) Include expected sha256 in manifest; validate on download. (3) For encrypted media, include HMAC of plaintext in manifest; validate post-decrypt. (4) Expose integrity errors to user: 'File corrupted (checksum mismatch); retrying from backup…'.
+
+### [MEDIUM] Public chiffré manifests lack fallback repo+path — jsDelivr 404 = unrecoverable  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+
+**Problème :** Public chiffré audio/PDF/video manifests have {vis:'public', cdnRepo, cdnCommit, ivs[]} but NO repo/path fallback. If jsDelivr returns 404 (cache expired, commit orphaned, rate-limited), no fallback exists. Private chiffré media includes fallback (vis:'private', repo, path) + /api/shard. Public chiffré media = zero fallback. Design assumes 100% jsDelivr reliability. If assumption breaks, media is permanently inaccessible.
+
+**Correctif :** (1) Add optional fallback repo+path to public chiffré manifests; store copy on private shard. (2) Client priority: try jsDelivr first (fast), fallback to /api/shard on 404/timeout. (3) If fallback absent (legacy), log warning, fail gracefully (no crash). (4) Document fallback pattern in ARCHITECTURE.md as requirement. (5) Retroactively regenerate legacy public-chiffré manifests without fallback.
+
+### [MEDIUM] raw.githubusercontent.com fetches from Vercel origin hit GitHub secondary rate-limits on concurrent load  ·  `PROPOSE-REVIEW` · effort M · conf 0.65
+
+**Problème :** server/shard.js:25-29 fetches private shards from raw.githubusercontent. Comment claims 'raw does NOT count against REST limit' (true for direct browser). But fetches FROM Vercel origin server hit GitHub's secondary rate-limit by origin IP. Concurrent users browsing private images trigger 429 on Vercel's shared IP. /api/shard returns 502/503, all private media breaks. Code has no rate-limit detection or backoff for raw.githubusercontent. Expired/revoked token causes 401, no recovery.
+
+**Correctif :** (1) Detect rate-limits in rawFetch: check x-ratelimit-* headers, handle 429/403 (return 503 with Retry-After). (2) Exponential backoff retry for transient (429, 5xx) in /api/shard. (3) Pre-check quota via /rate_limit before fetch (pattern exists in page.js). (4) Proxy raw.githubusercontent through rate-limit-aware CDN (Cloudflare). (5) Monitor/alert on 429s.
+
+### [MEDIUM] GITHUB_TOKEN used across 5 contexts with no scope validation  ·  `PROPOSE-REVIEW` · effort M · conf 0.6
+
+**Problème :** Single GITHUB_TOKEN used by: /api/shard (private shards), page.js (zenray-data CRUD), upload-shard.js (public shards), media-key.js (key serving), state.js (drive state). If token compromised or scope drifts, single leak exposes all. No validation in .env.example that token scope matches minimal required permissions per endpoint.
+
+**Correctif :** (1) Document required scopes in README.md: Contents RW on zenray-data, read-only on zenray-*-private-*, read+write on zenray-*-public-*. (2) Separate into two tokens: CONTENT_TOKEN (zenray-data), MEDIA_TOKEN (shards). (3) At startup, verify token scopes by test API call and check metadata. (4) Add /api/token-verify (protected, read-only) endpoint returning scope for debugging.
+
+### [MEDIUM] jsDelivr CDN cache retention (7 days) combined with commit pinning creates race on recent commits  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+
+**Problème :** buildJsDelivrUrl pins each file to a specific commit SHA (@<commit>), which guarantees immutable cache on jsDelivr. However, jsDelivr's documented behavior is that @<commit> tags cache for 7 days by default, and after 7 days may serve stale content if the commit is removed. While the repo is not deleted (GitHub keeps commit history), if a file was re-uploaded (new commit, old commit orphaned), jsDelivr might cache-serve the old version up to 7 days. Second risk: if the upload pipeline writes the manifest BEFORE the commit is fully propagated on GitHub (race condition on GitHub's distributed refs), the pinned URL may 404 on jsDelivr for ~30 seconds until GitHub CDN refresh. No retry-with-backoff logic exists in the client (ImageNodeViewer decryptedObjectUrl has a .catch but no retry).
+
+**Correctif :** (1) Document the 7-day CDN retention as a known limitation in ARCHITECTURE.md or code comments. (2) In downloadChunkedMedia and decryptedObjectUrl, add exponential backoff retry (3 attempts, 500ms→1000ms) for transient 404s on initial fetch (covers GitHub propagation delay). (3) Add a cache-buster query param (e.g. ?ts=<timestamp>) as a fallback if jsDelivr staleness is observed in production. (4) Consider pinging the jsDelivr URL via HEAD after commit completes (server-side) to warm the cache synchronously before returning the manifest to client.
+
+### [MEDIUM] jsDelivr-served public media lacks explicit s-maxage header from origin — no CDN cache guarantee  ·  `PROPOSE-REVIEW` · effort M · conf 0.65
+
+**Problème :** Files served by /api/shard (server/shard.js:89) set Cache-Control: 'public, max-age=31536000, immutable' for hashéd binaries (correct). However, this header is set on responses from the /api/shard endpoint (a Vercel serverless function), NOT on the actual jsDelivr URLs (cdn.jsdelivr.net/gh/...). jsDelivr itself fetches from raw.githubusercontent.com and applies its own caching policy. If jsDelivr's default cache for raw GitHub is shorter than 31536000s (documented as ~7 days in production), the 'immutable' promise is broken: jsDelivr may re-fetch the file after 7 days, and if the file has been deleted/moved in the meantime (e.g., shard migration), the URL becomes a 404 even though the original SHA is immutable. The comment at L40-41 correctly notes that images are 'immuable -> raw CDN', but there's no verification that the raw GitHub CDN respects the immutable tag, nor any fallback if jsDelivr's cache expires.
+
+**Correctif :** (1) Add Cache-Control: public, max-age=31536000, immutable to the response headers served by raw.githubusercontent.com itself — this requires GitHub API call to update repo settings (may not be possible via API). (2) Alternatively, document the 7-day cache window as a known limitation and implement a client-side cache validation: before serving a cached jsDelivr URL after 7 days, ping the endpoint with a HEAD request to verify it still 200s, or fallback to /api/shard. (3) In the manifest (.img.json), include both cdnCommit (for jsDelivr pin) AND repo+path (for /api/shard fallback) — this way if jsDelivr cache expires and the file is gone, the private shard is a guaranteed fallback. (4) Monitor/alert on jsDelivr 404 rates by URL pattern.
+
+### [MEDIUM] Manifest written to zenray-data with cdnCommit pointing to a shard commit that may race or fail to propagate  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+
+**Problème :** The upload flow is: (1) chunks pushed to public shard (zenray-vid-NN or zenray-img-public-NN) via /api/upload-shard, (2) commitShard() returns a commit SHA, (3) manifest written to zenray-data with cdnCommit=<SHA>. But the manifest commit to zenray-data is SEPARATE from the shard commit. If the manifest commit succeeds but the user navigates away before the shard commit propagates on GitHub (GitHub distributed refs, ~1-2s), the manifest points to a future commit hash that hasn't been fully replicated yet. jsDelivr may then 404 on the first request (pending repo sync). The code at universalCapture.js:405 calls commitShard(repo, files, file.size) which does 4 retries with backoff, but: (a) there's no exponential backoff validation AFTER the manifest is committed to verify jsDelivr can resolve it, and (b) if commitShard fails after manifest is already committed (race), the manifest is orphaned.
+
+**Correctif :** (1) Reverse the order: write the manifest ONLY AFTER commitShard succeeds AND a verification ping (HEAD request) to jsDelivr confirms the file is reachable. (2) If verification fails, reject the upload and ask the user to retry. (3) Add a 'pending' state to the manifest (vis:'pending' → 'public' after verification) to distinguish unverified from confirmed commits. (4) In the download path, when jsDelivr returns 404, automatically retry the fetch after 2s (GitHub propagation window) before falling back to /api/shard.
+
+### [MEDIUM] No integrity check (subresource integrity / checksum validation) on jsDelivr-fetched media  ·  `PROPOSE-REVIEW` · effort L · conf 0.6
+
+**Problème :** Files fetched from jsDelivr (cdn.jsdelivr.net/gh/.../ab/cd/<sha256>.webp) rely on the filename SHA matching the actual file content, but there's no runtime validation. If jsDelivr serves a stale or corrupted cached version, or if the shard commit on GitHub is corrupted, the fetch succeeds (HTTP 200) but the content is wrong. For images, this may cause decryption to fail silently (decryptBytes returns garbage, the <img> tag displays corrupted pixels). For audio/video, playback may fail with cryptic media errors. No error message indicates 'file is corrupted' vs 'file cannot be fetched'. The client trusts the filename as the integrity signal, but does not verify the SHA-256 hash of the downloaded bytes against the filename.
+
+**Correctif :** (1) After fetching from jsDelivr, compute the SHA-256 hash of the response body and validate it matches the path hash (ab/cd/... component). If mismatch, reject and fallback to /api/shard. (2) Add a --integrity flag to the manifest that records the expected sha256; validate on every download. (3) For encrypted media, include the HMAC of the plaintext in the manifest as well, validate after decryption. (4) Expose integrity errors to the user with a clear message: 'File corrupted (checksum mismatch); retrying from backup…'.
+
+### [MEDIUM] Public chiffré manifests lack fallback repo+path — if jsDelivr fails, unplayable media cannot recover  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+
+**Problème :** Public chiffré media manifests (audio, PDF, video) have {vis:'public', cdnRepo, cdnCommit, ivs[], alg:'AES-GCM'} but NO repo/path fallback pointing to a private mirror. If jsDelivr returns 404 (cache expired, commit orphaned, rate-limited), the client has nowhere else to fetch the ciphertext. Compare private chiffré media (.media.json with vis:'private', repo, path) — they have /api/shard as a fallback. But public chiffré media has ZERO fallback. The design assumes jsDelivr is 100% reliable and always cached. If that assumption breaks (GitHub action deletes old commits, jsDelivr CDN failure), the media is permanently inaccessible. This is especially risky for audio and PDF since they're less likely to be cached locally than images.
+
+**Correctif :** (1) Add optional fallback repo+path to all public chiffré manifests (audio, PDF, video): store a copy of the chunks on a private shard and include the reference. (2) Client priority: try jsDelivr first (fast), fallback to /api/shard proxy if 404/timeout. (3) If fallback repo is absent (legacy manifests), log a warning and fail gracefully (don't crash). (4) Document the fallback pattern in ARCHITECTURE.md as a requirement for public-chiffré manifests. (5) Retroactively regenerate manifests for any existing public-chiffré media without fallback repo, adding the fallback.
+
+### [MEDIUM] raw.githubusercontent.com fetches for private shards count against GitHub API rate limits if served through Vercel  ·  `PROPOSE-REVIEW` · effort M · conf 0.65
+
+**Problème :** server/shard.js:25-29 fetches private shards from raw.githubusercontent.com. The comment claims 'raw does NOT count against REST limit', which is true for direct browser requests. However, when the request flows through /api/shard (a Vercel serverless origin), the raw.githubusercontent fetch is made FROM the Vercel origin server, not from the client's IP. GitHub may apply rate limits based on the origin IP (Vercel's shared pool). If concurrent users all browse private images simultaneously, the Vercel origin IP hits the secondary rate-limit and raw.githubusercontent returns 429. The /api/shard response is then a 502/503, and all private media appears broken. The code has no rate-limit detection or backoff for raw.githubusercontent; it just returns the error status. Additionally, if the token is expired/revoked, the raw.githubusercontent request fails with 401, again visible to users as a broken image with no recovery.
+
+**Correctif :** (1) Implement rate-limit detection in rawFetch: check response headers for x-ratelimit-* and handle 429/403 gracefully (return 503 with Retry-After). (2) Add exponential backoff retry for transient failures (429, 5xx) in /api/shard. (3) Pre-emptively check quota via /rate_limit before fetching raw (already done in page.js, reuse pattern). (4) Consider serving raw.githubusercontent requests through a rate-limit-sharing proxy (e.g., Cloudflare) to distribute the load. (5) Add monitoring/alerting on 429 responses from raw.githubusercontent.
+
+### [MEDIUM] GITHUB_TOKEN used in multiple contexts (private shards, state.js, media-key.js) with no scope validation  ·  `PROPOSE-REVIEW` · effort M · conf 0.6
+
+**Problème :** The single GITHUB_TOKEN env variable is used by: (1) /api/shard to fetch private media from zenray-media-NN, zenray-img-private-NN, (2) server/page.js to perform CRUD on zenray-data, (3) server/upload-shard.js to create blobs/commits on public shards, (4) server/media-key.js to serve the AES-256 master key (no GitHub API call but token checked indirectly), (5) server/state.js to manage drive state. If the token is compromised or its scope drifts (e.g., someone adds a new fine-grained scope), a single leak exposes all these operations. There's no validation in .env.example or code that the token scope matches the minimal required permissions per endpoint.
+
+**Correctif :** (1) Document the required GITHUB_TOKEN scopes in README.md and .env.example: 'Contents RW on matthieuhuguet/zenray-data, read-only on all zenray-img-private-NN and zenray-vid-NN, read+write on all zenray-img-public-NN and zenray-vid-NN'. (2) Separate the token into two: CONTENT_TOKEN (zenray-data only, write) and MEDIA_TOKEN (shards only, read+write public / read private). (3) At server startup, verify token scopes by making a test API call to /repos/{owner}/{repo} and checking the Authorization header response metadata. (4) Add a /api/token-verify endpoint (protected, read-only) that returns the token scope for debugging.
+
+### [LOW] cdnCommit lacks format validation — invalid SHA accepted silently  ·  `SAFE-AUTO` · effort S · conf 0.7
+
+**Problème :** buildJsDelivrUrl checks 'if (!commit)' but not 'if commit is valid SHA'. Invalid cdnCommit='main' or cdnCommit='invalid' passes through, creating mutable URLs (cdn.jsdelivr.net/gh/...@main/...). jsDelivr serves @main as @latest, breaking immutability assumption.
+
+**Correctif :** (1) Add validator isValidCommitSha(s): /^[0-9a-f]{7,}$/ (min 7 hex chars). (2) buildJsDelivrUrl returns null if commit invalid. (3) universalCapture.js validates commitShard response before manifest write. (4) Runtime assertion in ImageNodeViewer: if buildJsDelivrUrl returns null, log reason.
+
+### [LOW] downloadChunkedMedia does not validate manifest schema before use  ·  `SAFE-AUTO` · effort S · conf 0.5
+
+**Problème :** readMediaManifest (ImageNodeViewer.jsx:410) assumes m.type==='chunked-media', m.vis==='public', m.count, m.ivs without validation. Corrupted/partial manifest may have m.ivs as non-array or m.count=undefined. Loop iterates over undefined count, decryptBytes(undefined) at L421 crashes. No try/catch, error unhandled.
+
+**Correctif :** (1) Schema validation in readMediaManifest: assert m.type, m.count >= 0, Array.isArray(m.ivs), m.ivs.length === m.count. (2) downloadChunkedMedia: validate before loop 'if (!m || m.type !== "chunked-media" || m.ivs.length !== m.count) throw'. (3) Wrap buffer collection in try/catch, surface clear error. (4) Add /api/validate-manifest endpoint.
+
+### [LOW] cdnCommit stored in manifest lacks format validation — invalid SHA accepted silently  ·  `SAFE-AUTO` · effort S · conf 0.7
+
+**Problème :** buildJsDelivrUrl() checks 'if (!repo || !commit || !path)' but does not validate that commit is a valid Git SHA (40 hex chars for SHA-1, 64 for SHA-256, or abbreviated 7+). A manifest could be written with cdnCommit='invalid' or cdnCommit='main' (branch name instead of commit), and buildJsDelivrUrl would still construct a URL like `cdn.jsdelivr.net/gh/...@invalid/...`. jsDelivr's API would return 404 or redirect to @main, leading to mutable behavior (not immutable), defeating the architectural goal. The code at universalCapture.js:323 writes 'cdnCommit: commit || null' without validating the commit format.
+
+**Correctif :** (1) Add a validator isValidCommitSha(s) that checks for /^[0-9a-f]{7,}$/ (at least 7 hex chars). (2) In buildJsDelivrUrl, return null if commit does not match this pattern. (3) In universalCapture.js, validate commitShard response: if the returned commit is not a valid SHA, throw an error and prevent manifest write. (4) Add a runtime assertion in ImageNodeViewer when resolving URLs: if buildJsDelivrUrl returns null, log the reason (missing repo/commit/path) to help debug.
+
+### [LOW] readMediaManifest in ImageNodeViewer.jsx does not validate manifest format before use  ·  `SAFE-AUTO` · effort S · conf 0.5
+
+**Problème :** downloadChunkedMedia (ImageNodeViewer.jsx:410) calls readMediaManifest(path) and assumes m.type==='chunked-media', m.vis==='public', m.count, m.ivs, m.cdnRepo without validation. If the manifest is corrupted (e.g., was partially overwritten due to a failed commit), or has a legacy format, the code may iterate over m.count undefined times or try to access m.ivs[i] on a non-array. No try/catch wraps the loop, so a crash at line 421 (decryptBytes) goes unhandled in the .catch() at line 432.
+
+**Correctif :** (1) Add schema validation in readMediaManifest: assert m.type === 'chunked-media', m.vis === 'public', m.count >= 0, Array.isArray(m.ivs), m.ivs.length === m.count, etc. (2) In downloadChunkedMedia, check before loop: if (!m || m.type !== 'chunked-media' || !m.ivs || m.ivs.length !== m.count) throw new Error('manifest corrupted'). (3) Wrap the entire buffer collection in try/catch and surface a clear error: 'Cannot download: manifest is corrupted or partially written. Please retry.' (4) Add a /api/validate-manifest endpoint to pre-check manifests before download.
+
+## video-hls  (15)
+
+### [HIGH] Transcodage HLS navigateur muet (plusieurs minutes sans feedback)  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+
+**Problème :** Pipeline runCapture → routeFile vidéo → hlsTranscoder.js → ffmpeg.wasm dure potentiellement plusieurs minutes. Infra notifyProgress existe (Notifications.jsx). Mais runCapture n'appelle notifyProgress QUE pour uploadProgress. Pendant transcodage: aucune barre, %, logs ffmpeg, étape. Utilisateur voit silence 3-10 min.
+
+**Correctif :** Dans App.jsx runCapture (route='hls'), ouvrir notifyProgress handle dès début transcodage. Brancher hlsTranscoder.onProgress pour h.set({progress, body}), h.log(logs ffmpeg). Fin: h.done() ou h.fail() garder source. Transforme black box en feedback macOS-grade.
+
+### [HIGH] Pas de sélecteur de qualité (ABR) dans le lecteur HLS  ·  `CONSULT-UI` · effort M · conf 0.95
+
+**Problème :** Le lecteur HlsVideo.jsx expose un menu de pistes audio et un sélecteur de vitesse de lecture, mais zéro sélecteur de qualité/résolution. hls.js supporte nativement hls.levels + Hls.Events.MANIFEST_PARSED + hls.currentLevel pour piloter l'ABR. Mais le transcodeur ffmpeg génère une unique variante H.264, donc le master n'a qu'une ligne EXT-X-STREAM-INF.
+
+**Correctif :** Implémenter le sélecteur de niveaux dans HlsVideo.jsx (pattern parallèle au menu audio). Après MANIFEST_PARSED, lire hls.levels et exposer {bandwidth, width, height}. Menu: Auto (ABR) + chaque niveau par résolution. Clic → hls.currentLevel = idx ou -1 pour Auto. Visible seulement si hls.levels.length > 1.
+
+### [MEDIUM] Gestion d'erreur HLS en boucle non bornée (recovery sans limite)  ·  `SAFE-AUTO` · effort S · conf 0.9
+
+**Problème :** HlsVideo.jsx traite Hls.Events.ERROR en appelant hls.startLoad() ou hls.recoverMediaError() sans compteur tentatives ni backoff. Si cause permanente (404 sur jsDelivr, 403 clé gatée, segment corrompu), relance régénère erreur = boucle infinie. hls.js documente: recovery methods should be limited to 1-2 attempts.
+
+**Correctif :** Ajouter state recoverAttempts dans HlsVideo. Handler ERROR: incrémenter recoverAttempts. Limiter: si (recoverAttempts >= 2) appeler setErr() au lieu de relancer. Réinitialiser à 0 quand FRAG_LOADED. Distinction: NETWORK_ERROR=retry ok, MEDIA_ERROR=1 essai max.
+
+### [MEDIUM] Segments HLS orphelins sur rollover (shard public plein)  ·  `SAFE-AUTO` · effort S · conf 0.72
+
+**Problème :** pushHls pousse segments sur zenray-vid-NN, commite, commitVidBytes. Si serveur voit >4.5 Go rollover {active: vid-01→vid-02}. Race condition: segments 1-50 sur vid-01 (avant rollover), 51-100 sur vid-02 (après), manifest.repo peut pointer vid-02. Segments vid-01 orphelins jamais référencés.
+
+**Correctif :** Manifest TOUJOURS enregistre public repo RÉEL où segments poussés (déjà cas: manifest.publicRepo). Pas suppositions. À relecture utiliser manifest.publicRepo (non résolvable dynamiquement, fixe). Reprise (--resume): loadResult relire manifest.publicRepo si présent. Test: push vidéo, force rollover manuellement, re-push 2e vidéo, vérifier manifest.publicRepo correct et différent.
+
+### [MEDIUM] Segments HLS orphelins sur rollover (shard public est plein)  ·  `SAFE-AUTO` · effort S · conf 0.72
+
+**Problème :** Le processus pushHls pousse d'abord les segments/init/VTT sur zenray-vid-NN public (pushBlobs L438), commite (commitPublic), puis commitVidBytes pour incrémenter l'octet-counter. Si le serveur voit que le shard dépasse ~4.5 Go, il bascule la STATE {active: zenray-vid-01 → zenray-vid-02}. Mais si le client pushHls était à mi-chemin lors du rollover (segments 1-50 sur vid-01, rollover déclenché, segments 51-100 censés aller sur vid-02), la VRAIE répartition peut être incohérente : le commit de segments était sur vid-01 (avant le rollover), mais le manifest.repo pointe peut-être vid-02 s'il y a une race. L'audit AUDIT-2026-06-03 ligne 62-64 (HAUTE) documente ce cas exactement. Conséquence : segments orphelins vid-01 jamais référencés (comptage faussé, jsDelivr CDN gonflé).
+
+**Correctif :** Le manifest doit TOUJOURS enregistrer le public repo RÉEL sur lequel les segments ont été poussés (déjà le cas : manifest.publicRepo = publicRepo L509). Pas de suppositions. À la relecture, utiliser manifest.publicRepo (non résolvable dynamiquement, fixe). Pour la reprise (--resume), loadResult relira manifest.publicRepo si présent. Ajouter un test : push une vidéo, forcer manuellement un rollover via l'API serveur, re-push une 2e vidéo, vérifier que les deux manifest.publicRepo sont corrects et différents. Pas de code à changer côté client si le manifest persiste déjà publicRepo correctement.
+
+### [MEDIUM] Transcodeur génère une seule variante H.264, pas multi-qualité  ·  `PROPOSE-REVIEW` · effort L · conf 0.92
+
+**Problème :** Script video-hls-lib.mjs configure ffmpeg avec UN seul -map vidéo dans le -var_stream_map, créant une unique chaîne stream_video.m3u8. L'encodage CPU utilise un CRF constant sans adaptation de bitrate ou résolution. Pour contenu 4K ou connexion lente, l'utilisateur reçoit la qualité source entière ou rien.
+
+**Correctif :** Étendre le transcodeur : ajouter des stategies -filter:v scale pour 360p/720p/1080p selon dimensions source. Générer N variantes en une seule passe ffmpeg. Chaque variant reçoit BANDWIDTH calculé. Tous segments (quel qualité) vont sur même shard public. Un seul master.m3u8 avec N EXT-X-STREAM-INF pour vrai ABR.
+
+### [MEDIUM] EXT-X-KEY sans IV explicite → dépendance implicite au sequence-number  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+
+**Problème :** keyinfo fourni à ffmpeg inclut IV explicite. Mais playlist générée ne remplace que l'URI du EXT-X-KEY, pas l'IV. Si ffmpeg n'a pas sérialisé IV=0x..., hls.js/Safari déchiffrent avec MEDIA-SEQUENCE comme IV par défaut. Marche car MEDIA-SEQUENCE=0 mais fragile.
+
+**Correctif :** Post-traitement playlists: après ffmpeg, parser EXT-X-KEY. Si IV absent mais aesIv connu, injecter IV=0x<hex> dans chaque media playlist avant rewriteMediaPlaylist. Stocker IV dans manifest.iv pour log.
+
+### [MEDIUM] Manifest HLS ne valide pas cohérence count vs niveaux réels  ·  `PROPOSE-REVIEW` · effort M · conf 0.8
+
+**Problème :** Manifest stocke count=segments.length (total TOUS variants mélangés). Ne documente pas nombre NIVEAUX, segments par niveau, bandwidth. Si transcodeur passe à 3 variantes, afficher '720p · 42 segments' devient incohérent.
+
+**Correctif :** Enrichir manifest: ajouter levels: [{id, name, bandwidth, width, height, videoSegmentCount}] parallèle au count global. À génération, itérer sur hls.levels (futur). À lecture, afficher levels.length > 1 pour UI que selecteur pertinent.
+
+### [MEDIUM] Manifest HLS ne valide pas la cohérence count vs niveaux réels  ·  `PROPOSE-REVIEW` · effort M · conf 0.8
+
+**Problème :** Le manifest généré (video-hls-lib.mjs:501-520) stocke {type:'hls', count: segments.length, audio: [...], subs: [...], ...}. Mais le count est juste le nombre TOTAL de segments .ts générés (tous les variants mélangés). Il ne documente pas le nombre de NIVEAUX (variants vidéo), ni de segments par niveau, ni de bandwidth. Si le transcodeur passe à 3 variantes à l'avenir, la lecture UI du manifest pour afficher « 720p · 42 segments » devient incohérente car on ignore count-par-level. De plus, le manifest ne valide aucune cohérence entre audio metadata (audioMeta) et ce que hls.audioTracks réellement expose à la lecture.
+
+**Correctif :** Enrichir le manifest : ajouter un champ levels: [{id, name, bandwidth, width, height, videoSegmentCount}] parallèle au count global. À la génération, si N variantes, itérer sur hls.levels (futur) ou documenter la structure dans loadResult. À la lecture (MediaViewer), afficher « levels.length > 1 » pour informer l'UI qu'un selecteur est pertinent. Le sélecteur HlsVideo.jsx peut alors aussi lire le manifest pour pré-remplir des labels plus riches (bandwidth estimé). Test : ajouter une 2e variante au transcodeur, vérifier que manifest.levels.length === 2.
+
+### [MEDIUM] UI cible: design Apple minimaliste (nom + résolution)  ·  `CONSULT-UI` · effort M · conf 0.88
+
+**Problème :** Cible produit: rectangle bord arrondi avec NOM du media + selecteur de resolution. HlsVideo.jsx aujourd'hui ignore les niveaux hls.js. Sélecteur doit être: minimaliste Apple, dynamique (absent si 1 niveau), affichant résolution actuelle, sans bloquer UI.
+
+**Correctif :** Créer Menu secondaire dans HlsVideo (pattern existant pour audio). State: [levels, currentLevelIdx]. Après MANIFEST_PARSED, builder liste [{id: -1, label: 'Auto (ABR)'}, {id: 0, label: '720p'}, ...]. Render bouton toggleable à droite de timeline. Menu déroulant même pattern. Setter: hls.currentLevel = idx.
+
+### [MEDIUM] UI cible du lecteur : design Apple minimaliste (nom + résolution)  ·  `CONSULT-UI` · effort M · conf 0.88
+
+**Problème :** La cible produit décrite dans le brief est : « rectangle bord arrondi avec NOM du media + selecteur de resolution pilote DYNAMIQUEMENT via hls.js ». Aujourd'hui le HlsVideo.jsx porte un layout correct (wrap avec border-radius md, barre de contrôle dégradée en bas) mais le composant entier ignore les niveaux hls.js. Le selecteur doit être : (1) minimaliste Apple (pill arrondie ou petit menu déroulant, pas de sidebar) ; (2) piloté dynamiquement (absent si 1 seul niveau, sensible à MANIFEST_PARSED) ; (3) affichant la résolution actuelle en HD/SD/Auto ; (4) sans bloquer le UI (setter async). La position visuelle est une question d'itération (coin haut-droit comme le menu audio, ou intégré à la barre de temps). L'accent #d97757 (coral ZenRay) doit rester.
+
+**Correctif :** Créer un Menu secondaire dans HlsVideo (pattern déjà existant pour audio L33-43, copier). State : [levels, currentLevelIdx]. Après MANIFEST_PARSED, builder une liste [{id: -1, label: 'Auto (ABR)'}, {id: 0, label: '720p'}, ...] depuis hls.levels. Render un bouton toggleable à droite de la timeline (avant pip/fullscreen) avec l'icône 'hd' ou le label '720p'. Menu déroulant même pattern. Setter : hls.currentLevel = idx. Écouter Hls.Events.LEVEL_SWITCHED pour mettre à jour le state local (feedback visuel du switch réel). Test : générer un manifest avec 2+ variants via le transcodeur, vérifier que le menu apparaît et switch correctement.
+
+### [LOW] Segments JSDelivr cachés indéfiniment (@commit) = incompatible updates  ·  `SAFE-AUTO` · effort S · conf 0.6
+
+**Problème :** URLs segments pointent jsDelivr pinné @<commitSha>: immutable, bon perf. Mais si on retranscode vidéo et re-pousse segments, ancien commit reste CDN indéfiniment. Gaspillage bande passante CDN sur segments inutilisés + confiance affaiblie versions multiples.
+
+**Correctif :** Documentation: vidéo EST immuable une fois live (segments + clé + master). Si update, créer NOUVELLE vidéo (nouveau dossier, nouveau manifest). Ancienne persiste jsDelivr (pas risque, segments indépendants). À court terme: juste documenter stratégie immutable.
+
+### [LOW] Métadonnées audio manifest vs audioTracks hls.js divergent  ·  `SAFE-AUTO` · effort S · conf 0.65
+
+**Problème :** Manifest stocke audioMeta extrait ffmpeg probe. VRAI choix piste vient hls.audioTracks. Si master m3u8 mal réécrit ou pistes changent, mapping index hls.audioTracks[idx] vs audioMeta[idx] diverge ('Français' affichée mauvaise piste).
+
+**Correctif :** À lecture, après MANIFEST_PARSED, vérifier audioMeta.length === hls.audioTracks.length. Si divergence, recalculer labels en priorité hls.audioTracks (vérité runtime prime). Log debug si divergence.
+
+### [LOW] Segments JSDelivr cachés indéfiniment (@commit) = incompatible avec updates  ·  `SAFE-AUTO` · effort S · conf 0.6
+
+**Problème :** Les URLs segments HLS pointent jsDelivr pinné au commit (@<commitSha>) : « https://cdn.jsdelivr.net/gh/owner/zenray-vid-NN@<sha>/ab/cd/hash.ts ». C'est immutable et bon pour la performance. MAIS si un jour on doit retranscroder une vidéo (meilleure qualité, codec différent, bug fix) et repousser les segments, l'ancien commit reste sur le CDN indéfiniment. C'est pas un bug de lect ure (l'ancien commit marche), juste un gaspillage de bande passante CDN sur des segments inutilisés + confiance affaiblie si l'UI montre plusieurs versions (puzzle de versions). Les metrics jsDelivr vont confondre les hits de l'ancien vs nouveau. Problème : aucun endpoint « delete old segments » ou marque « obsolète ».
+
+**Correctif :** Documentation et processus : documenter qu'une vidéo EST immuable une fois live (segments + clé + master). Si on doit mettre à jour, créer une NOUVELLE vidéo (nouveau dossier, nouveau manifest). L'ancienne persiste sur jsDelivr pour l'éternité (pas de risque, segments indépendants). Le manifest.commitPublic enregistre le SHA pour traçabilité. Si dans l'avenir on voulait vraiment nettoyer, écrire un script qui liste les manifests actifs et leurs commitPublic, puis purge jsDelivr en dehors de cette liste (mais c'est overkill pour v1). À court terme : juste documenter la stratégie immutable.
+
+### [LOW] Métadonnées audio du manifest vs audioTracks hls.js peuvent diverger  ·  `SAFE-AUTO` · effort S · conf 0.65
+
+**Problème :** Le manifest stocke audioMeta (L235-237 video-hls-lib.mjs) : {lang, label, default} extrait de ffmpeg probe + tags. Mais le VRAI choix de piste à la lecture vient de hls.audioTracks (peuplé par MANIFEST_PARSED L123-125 HlsVideo.jsx). Si le master m3u8 était mal réécrit ou si les pistes changent, le mapping index hls.audioTracks[idx] vs audioMeta[idx] peut diverger silencieusement (« Français » affiché sur la bonne piste mais mauvais label interne). C'est cosmétique mais source de confusion à l'usage. L'audit AUDIT-2026-06-03 ligne 113-115 (MOYENNE : loadResult reconstruction fragile) note déjà ce problème pour la reprise (--resume).
+
+**Correctif :** À la lecture, après MANIFEST_PARSED et peuplage de hls.audioTracks, vérifier que audioMeta.length === hls.audioTracks.length et que l'ordre est cohérent. Afficher un log debug si divergence (jamais en prod, sauf si activé). Si vraiment divergence, recalculer les labels en priorité depuis hls.audioTracks plutôt que manifest.audioMeta (la vérité runtime prime). Test : transcoder une vidéo multi-audio, modifier le master.m3u8 manuellement pour inverser 2 pistes, vérifier que la lecture reste cohérente ou au moins documente le problème.
+
+## missing-features  (14)
+
+### [HIGH] Global search with Cmd+K / Command palette (zero exists)  ·  `CONSULT-PRODUCT` · effort M · conf 0.95
+
+**Problème :** No command palette, no global search across Create pages/databases/gallery. Users must click through sidebar, then use folder-scoped search in Finder. Missing for productivity app shipping as sellable: can't find a page by title, can't discover features, can't navigate fast cross-view. Compare Notion/Linear (Cmd+K everywhere). Verified: zero matches for 'global.*search' or 'command.*palette' or 'Cmd+K' in src/.
+
+**Correctif :** Create src/components/CommandPalette.jsx (fuzzy find library, e.g. fuse.js). Wrap App.jsx in a context. addEventListener('keydown') for Cmd+K or Ctrl+K (debounce). Modal overlay with input + results: pages (basename), databases (name + row count), gallery images (filename), projects (title). onEnter navigates via setView + path state. Debounce query 100ms, limit results to 20. Reuse searchIndexClient.js patterns for indexing.
+
+### [HIGH] Undo/Redo system (missing entirely, only Trash for deletion)  ·  `CONSULT-PRODUCT` · effort M · conf 0.9
+
+**Problème :** No undo for edits, moves, renames, property changes. Only soft-delete via Trash (no undo for text edits in BlockNote, no undo for card title changes, no undo for drag/move on Finder tree). Users can't correct mistakes; once saved to GitHub there's no version history access in UI. Critical for daily-use app marketed as 'OS-like'. Contrast: Notion (full undo stack), Finder (cmd+z reverts move/delete).
+
+**Correctif :** Implement undo/redo via CommandHistory pattern (stack of {action, undo, redo} objects). Integrate at: (1) BlockNote via custom handler (L175 PageEditorBN.jsx) to intercept editor.undo/redo; (2) Finder moves/renames (movePage, renameNode hooks); (3) card edits (editCard); (4) property changes (TypedCell). Persist last 50 actions in App state (not on disk). Expose via Cmd+Z/Cmd+Shift+Z hotkeys + Edit menu. Use a context + history provider mounted at App level.
+
+### [HIGH] Discoverable keyboard shortcuts and navigation (Finder arrow keys, Cmd+N new, Cmd+Delete)  ·  `CONSULT-PRODUCT` · effort M · conf 0.92
+
+**Problème :** Zero discoverable keyboard shortcut system. No 'Help → Keyboard Shortcuts' menu. Arrow keys don't navigate Finder grid/list. Cmd+N doesn't create new page/card. Cmd+Delete doesn't trash. Tab focus-ring missing entirely (focus-visible issue already in audit-backlog). Users new to the app have no way to discover speed. Contrast: Notion sidebar + shortcut hint badges on buttons, Cmd+P search.
+
+**Correctif :** Create src/components/ShortcutsHelp.jsx (modal, Cmd+/ or Help menu) listing: Finder (↑↓← Cmd+↑ = go up, Cmd+N page, Cmd+B board, Cmd+G gallery, Cmd+K search, Del = trash, Cmd+Z undo), Editor (Cmd+S save, Cmd+I italic, Cmd+B bold, / slash menu), Global (Cmd+1–9 switch view). Add global listener in App.jsx for these. Register each action in a SHORTCUTS map. Show hints via title= attributes on buttons. Add focus-visible ring via CSS (already in audit-backlog quick-fix).
+
+### [HIGH] Multi-device sync and offline-first storage (no local-first, no conflict resolution UI)  ·  `CONSULT-PRODUCT` · effort L · conf 0.85
+
+**Problème :** No offline mode, no IndexedDB persistence of pages/cards (only images cached). No cross-device sync indicator. If user edits page on phone while desktop is offline, then desktop comes online: silent conflicts (409 handled invisibly per audit-2026-06-03). No 'waiting to sync' or 'conflicted' badge. App assumes always-online. Selling point: 'OS anywhere' — but can't use offline or manage multi-device conflicts. Audit already notes 409 conflicts silently avowed in manifests (Gallery/Audio/Databases/Articles).
+
+**Correctif :** Extend DirCache + add IndexedDB layer for pages/.md + card state. On startup, read from IDB → compare SHA to GitHub via HEAD-check. If offline: gray out create/edit, show 'working offline' banner. On network return: sync queue (debounce 500ms), detect 409 conflicts, prompt user (merge/overwrite/keep-both). Add SyncStatus context + banner (top, 'syncing…' → 'synced' or 'conflict'). Use Upstash Redis (already in package.json) for cross-device markers (last-edited-by, timestamp). Bonus: localStorage 'recent edits' recovery on crash.
+
+### [HIGH] Mobile responsive layout (sidebar hide, touch gestures, font scaling)  ·  `CONSULT-PRODUCT` · effort M · conf 0.9
+
+**Problème :** App is desktop-first. Sidebar is fixed 260px on mobile, occupies half the screen. No hamburger toggle. Finder grid doesn't reflow to single column. Cards on Board are full-width (unreadable on iPhone). Editor doesn't stack title/properties/body. No touch-friendly buttons (48px minimum hit target). Users on iPad/phone can't use the app efficiently. Selling as 'OS anywhere' but doesn't work on all devices.
+
+**Correctif :** Add media-query breakpoints (mobile <768px, tablet <1024px). Render sidebar conditionally (hamburger toggle, slide-out overlay on mobile). Adjust Finder grid to auto-fill min(200px, 100%) on mobile. Board card stack in single column <768px. Editor adapts layout via css grid-template-columns. Touch event handlers: swipe left/right for nav, long-press for context menu. Increase button padding to 12–16px. Use clamp() for font sizes (already used for title). Test on actual iPhone/iPad via devtools. Make Sidebar.jsx or App.jsx responsive-aware via useWindowSize hook.
+
+### [MEDIUM] Skeleton loaders and perceived performance (currently just 'chargement…' text)  ·  `SAFE-AUTO` · effort S · conf 0.9
+
+**Problème :** All grids/tables show 'chargement…' text until fully loaded. No skeleton screens, no shimmer, no placeholder shapes. Audit-backlog notes this (Feedbacks UI item 1: 'Aucun skeleton / placeholder'). On slow network, app feels laggy. Notion/Finder always show placeholder grid that fills in, users perceive speed. Zero @keyframes skeleton in index.html (verified in audit-backlog).
+
+**Correctif :** Add to index.html CSS: @keyframes shimmer (gradient sweep 1.2s infinite), @keyframes pulse (opacity 0.5–1 1s). Create src/components/Skeleton.jsx: SkeletonGrid (N cards w/ shimmer), SkeletonTable (rows w/ cells), SkeletonCard (title/desc). Use while loading (dirEntries===null, images===null). Dimensions match actual layout (aspect-ratio, height). In Finder replace 'chargement…' with <SkeletonGrid cols={3} count={12} />. In Gallery use Masonic skeleton cells. Style via zr-glass frosted background + lighter overlay. Effort: 1 keyframe + 1 component + 3 callsites. Gain: massive perceived-perf improvement.
+
+### [MEDIUM] Global focus-visible ring for keyboard navigation (audit-backlog B2 item)  ·  `SAFE-AUTO` · effort S · conf 0.98
+
+**Problème :** No :focus-visible style defined globally. All buttons/tuiles/inputs lack visible focus ring. Keyboard users (Tab navigation) are invisible. Audit-backlog 'Feedbacks UI' item 2 flags this as 'med' severity, 'low' effort. Already scoped fix in audit-backlog: add CSS rule to index.html.
+
+**Correctif :** One-liner CSS in index.html: :where(button,a,[tabindex]):focus-visible { outline: 2px solid var(--zr-selection, #0071e3); outline-offset: 2px; }. Reuse --zr-selection variable already used for .zr-input:focus. Zero behavioral change, pure CSS. Verify in DevTools Tab navigation.
+
+### [MEDIUM] Skeleton loaders and perceived performance (currently just 'chargement...' text)  ·  `SAFE-AUTO` · effort S · conf 0.9
+
+**Problème :** All grids/tables show 'chargement...' text until fully loaded. No skeleton screens, no shimmer, no placeholder shapes. Audit-backlog notes this (Feedbacks UI item 1: 'Aucun skeleton / placeholder'). On slow network, app feels laggy. Notion/Finder always show placeholder grid that fills in, users perceive speed. Zero @keyframes skeleton in index.html (verified in audit-backlog).
+
+**Correctif :** Add to index.html CSS: @keyframes shimmer (gradient sweep 1.2s infinite), @keyframes pulse (opacity 0.5-1 1s). Create src/components/Skeleton.jsx: SkeletonGrid (N cards w/ shimmer), SkeletonTable (rows w/ cells), SkeletonCard (title/desc). Use while loading (dirEntries===null, images===null). Dimensions match actual layout (aspect-ratio, height). In Finder replace 'chargement...' with <SkeletonGrid cols={3} count={12} />. In Gallery use Masonic skeleton cells. Style via zr-glass frosted background + lighter overlay. Effort: 1 keyframe + 1 component + 3 callsites. Gain: massive perceived-perf improvement.
+
+### [MEDIUM] Clear error messages and failure transparency (cryptic 'erreur publish artifact', silent 409s)  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+
+**Problème :** Audit-backlog notes: Articles (item 6) 'publication impossible si une image n'a pas pu être promue (échec cryptique)'. Server errors (409 conflict, rate-limit, timeout) are silent or show mono status text. Window.alert still used in media chunked upload (audit-backlog Feedbacks UI item 5). Users can't diagnose failures. Selling requires trust: 'I know what went wrong and how to fix it'.
+
+**Correctif :** Audit all error paths in App.jsx, Articles.jsx, Databases.jsx, PageEditorBN.jsx. Replace window.alert with notify({kind:'error', title, detail, action:'Retry'}). For 409 conflicts: show modal 'File changed on disk. Keep mine / Use theirs / Merge'. For image-upload failure: 'Image {name} failed: {reason}. Retry / Skip / Replace'. Log all errors to console + optionally Sentry. Add error boundary at App level to catch unhandled. Document expected errors in code comment (who throws, why, user-facing message).
+
+### [MEDIUM] Settings / Preferences panel (theme, default view, font size, auto-save interval)  ·  `CONSULT-PRODUCT` · effort M · conf 0.8
+
+**Problème :** Theme toggle (light/dark) is in footer of sidebar (L305 App.jsx) but no other settings. No way to: change default view on startup, set auto-save debounce, manage storage (cache clear, export), set notification preferences, customize fonts/colors, or manage integrations. Non-technical user can't configure the app. Missing for 'shippable' product: users expect Settings gear icon in Sidebar or top menu.
+
+**Correctif :** Create src/components/SettingsPanel.jsx: modal or sidebar panel. Sections: (1) Appearance (theme, font scale 0.9–1.2, accent color picker reusing PALETTE); (2) Editor (auto-save delay ms, markdown vs BlockNote default view); (3) Finder (default sort/view, icon size); (4) Storage (clear image cache, export db as JSON, import from JSON backup); (5) Integrations (Spotify auth status, toggle features). Store in localStorage('zr:settings:v1'). Wire into App theme/state. Menu button in sidebar or hamburger (already exists for mobile).
+
+### [MEDIUM] Export / Backup data (no way to export pages/databases/cards as JSON or markdown)  ·  `CONSULT-PRODUCT` · effort L · conf 0.8
+
+**Problème :** No 'Export all as ZIP' or 'Backup database'. All data lives on GitHub repos. If GitHub account is compromised or user wants to migrate elsewhere: no exit path. Users can download individual files via Drive view but no bulk export, no portable backup. For selling: data portability is a trust signal and legal requirement (data ownership).
+
+**Correctif :** Add to SettingsPanel: 'Export' button → creates a downloadable ZIP containing: (1) all pages as .md; (2) databases as .json; (3) cards as .json; (4) metadata (.zr-tags.json, .zr-favorites.json, .props.json). Use JSZip library (add to package.json). Fetch all via /api/file (extend if needed) then zip client-side and download as 'zenray-backup-{date}.zip'. Bonus: 'Import from ZIP' to restore (parsing reverse). Optional: schedule weekly auto-backup to Google Drive / Dropbox (user connects OAuth scope).
+
+### [MEDIUM] Onboarding flow and guided empty states (new user has no idea what to do)  ·  `CONSULT-PRODUCT` · effort M · conf 0.85
+
+**Problème :** App opens to 'Board' with no tutorial. Create view shows 'Dossier vide' text (audit-backlog noted). Gallery shows 'empty' text. No guided tour, no sample page, no 'try dragging this' affordance. New users are lost. Enterprise tools (Notion, Linear) always have: sample workspace, interactive tour, contextual help. Users waste 10min figuring out the basic model.
+
+**Correctif :** Create src/components/Onboarding.jsx: triggered on first visit (localStorage('zr:onboarded')===false). Steps: (1) Welcome slide with app purpose; (2) Create your first page (show Finder, drag-drop invite); (3) Edit & save demo; (4) Add to a board; (5) Create a database; (6) Celebrate + skip. Use a Stepper component with forward/skip/finish. On finish, set localStorage + clear flag. Persist sample/demo pages in a hidden template folder (pages/_tutorial/), delete after first completion. Bonus: contextual help balloons (Cmd+?) on first use of each major feature.
+
+### [MEDIUM] Sharing / read-only links (no way to share a page or gallery publicly)  ·  `CONSULT-PRODUCT` · effort L · conf 0.75
+
+**Problème :** All repos are private (zenray-content, zenray-data). No public 'share link' feature. User can't send a page to a friend, can't embed a gallery, can't publish a single article independently. For 'selling' this as personal OS: sharing is a key collaboration feature. Every note app (Notion, Apple Notes, OneNote) has 'share link' at minimum.
+
+**Correctif :** Create src/components/ShareModal.jsx. On 'share' button: generate a short UUID token + store in Redis (Upstash, already in package.json). Token maps to (pageId, permissions: 'read'|'read-write', expiresAt). Add a serverless endpoint /api/share/{token} that validates token + serves the resource via a public view component (read-only PageRenderer or GalleryGrid). Return public URL zenrayproject.com/shared/{token}. Support: copy link, set expiration, revoke. For simplicity, start with 'read-only' only. Premium feature: collaborative editing (share with 'edit' perm).
+
+### [LOW] Real-time collaboration (Figma-style presence, live cursors) for multi-user editing  ·  `CONSULT-PRODUCT` · effort XL · conf 0.5
+
+**Problème :** Single-user only. Even if sharing is added, no presence awareness (who's editing now?), no live cursors, no conflict-free merge. Selling as 'personal OS' first, so not critical for v1. But mentioned in SPEC-MASTER as 'A part: auditer le sous-systeme editeur'. Ambitious for premium tier later.
+
+**Correctif :** Phase 2 only. Use Yjs (CRDT library) + Upstash Redis for sync. Each client publishes updates to a channel (pageId), subscribes to others' changes, merges via CRDT. Render remote cursors in PageEditorBN. Requires refactor of save flow (atomic updates instead of full-file SHA). Out of scope for shipping MVP, but architecture should not prevent it.
+
+## robustness  (7)
+
+### [HIGH] Gestion d'erreurs silencieuse : `.catch(()=>{})` partout sans logging ni feedback UX  ·  `PROPOSE-REVIEW` · effort M · conf 0.95
+`src/components/Gallery.jsx, Articles.jsx, Databases.jsx, PageEditorBN.jsx, et 5+ autres Gallery:75; Articles:29; Databases:31,36,44; PageEditorBN:95`
+
+**Problème :** Gallery.jsx:65,75 `.catch(() => null)`, Articles.jsx fait pareille, Databases.jsx aussi. Quand un fetch échoue (rate-limit, timeout, 500 GitHub), l'utilisateur voit rien : l'upload 'réussit' à 0%, un save semble passer en silence, une lecture ne remplit jamais l'état => UI gelée, user perd confiance.
+
+**Correctif :** Remplacer tout `.catch(()=>{})` par `.catch(e => { notify({kind:'error', title:'Erreur', body:e.message || 'Sauvegarde échouée'}) })`. Ou si l'erreur est tolérable, logger en développement seulement (`if(DEV) console.warn(e)`). Exposer au minimum le statut HTTP (409=conflit, 429=rate-limit, 500=serveur) pour les choix UX.
+
+### [HIGH] Saveindex/saveMetadata ne testent pas j.ok ni j.conflict, avalent les écritures en silence  ·  `PROPOSE-REVIEW` · effort M · conf 0.9
+`src/components/Databases.jsx, Audio.jsx, SfxView Databases:47-58 ; vues à manifeste (Gallery, SFX, etc.) remplacées par saveJsonWithRetry mais vieux pattern subsiste`
+
+**Problème :** Articles.jsx:29 `saveIndex` appelle saveJsonWithRetry et teste `res.ok` (bon). Mais dans Databases.jsx:47 `persist`, on teste `if(j && j.ok)` SEUL — un conflit 409 du serveur n'est jamais capté. Si le serveur renvoie `{error:'conflict'}` (format ancien), `j.ok` est falsy et le sha local n'est jamais rafraîchi => boucle d'écrasement silencieuse sur les saves suivantes.
+
+**Correctif :** Auditer tous les `.then(j => if(!j.ok)` : si c'est une action non-atomique (read → update → save triplet), migrer vers saveJsonWithRetry si absent, ou ajouter une branche `if(j && j.conflict) { alert('Conflit'); reload }`. Tester que le 409 est capté ET relué, pas juste loggé.
+
+### [HIGH] Gestion d'erreurs silencieuse: .catch(()=>{}) partout sans logging ni feedback UX  ·  `PROPOSE-REVIEW` · effort M · conf 0.95
+`src/components/Gallery.jsx, Articles.jsx, Databases.jsx, PageEditorBN.jsx, et 5+ autres Gallery:75; Articles:29; Databases:31,36,44; PageEditorBN:95`
+
+**Problème :** Gallery.jsx:65,75 .catch(() => null), Articles.jsx fait pareille, Databases.jsx aussi. Quand un fetch échoue (rate-limit, timeout, 500 GitHub), l'utilisateur voit rien: l'upload 'réussit' à 0%, un save semble passer en silence, une lecture ne remplit jamais l'état => UI gelée, user perd confiance.
+
+**Correctif :** Remplacer tout .catch(()=>{}) par .catch(e => { notify({kind:'error', title:'Erreur', body:e.message || 'Sauvegarde échouée'}) }). Ou si l'erreur est tolerable, logger en développement seulement (if(DEV) console.warn(e)). Exposer au minimum le statut HTTP (409=conflit, 429=rate-limit, 500=serveur) pour les choix UX.
+
+### [MEDIUM] PropertiesBlock (App.jsx) sauvegarde à chaque frappe = 1 commit GitHub/caractère  ·  `SAFE-AUTO` · effort S · conf 0.85
+`src/App.jsx PropertiesBlock, lignes 789-843 (spécif pas visible, cf AUDIT-2026-06-03.md ligne 333)`
+
+**Problème :** Dans App.jsx, la sauvegarde des propriétés `.props.json` déclenche un PUT immédiat à chaque onChange de PropertiesBlock (l.839-840 'Add property'). Si l'utilisateur tape 10 caractères vite, c'est 10 commits GitHub sur zenray-content. Sans debounce, c'est rate-limit garanti et confiture l'historique git.
+
+**Correctif :** Ajouter debounce 800ms sur le save de .props.json. Utiliser un useRef(timer) + clearTimeout() pattern comme PageEditorBN:201 fait pour le markdown. Ou centraliser via saveJsonWithRetry qui expose déjà un timeout configurable.
+
+### [MEDIUM] del() et move() ignorent `.props.json`, les propriétés sont perdues à la corbeille/move  ·  `PROPOSE-REVIEW` · effort S · conf 0.9
+`src/App.jsx delEntry (lignes ~1278-1345), movePage (lignes ~1213-1230)`
+
+**Problème :** App.jsx moveEntry/delEntry traitent `.md`, `.blocknote.json`, `.comments.json` mais PAS `.props.json`. Quand on déplace/jette une page, les propriétés (cover, icône, custom) restent orphelines ou disparaissent. Idem au vidage corbeille : les props ne sont jamais purgées du privé.
+
+**Correctif :** Ajouter `.props.json` à la liste des variantes/jumeaux gérés dans `del()`, `move()`, `trashPath()` ; côté serveur, ajouter aux `pairs` de page.js move/delete. Vérifier le pattern : pour chaque `.md` x, gérer aussi x.md, x.blocknote.json, x.comments.json, x.props.json, x.canvas.json, x.embed.json.
+
+### [MEDIUM] del() et move() ignorent .props.json, les propriétés sont perdues à la corbeille/move  ·  `PROPOSE-REVIEW` · effort S · conf 0.9
+`src/App.jsx delEntry (lignes ~1278-1345), movePage (lignes ~1213-1230)`
+
+**Problème :** App.jsx moveEntry/delEntry traitent .md, .blocknote.json, .comments.json mais PAS .props.json. Quand on déplace/jette une page, les propriétés (cover, icône, custom) restent orphelines ou disparaissent. Idem au vidage corbeille: les props ne sont jamais purgées du privé.
+
+**Correctif :** Ajouter .props.json à la liste des variantes/jumeaux gérés dans del(), move(), trashPath(); côté serveur, ajouter aux pairs de page.js move/delete. Vérifier le pattern: pour chaque .md x, gérer aussi x.md, x.blocknote.json, x.comments.json, x.props.json, x.canvas.json, x.embed.json.
+
+### [MEDIUM] saveJsonWithRetry existe mais n'est utilisé que dans 3 composants, ailleurs on réimplemente  ·  `PROPOSE-REVIEW` · effort M · conf 0.92
+`src/lib/saveJson.js (existant), src/components/Databases.jsx, Audio.jsx, Shelf.jsx saveJsonWithRetry L22-35 bien implémenté; redondance dans Databases:47-58, Audio L137, Shelf L92`
+
+**Problème :** Gallery.jsx:68-74 utilise saveJsonWithRetry (bon pattern), Articles.jsx:28-30 aussi. Mais Databases.jsx:47 et Shelf.jsx et Audio/SFX re-font le read-modify-write à la main sans retry sur 409 => bugs de concurrence. saveJsonWithRetry est un helper excellent (src/lib/saveJson.js) mais pas découvert/imposé globalement.
+
+**Correctif :** Mettre en avant saveJsonWithRetry dans les docs (ajouter un commentaire au top de api.js), migrer Databases/Audio/Shelf vers cet helper. Tester que les 409 sont retried avec le sha frais et que la mutation réappliquée corrige les conflits. Pattern atomic: idempotent pour reads, replaying mutations.
+
+## ux-daily  (22)
+
+### [HIGH] Erreur de publication d'article affiche un message cryptique sans contexte  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+`src/components/Articles.jsx src/components/Articles.jsx:96-97`
+
+**Problème :** Articles.jsx:97 affiche 'erreur publish ' + j.error ou j.detail, mais cela peut être vide, cryptique (ex 'validation error') sans dire QUELLE image/champ a échoué. Utilisateur reste bloqué.
+
+**Correctif :** Améliorer le message d'erreur : 'erreur publish : ' + (j.errors && j.errors.join(', ')) + (j.detail ? ' — ' + j.detail : ''). Et côté serveur, toujours renvoyer un array j.errors avec contexte (nom de fichier, type d'erreur).
+
+### [HIGH] Erreur de publication d'article sans détail sur ce qui a échoué  ·  `PROPOSE-REVIEW` · effort M · conf 0.85
+`src/components/Articles.jsx Articles.jsx:96-97`
+
+**Problème :** Articles.jsx:97 affiche 'erreur publish…' cryptique sans dire QUELLE image/champ a échoué. Utilisateur reste bloqué sans recours.
+
+**Correctif :** Améliorer le message : 'erreur publish : ' + j.errors.join(', '). Côté serveur, toujours renvoyer array j.errors avec contexte (fichier, type d'erreur).
+
+### [MEDIUM] Absence de feedback visuel immédiat lors de la sauvegarde auto  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/PageEditorBN.jsx src/components/PageEditorBN.jsx:156, 199, 201, 184 (setStatus + setTimeout)`
+
+**Problème :** Le texte de statut 'enregistré…' / 'enregistré ✓' n'est visible que si l'utilisateur regarde le petit texte gris (StatusLabel), et il disparaît après 2-3 secondes sans transition visible. Sur un flux d'édition fluide avec debounce 2s, l'utilisateur ne sait pas si ses changements passent tant qu'il tape. Aucune animation, couleur ou badge subtil du côté du titre/contenu pour confirmer la persistance.
+
+**Correctif :** Ajouter une animation subtile de 500ms sur le container du statut (pulse/fade-in) lors du passage à 'enregistré ✓', puis fade-out. Ou un petit badge vert (~8px) au-dessus du titre qui clignet 1 fois au save réussi. L'objet est que l'utilisateur voie une confirmation sans interrompre sa frappe.
+
+### [MEDIUM] Messages de statut qui restent orphelins après fermeture d'une action longue  ·  `SAFE-AUTO` · effort S · conf 0.75
+`src/components/Gallery.jsx src/components/Gallery.jsx:43, 74 / src/components/Audio.jsx:142, 160 / src/components/Databases.jsx:22, 55`
+
+**Problème :** Dans Gallery.jsx:74 et Audio.jsx:160, les messages 'conflit — recharge et réessaie' ou 'upload…' ne s'effacent jamais automatiquement s'il y a une panne réseau ou un timeout. L'utilisateur voit un message faux indéfiniment. Aucun timeout associé ni bouton 'effacer'.
+
+**Correctif :** Ajouter setStatus('') après 5000ms ou un bouton [×] sur les messages de type erreur/conflit. Utiliser le pattern de PageEditorBN qui ajoute setTimeout(() => setStatus('')) après le succès.
+
+### [MEDIUM] Pas de barre de progression lors des uploads longs (galerie multi-fichiers)  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/Gallery.jsx src/components/Gallery.jsx:58-75 (addFiles boucle sans counter)`
+
+**Problème :** Gallery.jsx:55-75 affiche juste setStatus('upload N…') puis 'N ajoutée(s)' sans montrer le nombre d'items traités actuellement (ex '3/20 images importées'). Un drag-drop de 50 images lance une boucle for silencieuse pendant 10-15 s.
+
+**Correctif :** Afficher un compteur live : setStatus(`upload…`) puis dans la boucle for, setStatus(`image ${i+1}/${imgs.length}`) à chaque itération. Ou mieux : utiliser notifyProgress({kind:'image'}) pour une barre visuelle.
+
+### [MEDIUM] Chaque composant redéveloppe sa propre gestion de conflit 409 sans pattern unifié  ·  `SAFE-AUTO` · effort M · conf 0.7
+`src/components/Gallery.jsx:69 (saveJsonWithRetry), Audio.jsx:153, Databases.jsx:54, Articles.jsx:29`
+
+**Problème :** Gallery, Audio, Databases, Articles chacun fait saveJsonWithRetry ou gère 409 de façon légèrement différente. Pas de hook réutilisable, donc comportement inconsistent : l'utilisateur voit 'conflit' dans un endroit et 'erreur' ailleurs.
+
+**Correctif :** Créer un hook useSaveWithConflict() dans src/lib/saveJson.js qui wrappe saveJsonWithRetry et expose {save, status, lastError}. Tous les composants l'utilisent, ce qui assure UI cohérente et messages unifiés.
+
+### [MEDIUM] Pas de possibilité d'annuler une action longue (upload, save, publish) après démarrage  ·  `SAFE-AUTO` · effort M · conf 0.7
+`src/components/Gallery.jsx src/components/Gallery.jsx:55-75 / src/components/Articles.jsx:82-98`
+
+**Problème :** Une fois que Gallery.addFiles ou Articles.publish lance le fetch, il n'y a aucun bouton [Annuler] ou [Arrêter l'upload]. Si la connexion plante, l'utilisateur attend indéfiniment ou ferme l'onglet.
+
+**Correctif :** Stocker la requête dans un AbortController. Afficher un bouton [Annuler] à côté du message 'upload…' qui appelle abort(). Même pour Articles publish.
+
+### [MEDIUM] Messages de statut orphelins ne s'effacent pas après erreurs  ·  `SAFE-AUTO` · effort S · conf 0.75
+`src/components/Gallery.jsx Gallery.jsx:43, 74`
+
+**Problème :** Dans Gallery.jsx:74 et Audio.jsx:160, les messages 'conflit — recharge et réessaie' ne s'effacent jamais si une panne réseau survient. Aucun timeout associé ni bouton pour fermer.
+
+**Correctif :** Ajouter setStatus('') après 5000ms ou un bouton [×] sur les messages d'erreur/conflit.
+
+### [MEDIUM] Pas de barre de progression lors des uploads multi-fichiers  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/components/Gallery.jsx Gallery.jsx:55-75`
+
+**Problème :** Gallery.jsx:55-75 affiche 'upload N…' sans montrer le nombre d'items traités actuellement (ex '3/20 images importées'). Drag-drop de 50 images = 10-15 s de silence.
+
+**Correctif :** Afficher un compteur live dans la boucle for : setStatus(`image ${i+1}/${imgs.length}`). Ou utiliser notifyProgress() pour une barre visuelle.
+
+### [MEDIUM] Chaque composant gère les conflits 409 différemment  ·  `SAFE-AUTO` · effort M · conf 0.7
+`src/lib/saveJson.js Gallery.jsx:69, Audio.jsx:153, Databases.jsx:54`
+
+**Problème :** Gallery, Audio, Databases, Articles chacun implémente saveJsonWithRetry sans pattern unifié. Comportement inconsistent selon le contexte.
+
+**Correctif :** Créer un hook useSaveWithConflict() dans src/lib/saveJson.js qui unifie la gestion et les messages pour tous les composants.
+
+### [MEDIUM] Pas de possibilité d'annuler une action longue après démarrage  ·  `SAFE-AUTO` · effort M · conf 0.7
+`src/components/Gallery.jsx Gallery.jsx:55-75, Articles.jsx:82-98`
+
+**Problème :** Gallery.addFiles ou Articles.publish lancent des fetches sans aucun bouton [Annuler]. Si la connexion plante, utilisateur attend indéfiniment.
+
+**Correctif :** Stocker la requête dans un AbortController. Afficher bouton [Annuler] à côté du message de progression qui appelle abort().
+
+### [MEDIUM] Message 'conflit — recharge et réessaie' sans indication de ce qui a conflicté  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+`src/components/Gallery.jsx src/components/Gallery.jsx:74 / src/components/Audio.jsx:160 / src/components/Databases.jsx:55`
+
+**Problème :** Gallery.jsx:74 et plusieurs autres affichent 'conflit — recharge et réessaie' sans contexte : lequel des manifestes ? Quel champ ? Nouveau utilisateur ne comprend pas.
+
+**Correctif :** Remplacer par un message plus explicite : 'Images en cours d'ajout ailleurs — réessai automatique en cours…' suivi d'une vraie retry via saveJsonWithRetry. Sinon, toast notifyProgress() avec un bouton [Réessayer].
+
+### [MEDIUM] Messages de conflit sans contexte sur l'origine de l'erreur  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+`src/components/Gallery.jsx Gallery.jsx:74`
+
+**Problème :** 'conflit — recharge et réessaie' sans dire lequel des manifestes a conflicté. Nouveau utilisateur reste confus.
+
+**Correctif :** Remplacer par 'Images en cours d'ajout ailleurs — réessai automatique en cours…' ou toast notifyProgress() avec bouton [Réessayer].
+
+### [MEDIUM] Débounce de 2s dans PageEditorBN non visible, utilisateur ignore quand son travail est sauvé  ·  `CONSULT-UI` · effort M · conf 0.6
+`src/components/PageEditorBN.jsx src/components/PageEditorBN.jsx:195-202 (debounce 2000ms)`
+
+**Problème :** L'utilisateur frappe, s'arrête 1.5s, et le message passe à 'enregistré ✓' sans qu'il sache si c'est parce qu'il y a un délai ou si c'est réussi. Pour un workflow multi-onglets ou multi-device, la certitude de la persévérance du état est critique.
+
+**Correctif :** Afficher le délai restant : au lieu de juste 'modifié…', montrer 'enregistrement dans 2s…' avec un mini-décompte, ou un motif d'attente (pulsing dot). Ou passer à debounce 600ms pour une sensation plus immédiate.
+
+### [MEDIUM] Pas de placeholder/skeleton lors du chargement des vignettes dans la grille  ·  `CONSULT-UI` · effort M · conf 0.75
+`src/components/Gallery.jsx src/components/Gallery.jsx:48-52 / src/media/SmartThumb.jsx (pas de skeleton)`
+
+**Problème :** Gallery.jsx:48-52 charge les images d'un coup (await fetch) et n'affiche rien jusqu'au retour. Sur une grille de 1000+ images, cela crée un blanc de 1-2 s. SmartThumb a un fallback couleur (bg={t.border}) mais pas d'animation de loading.
+
+**Correctif :** Afficher un squelette de grille (5-10 lignes de faux carrés gris) pendant le chargement du manifest, puis remplacer par les vraies images. Ou une animation subtile de fade-in par tile (staggered 20ms).
+
+### [MEDIUM] Débounce de 2s non visible, utilisateur ignore quand l'état est sauvé  ·  `CONSULT-UI` · effort M · conf 0.6
+`src/components/PageEditorBN.jsx PageEditorBN.jsx:195-202`
+
+**Problème :** Utilisateur frappe, s'arrête 1.5s, message passe à 'enregistré ✓' sans qu'il sache si le délai causait l'attente ou si c'était réussi immédiatement.
+
+**Correctif :** Afficher 'enregistrement dans 2s…' avec mini-décompte, ou passer à debounce 600ms pour sensation plus immédiate.
+
+### [LOW] Latence imperceptible entre 'enregistrement…' et la vraie écriture réseau  ·  `SAFE-AUTO` · effort S · conf 0.5
+`src/components/PageEditorBN.jsx src/components/PageEditorBN.jsx:162-184 / Databases.jsx:50-57`
+
+**Problème :** Les messages changent immédiatement en UI ('enregistrement…') mais le fetch réseau prend 200-800 ms. L'utilisateur voit une confirmation visuelle avant que la requête soit en vol, ce qui crée une fausse sensation de fluidité. Si le réseau plante, le message est optimiste.
+
+**Correctif :** Retarder setStatus('enregistrement…') au-delà du délai de debounce (débat : on peut attendre 200ms avant l'affichage du message). Ou ajouter une badge 'en attente' différent de 'enregistrement…' tant que le fetch n'est pas en vol.
+
+### [LOW] Messages de statut avant que le réseau soit réellement en vol  ·  `SAFE-AUTO` · effort S · conf 0.5
+`src/components/PageEditorBN.jsx PageEditorBN.jsx:162-184`
+
+**Problème :** setStatus('enregistrement…') change immédiatement mais le fetch réseau prend 200-800 ms. Fausse sensation de fluidité si le réseau plante.
+
+**Correctif :** Retarder setStatus() de 200ms ou ajouter une badge 'en attente' différente de 'enregistrement…'.
+
+### [LOW] États vides moroses, pas de conseils d'action clairs  ·  `CONSULT-UI` · effort S · conf 0.7
+`src/components/Gallery.jsx src/components/Gallery.jsx:44 / src/components/Audio.jsx:77 / src/components/Articles.jsx:44`
+
+**Problème :** Gallery.jsx:44, Audio.jsx:77, Databases.jsx:150 affichent des messages texte plats ('Aucun article.' / 'Bibliothèque vide.') sans icône, sans CTA, sans lien contextuel. Un nouvel utilisateur ne sait pas s'il faut créer du contenu ou le trouver ailleurs.
+
+**Correctif :** Ajouter une icône illustrative (nuages pour vide, dossier+ pour créer) + texte de 2 phrases avec lien vers le bouton CTA adjacent. Exemple : 'Aucun article encore. [+ Nouvel article]' avec icon. Garder le ton léger (Anthropic).
+
+### [LOW] Pas de feedback tactile lors de la frappe dans BlockNote (contraste avec une vraie app)  ·  `CONSULT-UI` · effort S · conf 0.5
+`src/components/PageEditorBN.jsx src/components/PageEditorBN.jsx:91-99 (BlockNoteView sans config)`
+
+**Problème :** PageEditorBN utilise BlockNote sans curseur/sélection visible accentuée lors de la frappe rapide. Ressenti laggy sur réseau lent ou onglet multi-tasking (comparé à Notion desktop ou iA Writer).
+
+**Correctif :** Améliorer la configuration BlockNote : activer visuellement le curseur (plus épais / coloré), ajouter une animation subtile au survol des blocs, et vérifier que le debounce 2s n'affecte pas la sensation immédiate du rendu du curseur.
+
+### [LOW] Champ 'status' en petit texte gris, collé à d'autres labels, se perd visuellement  ·  `CONSULT-UI` · effort S · conf 0.6
+`src/components/Articles.jsx src/components/Articles.jsx:117 (status inline avec toolbar)`
+
+**Problème :** PageEditorBN rend le status comme texte gris (L184) ou Articles.jsx rend status au même endroit que les options de font/thème (L117), ce qui crée du bruit visuel. Impossible de scanner rapidement.
+
+**Correctif :** Déplacer le status dans une petite badge épinglée en bas à droite (fixed ou sticky), ou dans une barre contextuelle séparée en tête. Garder le texte gris mais isolé.
+
+### [LOW] États vides moroses sans conseils d'action  ·  `CONSULT-UI` · effort S · conf 0.7
+`src/components/Gallery.jsx Gallery.jsx:44`
+
+**Problème :** Gallery.jsx:44, Audio.jsx:77 affichent des messages texte plats ('Aucun article.') sans icône ou lien contextuel. Nouvel utilisateur ne sait pas quoi faire.
+
+**Correctif :** Ajouter une icône illustrative + texte de 2 phrases avec lien vers le CTA adjacent.
+
+## architecture  (1)
+
+### [HIGH] App.jsx est un monolithe de 3282 lignes, source de conflits de merge et de regressions  ·  `PROPOSE-REVIEW` · effort L · conf 0.95
+`src/App.jsx global, lignes 1-3282`
+
+**Problème :** App.jsx (3282 lignes) est le conteneur unique de 6 vues + state global (Board, Pages, Databases, Gallery, Articles, Audio, etc.). Toute modification sur une feature casse potentiellement les autres ; les règles React (hooks, lazy chunks) explodent au reload avec tant de logique entrelacée ; la recherche/refactor est laborieuse.
+
+**Correctif :** Extraire chaque vue majeure (Board, Pages, Databases, Gallery) en composant de premier niveau avec son propre state local persisté (ex ViewContext). Garder App.jsx pour le routing/layout/tabs seul (~200 lignes). Passer le state globaux (steps, cards, goals) en Props/Context minces. Permet le code-splitting et évite les conflits sur un seul fichier.
+
+## duplication  (4)
+
+### [MEDIUM] Patterns fetch répétitifs sans helpers centralisés pour read/write page.json  ·  `PROPOSE-REVIEW` · effort M · conf 0.92
+`src/components/Databases.jsx, Gallery.jsx, Articles.jsx, PageEditorBN.jsx, et 5 autres Databases:29,31,36,44,74 ; Gallery:49 ; Articles:17-18`
+
+**Problème :** Chaque composant (Databases, Gallery, Articles, etc.) fait ses propres `fetch('/api/page?action=read&path=...').then(r=>r.json()).catch(()=>null)` et `fetch('/api/page', {method:'POST', ...})` 5-10 fois par fichier. Pas de wrapper centralisé => erreurs incohérentes, cache/retry/retry non uniformes, difficile à maintenir en cas d'évolution API.
+
+**Correctif :** Créer src/lib/apiPage.js exportant `readPage(path)`, `savePage(path, md, sha)`, `deletePage(path, sha)`, `listPages(dir)`. Intégrer la gestion d'erreur, retry sur 409 (conflict), debounce/timer centralisés. Réutiliser partout à la place des fetch bruts.
+
+### [LOW] Redéfinition du dictionnaire FONTS dans 12 fichiers composants  ·  `SAFE-AUTO` · effort S · conf 0.99
+`src/components/ (12 fichiers) lignes 6-14 de chaque composant`
+
+**Problème :** App.jsx, Articles.jsx, BuildBoard.jsx, Audio.jsx, DriveDashboard.jsx, Databases.jsx, DatabaseTable.jsx, Gallery.jsx, Notifications.jsx, PinGate.jsx, Shelf.jsx, Views.jsx, TypedCell.jsx définissent chacun `const FONTS = {serif:..., sans:..., mono:...}`. L'existe déjà dans src/theme.js mais injecté par les props `t` (thème). Zéro rationalisation => maintenance fragmentée.
+
+**Correctif :** Extraire FONTS en objet unique dans src/fonts.js ou src/lib/fontDefs.js, exporter. Remplacer tous les `const FONTS =` par `import { FONTS } from '../lib/fontDefs.js'`. Garantit cohérence, réduit la taille des bundles inline, et une seule source de vérité.
+
+### [LOW] Fonction uid() réimplémentée 3+ fois identiquement  ·  `SAFE-AUTO` · effort S · conf 0.98
+`src/App.jsx, src/components/Databases.jsx, src/components/DatabaseTable.jsx App:69, Databases:14, DatabaseTable:9`
+
+**Problème :** App.jsx:69 `uid = () => crypto.randomUUID()...`, Databases.jsx:14 `uid = (p='x') => p+Math.random()...`, DatabaseTable.jsx:9 même, PageEditorBN.jsx n'a pas d'uid local mais pose des `'c'+Date.now()`. Aucun import d'une source centralisée => bug silencieux si les signatures divergent.
+
+**Correctif :** Créer src/lib/uid.js exportant `export const uid = () => ...` (préférer crypto.randomUUID + fallback). Importer partout. Bénéfice collatéral : IDEs détectent les appels orphelins si la signature change.
+
+### [LOW] Helpers de dates (pad, ymd, mondayOf) redéfinis dans plusieurs fichiers  ·  `SAFE-AUTO` · effort S · conf 0.98
+`src/App.jsx, src/components/Databases.jsx, src/components/DatabaseTable.jsx App:61-68, Databases:8-12, DatabaseTable:10-12`
+
+**Problème :** App.jsx:61-66 défini `pad, ymd, DAYNAMES, MONTHS_SHORT/FULL, mondayOf, fmtLong, monthKey`. Databases.jsx:8-12 réimplémente `pad2, ymd2, mondayOf2`. PageEditorBN redéfinit ses propres dates. Aucun partage => duplication volumineuse et bugs de cohérence (pad vs pad2).
+
+**Correctif :** Créer src/lib/dateHelpers.js exportant pad, ymd, mondayOf, fmtLong, monthKey, DAYNAMES, MONTHS_FULL/SHORT. Importer dans App.jsx, Databases.jsx, DatabaseTable.jsx.
+
+## code-quality  (5)
+
+### [MEDIUM] Styles inline massifs non factorisés (> 30 occurrences par composant)  ·  `PROPOSE-REVIEW` · effort M · conf 0.88
+`src/components/Databases.jsx, Gallery.jsx, Articles.jsx, PageEditorBN.jsx Databases:123-140 (7+ styles différents), Gallery:31-98 (10+ styles diff), Articles:47-51`
+
+**Problème :** Databases.jsx accumule 30+ `style={{...}}` en dur, chacun redéfinissant borderRadius, color, padding, fontFamily identiques. Exemple : inputBase réutilisé mais 90% des autre styles copiés-collés. PageEditorBN, Gallery, Articles identiques. Zéro variables CSS ni objets partagés => maintenabilité catastrophique.
+
+**Correctif :** Extraire un objet `styleLib` par composant (ex src/components/styles/databasesStyles.js) regroupant `inputBase, selectStyle, cellStyle, card, btn, label, etc.` utilisables directement. Ou passer le `t` (thème) plus agressivement aux sous-composants pour DRY.
+
+### [MEDIUM] Styles inline massifs non factorisés (30+ occurrences par composant)  ·  `PROPOSE-REVIEW` · effort M · conf 0.88
+`src/components/Databases.jsx, Gallery.jsx, Articles.jsx, PageEditorBN.jsx Databases:123-140 (7+ styles différents), Gallery:31-98 (10+ styles diff), Articles:47-51`
+
+**Problème :** Databases.jsx accumule 30+ style={{...}} en dur, chacun redéfinissant borderRadius, color, padding, fontFamily identiques. Exemple: inputBase réutilisé mais 90% des autres styles copiés-collés. PageEditorBN, Gallery, Articles identiques. Zéro variables CSS ni objets partagés => maintenabilité catastrophique.
+
+**Correctif :** Extraire un objet styleLib par composant (ex src/components/styles/databasesStyles.js) regroupant inputBase, selectStyle, cellStyle, card, btn, label, etc. utilisables directement. Ou passer le t (thème) plus agressivement aux sous-composants pour DRY.
+
+### [LOW] 12 lazy imports déclarés en haut d'App.jsx mais plusieurs jamais utilisés ou remplacés  ·  `SAFE-AUTO` · effort S · conf 0.65
+`src/App.jsx lignes 30-41`
+
+**Problème :** App.jsx:30-41 déclare LazyPageEditor, LazyArticles, LazyDatabaseTable, LazyDriveDashboard, LazyShelf, LazyMediaViewer, LazyImageNodeViewer, LazyRefApp, LazyCanvasNodeViewer, LazyEmbedNodeViewer. Mais le code ne les utilise pas directement dans le rendu JSX : il y a un niveau d'indirection (ex. `view==='pages' && <LazyPageEditor>`). Code mort ou renommage en attente ?
+
+**Correctif :** Vérifier que chaque LazyXxx est réellement utilisé : chercher son nom dans le JSX (render section). S'il n'est pas appelé, supprimer l'import. Si un composant est remplacé (ex LazyMediaViewer par StreamVideo), documenter ou nettoyer les deux.
+
+### [LOW] Hardcoded magic numbers pour delays, sizes, ratios (600ms debounce, 760px width, 0x8000 chunk)  ·  `SAFE-AUTO` · effort S · conf 0.85
+`src/App.jsx, src/components/PageEditorBN.jsx, src/capture/universalCapture.js, etc. App:104,106,113 ; PageEditorBN:201 ; Databases:57 ; universalCapture:25,32 ; et 10+ autres`
+
+**Problème :** App.jsx:104 `window.innerWidth >= 860` (responsive threshold), Articles:80 `setTimeout(..., 0)`, PageEditorBN:201 `setTimeout(..., 2000)`, universalCapture:25 `CHUNK_SIZE = 3145728`, Databases:57 `setTimeout(run, 800)`, Gallery:62 `createImageBitmap(f)` sans timeout. Zéro constantes nommées => difficile de maintenir/ajuster (si on passe 1024px de breakpoint, il faut chercher partout).
+
+**Correctif :** Créer src/lib/constants.js exportant `RESPONSIVE_BREAKPOINT=860, DEBOUNCE_DURATION_MS=800, CHUNK_SIZE=3145728, AUTOSAVE_DELAY_MS=2000`. Importer et utiliser partout au lieu de literals. Bénéfice : une change une fois, propage partout.
+
+### [LOW] Articles.jsx:80 utilise `setTimeout(() => save(patch), 0)` (anti-pattern)  ·  `PROPOSE-REVIEW` · effort S · conf 0.75
+`src/components/Articles.jsx ligne 80`
+
+**Problème :** Articles.jsx:80 `const setM = (patch) => { setMeta(...); setTimeout(() => save(patch), 0) }` exécute le save via setTimeout(0) = au prochain tick. C'est une façon contournée de dire 'save async', mais crée une micro-race : React peut re-render et appeler setM() à nouveau avant que le timeout fire. Préférer un `useEffect(() => save(meta), [meta])` ou debounce('dura-save', 600ms).
+
+**Correctif :** Remplacer par `useEffect(() => { const t = setTimeout(() => save(meta), 600); return () => clearTimeout(t) }, [meta])` (debounce 600ms). Ou passer le patch directement à une fonction `saveAsync(patch)` qui retourne une promesse.
+
+## Robustness / Performance  (4)
+
+### [HIGH] index.html served with default cache headers (risk of stale client on build)  ·  `SAFE-AUTO` · effort S · conf 0.85
+`vercel.json + vite.config.js`
+
+**Problème :** Vite build creates index.html without explicit Cache-Control headers. Vercel may cache index.html at edge (up to 60s). On new deploy, client serves stale index.html pointing to old asset hashes → assets 404 or broken app state → blank screen or crashes.
+
+**Correctif :** Add vercel.json rule to set Cache-Control:no-cache for index.html (revalidate on each use, no stale-while-revalidate). Assets already use immutable long cache (server/img.js, server/shard.js). Ensure vite build tags index.html with no-cache.
+
+### [MEDIUM] PropertiesBlock likely commits on every keystroke without debounce  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/App.jsx ~1257-1260 (PropertiesBlock save)`
+
+**Problème :** Property edits likely trigger immediate .props.json save. 10 characters typed = 10 GitHub commits. High rate-limit risk, noisy history, partial failures create ambiguous state. Contrast: Databases.persist debounces 800ms.
+
+**Correctif :** Add 800ms debounce to batch property changes into single commit. Verify all property change handlers are debounced.
+
+### [MEDIUM] PropertiesBlock saves on every keystroke without debounce (quota + noise)  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/App.jsx (PropertiesBlock save calls, likely ~L1257-1260)`
+
+**Problème :** Line 1257/1260 of App.jsx likely saves .props.json directly on property change. Each character typed = 1 commit. 10 characters = 10 GitHub commits. High rate-limit risk, creates noisy history, and if one fails, user doesn't know which change persisted.
+
+**Correctif :** Add 800ms debounce (like Database.persist L46) to property saves. Batch all prop changes in one window into a single commit.
+
+### [MEDIUM] PropertiesBlock likely saves on every keystroke without debounce  ·  `SAFE-AUTO` · effort S · conf 0.8
+`src/App.jsx (PropertiesBlock save calls near L1257-1260)`
+
+**Problème :** Property edits likely trigger immediate save of .props.json. Each character typed = 1 GitHub commit. Typing 10 characters = 10 commits. High rate-limit risk, creates noisy history, and partial saves can create ambiguous state if one commit fails mid-update.
+
+**Correctif :** Add 800ms debounce (matching Database.persist pattern) to batch property changes into single commits. Verify actual call site and debounce all property change handlers.
+
+## Robustness / Error Handling  (10)
+
+### [HIGH] api.js saveState swallows network errors silently, no recovery path  ·  `PROPOSE-REVIEW` · effort M · conf 0.8
+`src/api.js:35-40`
+
+**Problème :** Line 35-40: POST /api/state caught with .catch(()=>{}). Network drops or API failure during 600ms debounce window = silent state loss. No user feedback, no retry, no queue. Dashboard cards/steps may never persist server-side.
+
+**Correctif :** Replace silent catch with error handler: queue failed POST in IndexedDB, retry on next online event. Notify user 'State not saved' on persistent failure so they know session is at risk.
+
+### [HIGH] api.js:39 — saveState POST to /api/state swallows all errors silently  ·  `PROPOSE-REVIEW` · effort M · conf 0.8
+`src/api.js lines 35-40`
+
+**Problème :** Line 35-40: fetch to /api/state with 600ms debounce catches all errors and does nothing (.catch(()=>{})). If network drops during debounce window or API fails, state loss is silent. No user feedback, no retry, no queue persistence. Dashboard state (cards, steps) written to server may never arrive.
+
+**Correctif :** Replace .catch(()=>{}) with error handler: detect offline state, queue the POST in IndexedDB, retry on online event. Or fallback: notify user 'State not saved' on error instead of silent void.
+
+### [HIGH] api.js saveState POST to /api/state swallows all errors silently  ·  `PROPOSE-REVIEW` · effort M · conf 0.8
+`src/api.js lines 35-40`
+
+**Problème :** Line 35-40: fetch to /api/state with 600ms debounce catches all errors and does nothing. If network drops during debounce window or API fails, state loss is silent. No user feedback, no retry, no queue persistence. Dashboard state (cards, steps) written to server may never arrive.
+
+**Correctif :** Replace .catch(()=>{}) with error handler: detect offline state, queue the POST in IndexedDB, retry on online event. Or fallback: notify user 'State not saved' on error instead of silent void.
+
+### [MEDIUM] Gallery.jsx corrupted manifest JSON becomes empty with no user diagnostic  ·  `PROPOSE-REVIEW` · effort S · conf 0.65
+`src/components/Gallery.jsx:48-52`
+
+**Problème :** Line 51: JSON.parse error triggers bare catch, sets empty array. Manifest corruption silently renders empty gallery. No error message, no diagnostic, no recovery hint. User cannot distinguish 'truly empty' from 'corrupted'.
+
+**Correctif :** On parse error: log warning + notify user 'Manifest corrupted, reverting to empty. Reload to retry.' Offer cache restore if available.
+
+### [MEDIUM] Gallery image processing errors silently skip corrupted files with no user feedback  ·  `PROPOSE-REVIEW` · effort S · conf 0.65
+`src/components/Gallery.jsx:62`
+
+**Problème :** Gallery.jsx:62 createImageBitmap error caught bare, file skips without log. User sees N files added when they dropped M; no diagnostic which/why. Corrupted HEIC/SVG silently ignored.
+
+**Correctif :** On error: log filename + error, notify 'File X unreadable (corrupted?)'. Batch continues. User knows what failed.
+
+### [MEDIUM] Gallery.jsx:51 — JSON.parse of manifest has bare try/catch, no fallback if corrupt  ·  `PROPOSE-REVIEW` · effort S · conf 0.65
+`src/components/Gallery.jsx lines 48-52`
+
+**Problème :** Line 51: `try { setImages(JSON.parse(j.markdown).images || []) } catch { setImages([]) }`. If manifest JSON is corrupt, empty array is set and UX shows 'empty gallery'. But no error message to user about corruption, no diagnostic, and silent data loss if the manifest was partially valid before corruption.
+
+**Correctif :** On parse error: log console warning + optionally notify user 'Gallery manifest corrupt, reverting to empty'. Or read a cached version if available. Distinction: intentionally empty vs corrupted state.
+
+### [MEDIUM] Gallery.jsx:62 — createImageBitmap errors caught but no notification to user  ·  `PROPOSE-REVIEW` · effort S · conf 0.65
+`src/components/Gallery.jsx line 62`
+
+**Problème :** Line 62: `try { const bmp = await createImageBitmap(f); ... } catch {}`. If image is corrupted or unsupported, exception is silently swallowed. File silently skips (no webp generated). User sees fewer items added than expected, no diagnostic why.
+
+**Correctif :** On createImageBitmap error: log the filename + error, optionally notify 'File X unreadable (may be corrupted)'. Allow upload of other images in batch to continue.
+
+### [MEDIUM] Gallery manifest JSON.parse corrupt data handled silently with no diagnostics  ·  `PROPOSE-REVIEW` · effort S · conf 0.65
+`src/components/Gallery.jsx lines 48-52`
+
+**Problème :** Line 51: try/catch on JSON.parse sets empty array on error. If manifest.json becomes corrupted or truncated, UX shows empty gallery with no error message. Silent data loss if manifest was valid before corruption; user has no diagnostic.
+
+**Correctif :** On parse error: log console warning plus optionally notify user 'Gallery manifest corrupt, reverting to empty'. Provide user option to restore from cache or reload.
+
+### [MEDIUM] Gallery image processing errors caught but user has no diagnostic feedback  ·  `PROPOSE-REVIEW` · effort S · conf 0.65
+`src/components/Gallery.jsx line 62`
+
+**Problème :** Gallery.jsx line 62: createImageBitmap errors are silently caught with bare try/catch. If image is corrupted or unsupported, file silently skips. User sees fewer items added than dropped, with no message about which file failed or why.
+
+**Correctif :** On createImageBitmap error: log filename + error type, notify user 'File X could not be read (may be corrupted)'. Allow batch to continue with other files.
+
+### [LOW] ClipboardProvider.jsx likely has broad .catch(() => {}) on clipboard operations  ·  `SAFE-AUTO` · effort S · conf 0.6
+`src/clipboard/ClipboardProvider.jsx (search .catch calls)`
+
+**Problème :** Clipboard API (navigator.clipboard.write/read) can throw for many reasons (permission denied, clipboard empty, browser sandbox). If these are caught and silently ignored, user won't know paste/copy failed. Appears to be pattern in codebase (48 silent catches found).
+
+**Correctif :** Replace silent catches with at least a console.warn or opt-in notify() call for permission/access errors. Distinguish user-actionable errors (permission) from non-errors (empty clipboard).
+
+## Robustness / Storage  (6)
+
+### [MEDIUM] dirCache sessionStorage quota fills silently, eliminating caching benefit  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/dirCache.js:20-40`
+
+**Problème :** dirCache.js uses sessionStorage (5-10 MB quota). Many folder listings + large manifests = quota exhausted. Write failures caught silently. Subsequent listings ALL re-fetch from GitHub per dir change, straining API quota and killing cache benefits.
+
+**Correctif :** Catch QuotaExceededError, implement LRU eviction of oldest entries. Fall back to RAM-only if needed. Log quota-full event for diagnostics.
+
+### [MEDIUM] Multiple components write localStorage without quota check or fallback  ·  `PROPOSE-REVIEW` · effort M · conf 0.68
+`src/App.jsx:94-100, src/api.js:9, src/capture/uploadMode.js`
+
+**Problème :** App.jsx (tabs/view), api.js (state cache), capture/uploadMode.js all write localStorage. On private browsing or full quota (>5MB), all writes silently fail (try/catch only). Session state (tabs, view, mode) reverts on reload.
+
+**Correctif :** Implement quota check (catch QuotaExceededError, clear old entries before write, fall back to RAM). Notify user if persistent storage unavailable.
+
+### [MEDIUM] dirCache.js relies on sessionStorage which can fill up and silently fail, no fallback  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/dirCache.js lines 20-40`
+
+**Problème :** dirCache uses sessionStorage (line 24+) as secondary cache. sessionStorage has 5-10 MB quota per origin. If many folders are listed (each cached JSON), quota can fill silently. Subsequent cache writes fail (try/catch avoids errors but caching stops). No degradation path: once full, all listings re-fetch from GitHub at every dir change.
+
+**Correctif :** Monitor sessionStorage quota before write (try to detect QuotaExceededError). On quota-full: clear oldest entries (LRU) or switch to RAM-only (slower but functional). Expose a 'cache full' warning for user to clear app storage if needed.
+
+### [MEDIUM] Multiple components write to localStorage without quota monitoring or fallback  ·  `PROPOSE-REVIEW` · effort M · conf 0.68
+`src/App.jsx lines 94-100, src/api.js line 9, src/capture/uploadMode.js`
+
+**Problème :** App.jsx (lines 94-100) persists tabs, view, activeTab to localStorage. api.js (line 9) caches state. capture/uploadMode.js caches mode. On private browsing or full localStorage (>5MB), all writes fail silently (wrapped in try/catch). App continues but session state reverts on reload.
+
+**Correctif :** Implement localStorage quota check (attempt write, catch QuotaExceededError, fall back to RAM-only). Or clear old entries before new writes. Notify user if persistent storage unavailable.
+
+### [MEDIUM] dirCache sessionStorage quota exhaustion causes silent cache failure with no fallback  ·  `PROPOSE-REVIEW` · effort M · conf 0.7
+`src/dirCache.js lines 20-40`
+
+**Problème :** dirCache.js uses sessionStorage (5-10 MB quota per origin) as secondary cache. If many folders listed, quota fills silently. Writes fail but are caught. All subsequent listings re-fetch from GitHub at every dir change, eliminating caching benefit and straining API quota.
+
+**Correctif :** Monitor sessionStorage quota errors (QuotaExceededError). On quota-full: implement LRU eviction of oldest entries, or fall back to RAM-only. Expose 'cache full' diagnostic to user if needed.
+
+### [MEDIUM] Multiple components write to localStorage without quota monitoring or graceful fallback  ·  `PROPOSE-REVIEW` · effort M · conf 0.68
+`src/App.jsx lines 94-100, src/api.js line 9, src/capture/uploadMode.js`
+
+**Problème :** App.jsx (lines 94-100), api.js (line 9), capture/uploadMode.js all write to localStorage. On private browsing or full storage (>5MB), all writes silently fail (try/catch only). App continues but session state (tabs, view, mode preference) reverts on reload.
+
+**Correctif :** Implement localStorage quota check (catch QuotaExceededError, clear old entries before write, or fall back to RAM-only). Notify user if persistent storage unavailable so they know session won't survive reload.
+
+## Robustness / Concurrency  (3)
+
+### [MEDIUM] Gallery optimistic update races ahead of saveJsonWithRetry, can diverge from server  ·  `PROPOSE-REVIEW` · effort M · conf 0.72
+`src/components/Gallery.jsx:67-74`
+
+**Problème :** Gallery.jsx:67-72 applies optimistic setImages immediately, then saveJsonWithRetry merges fresh manifest. If concurrent write arrives between optimistic + actual save, screen state (merged optimistic) diverges from final persisted state. Items appear then vanish post-merge.
+
+**Correctif :** Only apply optimistic update AFTER saveJsonWithRetry succeeds (res.ok). Or track pending items separately, reconcile post-save. Current pattern leaves divergence window.
+
+### [MEDIUM] saveJsonWithRetry optimistic update can diverge from server state under race conditions  ·  `PROPOSE-REVIEW` · effort M · conf 0.72
+`src/components/Gallery.jsx lines 67-74 + src/lib/saveJson.js`
+
+**Problème :** Gallery.jsx:67-72 applies optimistic update (adds items to state), then calls saveJsonWithRetry which reads fresh manifest (retries on 409). If between optimistic setImages and the actual save, another device writes to the same manifest, saveJsonWithRetry re-reads + merges but optimistic state already applied locally. User sees items appear then disappear if server merge differs from client optimism.
+
+**Correctif :** Only update optimistic state AFTER saveJsonWithRetry succeeds (res.ok). Or: track pending items separately and reconcile post-save. Current pattern (optimistic first) leaves a window where screen state diverges from what save will actually persist.
+
+### [MEDIUM] Gallery saveJsonWithRetry optimistic update diverges from server state under race  ·  `PROPOSE-REVIEW` · effort M · conf 0.72
+`src/components/Gallery.jsx lines 67-74`
+
+**Problème :** Gallery.jsx lines 67-72: optimistic setImages applied immediately, then saveJsonWithRetry reads fresh manifest (with retry). If concurrent device write arrives between optimistic update and actual save, client screen shows merged state but final persisted state may differ. Items appear then vanish post-merge.
+
+**Correctif :** Defer optimistic update until saveJsonWithRetry succeeds (res.ok===true). Or track pending items separately and reconcile post-save to align display with persisted reality.
+
+## Security / Robustness  (3)
+
+### [MEDIUM] server/page.js safe() allows unlimited path depth, no invariant protection  ·  `SAFE-AUTO` · effort S · conf 0.55
+`server/page.js:35 (safe function)`
+
+**Problème :** safe() line 35 blocks '..' and '/', but allows pages/a/b/c/.../z/ (100+ nesting levels). GitHub permits it, but no invariant ensures reasonable depth. Risk: tools/scripts expecting shallow structure break.
+
+**Correctif :** Add depth check: `(p.match(/\//g) || []).length <= 20`. Document maximum depth and enforce it.
+
+### [MEDIUM] safe() path validator in server/page.js excludes '..' and '/' but allows deeply nested paths without depth limit  ·  `SAFE-AUTO` · effort S · conf 0.55
+`server/page.js line 35 (safe function)`
+
+**Problème :** server/page.js line 35: `!p.includes('..')` prevents directory traversal but doesn't limit path depth. Client could write to `pages/a/b/c/.../z/file.md` (100+ levels). While GitHub allows it, no invariant ensures reasonable depth. Risk: tools/scripts expecting shallow structure fail.
+
+**Correctif :** Add max depth check: `(p.match(/\//g) || []).length <= 20` to prevent abuse. Or document the maximum expected depth.
+
+### [MEDIUM] server/page.js safe() validator allows unlimited path depth, no invariant  ·  `SAFE-AUTO` · effort S · conf 0.55
+`server/page.js line 35 (safe function)`
+
+**Problème :** server/page.js line 35: safe() excludes '..' and leading '/' but allows arbitrarily deep nesting. Client could write to pages/a/b/c/...z/ (100+ levels). GitHub allows it, but no invariant ensures reasonable depth. Risk: tools/scripts expecting shallow structure fail.
+
+**Correctif :** Add max-depth check: `(p.match(/\//g) || []).length <= 20` to prevent abuse. Document expected maximum depth and enforce it.
+
+## Robustness / Security  (3)
+
+### [LOW] fileToWebp omits MIME type validation before createImageBitmap processing  ·  `SAFE-AUTO` · effort S · conf 0.6
+`src/api.js:57-72`
+
+**Problème :** api.js:57 fileToWebp(file) directly calls createImageBitmap without checking file.type. Non-image binaries rejected downstream but no early guard. Best practice: validate MIME type upfront.
+
+**Correctif :** Guard: if (!file.type.startsWith('image/')) throw Error('Not an image') before createImageBitmap.
+
+### [LOW] fileToWebp() doesn't validate file type before createImageBitmap; could process non-image binaries  ·  `SAFE-AUTO` · effort S · conf 0.6
+`src/api.js line 57-72`
+
+**Problème :** api.js:57: `async function fileToWebp(file)` calls createImageBitmap(file) without checking file.type. If file is text/json/binary, createImageBitmap will reject. The rejection is caught by callers, but no explicit MIME type guard. Small risk but good practice to validate early.
+
+**Correctif :** Add guard: `if (!file.type.startsWith('image/')) throw new Error('Not an image')` before createImageBitmap.
+
+### [LOW] fileToWebp does not validate MIME type before image processing  ·  `SAFE-AUTO` · effort S · conf 0.6
+`src/api.js lines 57-72`
+
+**Problème :** api.js line 57: fileToWebp(file) calls createImageBitmap without checking file.type. Non-image binaries will be rejected by createImageBitmap, but no early guard. Good practice to validate MIME type upfront.
+
+**Correctif :** Add guard: if (!file.type.startsWith('image/')) throw Error('Not an image') before createImageBitmap call.
+
+## Robustness / Data Loss  (1)
+
+### [MEDIUM] uploadBinaryChunks loop doesn't verify each blob PUT succeeds before continuing  ·  `PROPOSE-REVIEW` · effort M · conf 0.75
+`src/capture/universalCapture.js (search uploadBinaryChunks calls to PUT)`
+
+**Problème :** universalCapture.js likely loops through chunks and PUTs each to GitHub, but no verification that each PUT succeeded. If a PUT fails silently (network hiccup, rate-limit), loop continues to next chunk. Commit proceeds with incomplete blob set. Result: unplayable media (segments missing).
+
+**Correctif :** After each blob PUT, check response.ok. If not OK: halt, report error, allow user to retry from that chunk index. Consider retry logic with exponential backoff for transient failures.
+
+## Robustness / Data Consistency  (1)
+
+### [LOW] server/page.js read with raw=1 returns no sha; client using raw for saves will miss conflict detection  ·  `PROPOSE-REVIEW` · effort S · conf 0.5
+`server/page.js lines 170-177`
+
+**Problème :** Line 170-175: raw read via raw.githubusercontent.com returns content but sets sha:null (by design, no sha from raw). If client stores this null sha and later tries to save the page (edit), there's no conflict detection (sha null = blind overwrite risk). This path is used for display metadata reads, not saves, but potential footgun.
+
+**Correctif :** Document clearly: raw=1 is display-only, never use returned content for editing without re-reading with sha. Or: on raw read fallback, client must re-fetch with API to get fresh sha before any edit.

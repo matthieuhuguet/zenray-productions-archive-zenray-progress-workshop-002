@@ -1,0 +1,105 @@
+# ZenRay Freelance, le moteur de recherche d'emploi (4 October 2026)
+
+Le but, dans les mots de Matthieu : un bouton, et le site cherche seul sur tous les sites, range les annonces dans des cases, écrit la lettre avec son CV et ses derniers travaux, donne le lien de candidature du studio. Il n'a qu'à relire, copier, envoyer. (4 October 2026)
+
+## Ce qui tourne, et où (4 October 2026)
+
+- Le service local `com.zenray.freelance` (LaunchAgent, `scripts/Freelance/Main.mjs`, port 3101 en boucle locale) cherche toutes les 6 heures et au démarrage s'il est en retard. Il ne tourne que Mac allumé. Le bouton « Rechercher maintenant » de la page lui parle par `src/lib/freelanceBridge.js`, avec les garde-fous du pont Assets : boucle locale seule, origines autorisées, en-tête client `x-zr-freelance-client`. (4 October 2026)
+- Une passe : CV lu sur le site publié, 33 sources lues en parallèle (AFJV, GamesIndustry.biz, Keywords Studios et les tableaux officiels de 30 studios sur SmartRecruiters, Lever, Greenhouse, Ashby, Recruitee, Breezy, Teamtailor), fusion dans `freelance/applications.json` sans toucher à ce que Matthieu a écrit, texte de chaque nouvelle annonce archivé dans `freelance/offers/`, lettres écrites dans `freelance/letters/`, état écrit dans `freelance/engine.json`, UN commit par git (`CloudStore.mjs`). Un push refusé relance tout le calcul depuis l'état distant le plus frais, donc une sauvegarde faite par la page entre-temps survit (testé sur un vrai dépôt git). (4 October 2026)
+- La page (`FreelanceView.jsx` et `src/components/freelance/`) ne fait que lire ce que le moteur écrit et enregistrer ce que Matthieu fait. Elle lit hors quota (`urlLectureAffichage`) sauf pour les écritures. (4 October 2026)
+
+## Les fichiers du dépôt privé zenray-data (4 October 2026)
+
+| Fichier | Contenu | Écrit par (4 October 2026) |
+|---|---|---|
+| `freelance/applications.json` | les studios ; le bloc `engine` de chaque fiche est au moteur, statut, messages, historique et notes sont à Matthieu | moteur et page |
+| `freelance/engine.json` | dernière passe, historique, santé de chaque source, CV et PDF, derniers travaux, liens de recherche manuelle, état de Claude | moteur |
+| `freelance/letters/<id>.json` | l'archive d'une lettre : versions en ajout seul, une version de Matthieu n'est jamais écrasée, une version automatique plus récente attend en `suggested` | moteur et page |
+| `freelance/letter-template.json` | le modèle (sa lettre Asobo découpée par paragraphe), les paragraphes de studio, l'historique des modèles | moteur (graine) et page (éditeur) |
+| `freelance/offers/<id>.json` | le texte de l'annonce et, pour les annonces trouvées par le moteur, son recensement | moteur |
+
+## Les lois qui ne se négocient pas (4 October 2026)
+
+1. **Jamais d'envoi.** Rien n'envoie un message. « Marquer comme envoyée » garde le texte exact avec sa date quand Matthieu le décide. (4 October 2026)
+2. **Ses paragraphes sont repris mot pour mot** ; seuls les emplacements changent. Le test `Letters.test.js` exige que la lettre Asobo soit reproduite à l'identique. Les variantes ajoutées (stage, mission, vivier, anglais) sont des propositions marquées à relire. (4 October 2026)
+3. **Aucune affirmation que le CV ne porte pas.** L'accroche automatique ne nomme que les compétences communes à l'annonce et au CV. L'accroche écrite par Claude est refusée si elle dit avoir joué, aimé, admiré, étudié, si elle porte un lien, un tiret long, ou une compétence absente du CV (`Hooks.mjs`, `validateHook`). (4 October 2026)
+4. **L'absence d'une annonce ne ferme rien si la source a échoué.** Une annonce est fermée après deux passes manquées espacées d'au moins 4 heures, et seulement quand la source a répondu en entier. Une source de recherche (GamesIndustry.biz) ne ferme jamais rien. Une annonce qui revient est rouverte. (4 October 2026)
+5. **LinkedIn n'est jamais lu automatiquement** : le site interdit le scraping. La page construit des recherches triées par date et Matthieu les ouvre. Même règle pour Hitmarker, Welcome to the Jungle et Work With Indies. (4 October 2026)
+
+## L'incident de la limite d'1 Mio, à ne pas rejouer (4 October 2026)
+
+- L'API contents de GitHub renvoie un corps VIDE (`content: ""`, `encoding: "none"`) pour un fichier de plus d'1 048 576 octets, avec un sha pourtant valide. Le fichier des studios a franchi ce seuil (1 093 861 octets) et la page l'a lu vide pendant trois minutes : une sauvegarde faite alors aurait écrasé les 305 fiches. Rien n'a été écrit pendant cette fenêtre. (4 October 2026)
+- Trois protections : le moteur écrit le fichier compact (957 468 octets à la correction) et refuse de publier au-delà de `cloud.maxStoreBytes` ; `server/page.js` relit un tel fichier par son blob (`contentsText`, testé, et prouvé sur la version de 1 093 861 octets) et lève une erreur plutôt que de rendre un corps vide ; la page refuse d'afficher une liste vide et de sauvegarder quand le fichier existe mais ne se lit pas. (4 October 2026)
+- Les nouvelles annonces ne portent plus leurs 14 lignes de recensement dans la fiche : elles vont avec l'annonce archivée, la fiche garde une ligne. (4 October 2026)
+
+## Commandes (4 October 2026)
+
+```bash
+node scripts/Freelance/Client.mjs status        # état du service, dernière passe, prochaine échéance
+node scripts/Freelance/Client.mjs run           # lance une passe maintenant (comme le bouton)
+node scripts/Freelance/Client.mjs letter <id> [fr|en]   # écrit une lettre à la demande
+node scripts/Freelance/Run.mjs --dry            # lit tout, ne publie rien (aperçu)
+node scripts/Freelance/Daemon.mjs install|restart|status|uninstall
+npx vitest run scripts/Freelance src/components/freelance src/components/FreelanceView.test.jsx src/lib/freelanceEngineModel.test.js server/contentsTexteGrosFichier.test.js
+```
+
+Journal du service : `~/Library/Application Support/ZenRayFreelance/Service.log`. L'état local est `State.json`, le clone privé est `DataClone/` (le moteur le réinitialise à chaque passe, personne ne l'édite).
+
+## Ajouter une source (4 October 2026)
+
+Un tableau officiel d'un studio (Greenhouse, Lever, SmartRecruiters, Ashby, Recruitee, Breezy, Teamtailor) s'ajoute par UNE ligne dans `FreelanceConfig.json`, bloc `sources.<ats>.boards`, après avoir vérifié que l'adresse publique répond. Un nouveau type de site est un adaptateur dans `scripts/Freelance/sources/`, une ligne dans `Index.mjs`, son bloc de configuration et ses tests ; un adaptateur rend, par tableau, `listings`, `seenIds`, `complete`. L'identifiant d'une annonce est `job_` + sha256 de son identifiant source tronqué à 20 caractères, identique à celui du collecteur Python du 30 September 2026 (une annonce trouvée aussi par adresse est adoptée, pas dupliquée). (4 October 2026)
+
+## L'accroche écrite par Claude (4 October 2026)
+
+Désactivée tant que Claude Code n'est pas connecté. Voie principale, une seule fois, dans un terminal : `claude auth login` (la commande `claude` existe grâce à `~/.local/bin/claude`, qui lance la version installée par l'application Claude). La connexion est gardée et renouvelée par Claude Code lui-même ; le service la détecte seul (`claude auth status`, relue au plus toutes les 5 minutes), sans redémarrage, démarre à l'ouverture de session et n'a besoin ni du terminal ni de l'application Claude. Voie alternative : un jeton d'un an (`node scripts/Freelance/SetToken.mjs`, qui teste le jeton avant de l'écrire dans `~/Library/Application Support/ZenRayFreelance/.env`, droits 600). Un jeton incomplet dans ce fichier est ignoré à voix haute, parce qu'il masquerait la connexion et ferait échouer chaque appel. Incident du 4 October 2026 : trois jetons créés par `claude setup-token` ont tous été refusés (401 « OAuth access token is invalid ») par `claude -p` sur ce Mac, cause non établie ; la connexion directe évite ce chemin. (4 October 2026)
+
+Le service lance alors Claude Sonnet 5.5 en effort moyen, sans outil et sans session enregistrée, pour au plus 12 accroches par passe. Vérifié : la CLI reconnaît la variable (un jeton invalide répond 401 au lieu de « Not logged in »). (4 October 2026)
+
+## 5 October 2026 : horaires fixes, scoring honnête, plus de sources, mes recherches, lot du jour
+
+- 5 October 2026 : le service cherche à **00 h, 06 h, 12 h et 18 h, heure de Paris** (`service.schedule` dans `FreelanceConfig.json`, calcul dans `lib/Schedule.mjs`, une passe manuelle ne décale rien). Après un Mac endormi, la passe manquée part dès le réveil. La page affiche « prochaine dans 2 h (12 h) ».
+- 5 October 2026 : scoring durci. Un titre senior, lead, principal, director, manager, expert ou « mid-senior » perd 30 points et ne dépasse jamais 55 (jamais classé « très pertinent »). Une annonce publiée il y a plus de 120 jours perd 10 points, plus d'un an 25. Une annonce nouvelle sous 20 points n'est ni stockée ni lettrée (`relevance.storeMinScore`, comptée dans `belowFloor`).
+- 5 October 2026 : sources, de 33 à 54 lues : 12 tableaux Greenhouse (2K, Bethesda, Digital Extremes, Insomniac, Krafton, Roblox, Scopely, Take-Two, Firaxis, Firesprite, Keen, Bandai Namco), 2 Lever (Jam City, Kabam), 2 Ashby (Moon Active, thatgamecompany), 1 SmartRecruiters (Outpost VFX), plus quatre flux ouverts réutilisables avec crédit et lien d'origine : Remotive, Jobicy, Remote OK, Arbeitnow (`sources/Aggregators.mjs`). Ce sont des fenêtres de recherche : leur absence ne ferme jamais une annonce. Chaque tableau a été sondé en HTTP avant d'entrer dans la config.
+- 5 October 2026 : **mes recherches** : le fichier `freelance/my-searches.json` (jamais effacé : un retrait ajoute `removedAt`) est lu au début de chaque passe. Une adresse Greenhouse, Lever, Ashby, SmartRecruiters, Recruitee ou Breezy devient un tableau lu seul ; des mots-clés s'ajoutent à GamesIndustry, Remotive, Jobicy et à un lien LinkedIn ; toute autre adresse reste un lien (`lib/MySearches.mjs`, panneau « Mes recherches »).
+- 5 October 2026 : **lot du jour** (`src/lib/freelanceBatch.js`, panneau en tête de page) : les meilleures annonces ouvertes, une fois par poste (le même poste publié dans plusieurs pays compte pour un), deux au plus par studio, taille 5, 8 ou 12. « Fait » date la candidature ; « Ouvrir la lettre » mène à la fiche pour copier le texte exact.
+- 5 October 2026 : le disjoncteur de limite d'usage : quand Claude répond « session limit », le moteur cesse de lui demander pendant 30 minutes au lieu de douze refus lents.
+- 5 October 2026 : une fiche héritée de l'ancien collecteur perd son drapeau `legacy` dès qu'une source la revoit ; tant qu'aucune source ne l'a revue, ses faits se relisent de ses notes à chaque passe.
+
+## 6 October 2026 : Lot quotidien de trois candidatures
+
+- Trois candidatures par defaut, avec choix 5, 8 et 12 conserves ; la preference v2 applique une fois le nouveau defaut puis retient le choix explicite. Le lot visible ne plafonne pas les candidatures journalieres et aucun envoi automatique ne se produit. (6 October 2026)
+- Chaque carte prend un accent bleu, lavande ou vert pastel, defini dans FREELANCE_BATCH_PASTELS de src/config/colors.js et reference par P.batchPastels. Le score, la selection pertinente et les boutons gardent leur logique. (6 October 2026)
+- Quinze tests couvrent le nouveau defaut malgre une ancienne preference huit, les trois couleurs, l ouverture de lettre, les choix et leur conservation, ainsi que la page complete. La publication exige main a jour, puis CheckProduction.mjs et une relecture dix minutes apres. (6 October 2026)
+
+## 7 October 2026 : sept sites d'index lus par le moteur, ses propres pages, notifications locales
+
+- 7 October 2026 : sept index d'offres lus automatiquement (`sources/Indexes.mjs`, bloc `sources.indexes` de `FreelanceConfig.json`) : **DevQuest** (un fichier de données public de 6 301 offres, liens directs vers les employeurs), **Games Jobs Index**, **Hitmarker**, **GameJobs.co**, **Work With Indies** (sitemap, puis JSON-LD de chaque fiche), **Games Jobs Direct** (pages de catégorie, délai de 5 s respecté) et **Remote Game Jobs** (cartes de la liste). Un nouveau site qui publie un sitemap, des pages de catégorie ou un fichier de données coûte quelques lignes de configuration, pas de code.
+- 7 October 2026 : lecture polie (`lib/Robots.mjs`) : `robots.txt` lu avant toute page (en-tête `Accept: text/plain`, car un serveur répondait 406), Disallow respecté, Crawl-delay respecté (plancher 1,5 s, plafond 10 s), une requête à la fois par hôte même en parallèle. Un `robots.txt` illisible (5xx, réseau) ralentit à 5 s. Les conditions d'utilisation des sites ne se lisent pas par programme : seuls les robots.txt sont vérifiés.
+- 7 October 2026 : quatre des onze sources de la capture restent des LIENS (colonne « Index à ouvrir » du panneau Sources, avec la raison au survol) : **ASGC** (portail rendu par script, aucune liste lisible), **ArtStation Jobs** (répond 403 aux lectures automatiques, jamais contourné), **Skillsearch** (cabinet de recrutement, recherche rendue côté navigateur), **PlayHire** (formation et communauté). Les liens `lnkd.in` de la capture ont été résolus : gamesjobsindex.com, gamesjobsdirect.com, remotegamejobs.com, artstation.com/jobs/all, skillsearch.com, workwithindies.com.
+- 7 October 2026 : économie et mémoire : un lien déjà dans le fichier des studios n'est jamais relu (`known`), une page jugée hors sujet n'est pas relue pendant 45 jours (`lib/SeenCache.mjs`, `Cache/IndexSeen.json`, écriture atomique), au plus 25 à 40 pages de détail par site et par passe. Les sites tournent en parallèle (hôtes différents). Un site en panne donne sa propre carte d'erreur, jamais un arrêt des autres. Les index sont des fenêtres : ils ne ferment jamais une fiche.
+- 7 October 2026 : doublons entre sites (`lib/PostingKey.mjs`, même algorithme que `src/lib/freelanceBatch.js`, un test compare les deux) : une offre d'un index qui existe déjà chez le studio (même studio, même poste) n'est pas ajoutée, elle est comptée (`report.duplicates`). Un enregistrement fermé ne bloque pas une nouvelle annonce.
+- 7 October 2026 : « mes recherches » accepte maintenant n'importe quelle page https publique (offre ou page carrières) : le moteur lit son JobPosting et suit au plus 15 liens de même hôte dont le titre colle à ses métiers, un seul niveau (`genericPage`). Refusés : http, localhost, adresses IP, réseaux privés, noms internes, identifiants dans l'adresse, ports.
+- 7 October 2026 : JSON-LD fautif toléré (`tolerantJson`) : saut de ligne brut, antislash isolé, point-virgule à la place de la virgule, trois défauts observés sur des sites réels. Lecture stricte d'abord, nettoyage seulement en cas d'échec.
+- 7 October 2026 : notifications (`Notify.mjs`, bloc `notify`) : après une passe PUBLIÉE qui a trouvé du neuf, une notification macOS « N nouvelles offres, il y a X h que tu n'avais pas été prévenu » et un fichier daté `Digests/<date>.md` dans le dossier du service (les 10 meilleures avec liens). **Aucun mail n'est envoyé** : Mail.app n'a aucun compte sur ce Mac et aucun identifiant n'est stocké ; l'envoi par mail exige une décision de Matthieu (Resend, SMTP, ou Cloudflare Email Service sur zenray.studio). `maxStoreBytes` passe de 4 à 8 Mo.
+
+## 12 October 2026 : un refus enregistré, et le mail « demander un retour » prêt à copier
+
+- 12 October 2026 : premier cas, Voodoo (« Tech Artist - Portfolio team », fiche `job_f1ad9a5f06dd8e8aefef`, contactée le 6 October 2026) : mail de refus type « nous avons décidé de ne pas poursuivre », sans motif. La règle de Matthieu : après un refus, un court mail demande au studio ce qui n'a pas marché, pour que la candidature suivante s'améliore. (12 October 2026)
+- 12 October 2026 : le mail se compose depuis les données du studio (`src/lib/freelanceFeedbackRequest.js`, module pur, toutes les phrases dans `FEEDBACK_REQUEST`, FR et EN, langue de l'annonce par défaut). Il remercie, pose deux questions courtes (quelle partie du profil ou du portfolio était la plus éloignée du besoin, quel élément précis aurait été souhaité), propose de rester dans leur vivier, sans aucune affirmation hors CV et sans tiret long. Un paramètre sans valeur lève une erreur, jamais un mail à moitié rempli. (12 October 2026)
+- 12 October 2026 : la page l'affiche seule sur une fiche au statut « Refusé » (`FreelanceFeedbackRequest.jsx`, bloc « Demander un retour », avant « Candidature ») : copier le mail, copier objet + mail, bouton FR/EN, texte modifiable, « Marquer comme envoyé » qui garde le texte exact en message daté et pose `feedbackRequestedAt` pour ne jamais le proposer deux fois. Rien n'est envoyé d'ici. (12 October 2026)
+- 12 October 2026 : enregistrer un refus ou une réponse reçue par mail, sur la fiche exacte (un studio a souvent plusieurs annonces, le nom seul est ambigu) : `node scripts/Freelance/RecordEmail.mjs --studio <id> --from "<expéditeur>" --date <AAAA-MM-JJ> --file <texte.txt> [--subject "..."] [--dry]`. Mêmes règles que la page : un accusé de réception est ignoré, un refus passe la fiche en « Refusé », le texte entier est gardé (limite 20 000 caractères au lieu de 600), un seul commit. `processIncomingEmail` accepte désormais `{ studio, snippetLimit }`. (12 October 2026)
+- 12 October 2026 : tests : `npx vitest run src/lib/freelanceFeedbackRequest.test.js scripts/Freelance/RecordEmail.test.js src/components/freelance/FreelanceFeedbackRequest.test.jsx src/lib/freelanceEmailParser.test.js`. Limite connue : aucune boîte mail n'est lue automatiquement sur ce Mac, le refus se passe donc à la commande ci-dessus. (12 October 2026)
+- 12 October 2026 (même jour, correction de visibilité) : le mail n'apparaissait que dans la fiche ouverte, donc invisible depuis la liste. La carte d'un refus porte maintenant, dans la section « Refusé » de la vue Freelance, un badge « Refusé · date » et une ligne d'actions : « Copier le mail », « Copier objet + mail », bascule FR/EN, état « envoyé le … » ou « pas encore envoyé », « Ouvrir la fiche » (`FeedbackRequestShortcut` dans `FreelanceFeedbackRequest.jsx`). Modifier le texte et le marquer envoyé reste dans la fiche. (12 October 2026)
+
+## 15 October 2026 : session de prospection, lot en onglets
+
+- 15 October 2026 : le lot du jour propose 3, 5, 10, 20 ou 50 candidatures (`BATCH.sizes`, `src/lib/freelanceBatch.js`). « Ouvrir les N pages » demande au service local l'action `open-links` (`scripts/Freelance/Service.mjs`) : il ouvre les pages de candidature du lot comme onglets du navigateur par défaut, d'un coup, sans bloqueur de fenêtres. Seuls des liens https publics passent (ni localhost, ni réseau privé, ni identifiants dans l'adresse), 60 au plus par appel ; les autres sont rendus en `skipped`. Service éteint : repli sur `window.open`, qui n'ouvre en général que le premier onglet (la page le dit). (15 October 2026)
+- 15 October 2026 : aucune donnée personnelle n'est placée dans une adresse : les formulaires se préremplissent par l'autocomplétion du navigateur, la lettre se copie par « Copier » sur la carte (presse-papiers), puis « Fait » (ou « Tout marquer fait » après une confirmation) date la candidature. Rien n'est jamais envoyé. (15 October 2026)
+- 15 October 2026 : une longue liste affiche 72 fiches par groupe puis « Afficher plus » (617 annonces étaient 10 000 nœuds de page). Le service doit être relancé pour prendre `open-links` : `node scripts/Freelance/Daemon.mjs restart`. (15 October 2026)
+
+## 16 October 2026 : ZenRay Apply, la boucle de candidature (scripts locaux, rien à déployer)
+
+- 16 October 2026 : nom courant « ZenRay Apply ». Point d'entrée unique : `node scripts/Freelance/Apply.mjs 20 --open` (prépare les 20 meilleures offres à formulaire, pré-remplit coordonnées, CV et lettre exacte dans un Chromium privé, chronomètre, ouvre les pages prêtes pour relecture), puis `Apply.mjs sent` après l'envoi par Matthieu, `report`, `open`. Détail et mesures : skill `zenray-freelance`. (16 October 2026)
+- 16 October 2026 : ce sont des scripts du Mac (pas une fonction du site Cloudflare) : `Apply.mjs`, `ApplyLoop.mjs` (file, rapport, mark-sent), `ApplyRun.mjs` (navigateur), `apply/FillForm.js`, `apply/FieldMap.json`, `apply/ApplyHosts.json`. Coordonnées : `~/Library/Application Support/ZenRayFreelance/ApplyProfile.json`. Tests : `npx vitest run scripts/Freelance/ApplyLoop.test.js`. (16 October 2026)
+- 16 October 2026 : lois : jamais d'envoi, jamais de compte créé, aucun mur anti-bot contourné, questions sensibles laissées à Matthieu, « contacté » seulement après son accord. Mesuré : 20 pages en 31 s, 7 prêtes et 13 bloquées (murs SmartRecruiters, pages sans formulaire). (16 October 2026)
+- 16 October 2026 : bouton « Préparer N candidatures » dans le lot du jour (déployé) : la page parle au service local par `apply-start`, `apply-status`, `apply-open`, `apply-sent` (`lib/ApplyBridge.mjs`) ; « J'ai envoyé les prêtes » date les fiches par le même chemin que « Fait ». Le « dernier lot » est le plus récent : clore un lot avant d'en préparer un autre. (16 October 2026)

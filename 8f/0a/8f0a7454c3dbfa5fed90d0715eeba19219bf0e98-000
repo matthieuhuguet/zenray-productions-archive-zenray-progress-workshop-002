@@ -1,0 +1,26 @@
+# REVUE ADVERSARIALE — refactor unified-ingest (revue inline, le spawn d'agents ayant atteint la limite de session)
+
+Branche `refactor/unified-ingest`. 9 étapes (E1-E9) implémentées, build vert à chaque palier, aucun push.
+
+## Lentille 1 — Rétrocompat & sécurité des données : PASS
+- Le chemin chunk legacy (`.file.json` v4) est **strictement inchangé** (Scripts/archive-folder.mjs L328+).
+- Garde d'idempotence `sha256` AVANT le routage (L303) : re-archiver un dossier inchangé = no-op total → les 130 Go DJI live ne sont jamais réécrits.
+- **Repli défensif** : chaque branche (img/hls/media) retombe sur le chunk si l'ingestion échoue (try/catch ou null-check) → un fichier n'est JAMAIS perdu.
+- Aucune réécriture de manifeste existant. Aucune purge source.
+- Bémol noté (pas un bug) : re-archiver un fichier image MODIFIÉ crée un `.img.json` à côté de l'ancien `.file.json` (doublon visuel, pas de perte). Migration des anciennes archives = volontaire, jamais automatique.
+
+## Lentille 2 — Streaming & mobile : PASS
+- classify route image→img (.img.json, vignette réelle, affichable), vidéo→HLS adaptatif, audio/pdf→media. Le chunk binaire ne reçoit plus QUE les formats non ouvrables (zip/projets/RAW/proprios).
+- Le streaming sur machine faible est résolu structurellement : les médias sortent des chunks → plus de reassemblage, lecture HLS adaptative + image servie web.
+- Mobile : FAB d'upload (photo/galerie/fichiers) branché sur `runCapture → classify` (même pipeline que desktop, zéro routeur dédié). PWA installable + safe-area.
+- Web Share Target : **différé honnêtement** (nécessite un service worker, risque vs la règle index.html no-cache). Le FAB couvre déjà l'upload trivial.
+
+## Lentille 3 — Correctness & build : PASS
+- Build vert sur les 9 paliers. `node --check` OK sur les 4 fichiers refactor.
+- Smoke test classify : heic→img, mkv→hls, ogg→audio, zip→chunk, pdf→media, wav→media, mp4→hls, png→img — tous corrects (pièges .ogg et priorité mime audio respectés).
+- Effets de bord (gating localhost, notify, vis) conservés dans routeFile, hors du module pur isomorphe.
+- 6 lazy viewers morts retirés d'App.jsx (UnifiedViewer les gère).
+
+## Reste à valider SUR APPAREIL (non bloquant)
+- Rendu plein écran des viewers à 390px sur iPhone réel (les grilles sont déjà responsives via auto-fill minmax).
+- Test d'une archive bulk mixte réelle (2 img + 1 mp4 + 1 mp3 + 1 zip) → vérifier 2 .img.json + 1 HLS + 1 media + 1 .file.json.

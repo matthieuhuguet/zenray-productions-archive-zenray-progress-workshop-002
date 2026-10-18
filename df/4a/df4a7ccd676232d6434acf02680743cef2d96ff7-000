@@ -1,0 +1,218 @@
+# Audit du sous-systeme ARCHIVE (.file.json) — carte technique pour le refactor d'unification
+
+Branche cible du refactor : `refactor/unified-ingest`. Ce document est purement descriptif (aucune modif de code).
+Tout y est lu dans le code reel, pas invente.
+
+---
+
+## 0. Vue d'ensemble : 3 pipelines de stockage, 1 seul a corriger
+
+| Pipeline | Manifeste | Type node (`typeOfPath`) | Stockage binaire | Viewer | Streamable |
+|---|---|---|---|---|---|
+| IMAGE | `.img.json` v1 | `image` | shards PRIVES `zenray-media-NN` (hash `ab/cd/<sha>.<ext>`) + vignette .webp | `ImageNodeViewer.jsx` | oui (raw direct) |
+| VIDEO/AUDIO | `.media.json` (`chunked-media` v1) | `media` | HLS AES-128 (ladder 360/720/1080/4K) jsDelivr@SHA, ou chunks 3 Mo legacy | `MediaViewer.jsx` -> `StreamVideo(MSE)` | oui (HLS adaptatif) |
+| ARCHIVE | `.file.json` v4 | `file` | shards PUBLICS `zenray-productions-archive-*`, chunks BINAIRES 19 Mo hashes `aa/bb/<fid>-NNN` | `FileNodeViewer.jsx` + `DownloadsView.jsx` | NON (reassemblage total obligatoire) |
+
+Le probleme : ARCHIVE chunk-binarise N'IMPORTE QUEL fichier (image, video, audio inclus), donc une image archivee
+demande de re-telecharger N chunks de 19 Mo avant affichage, alors que les pipelines IMG/HLS la serviraient
+directement. Le chunk binaire opaque ne devrait servir QUE les vrais binaires non ouvrables (projets, zip, raw, .pkg...).
+
+---
+
+## 1. Format exact du manifeste `.file.json` v4
+
+Ecrit par `Scripts/archive-folder.mjs` L327-336 (objet `blobs[]`). Stocke dans le repo PRIVE `zenray-data`
+au chemin `<DEST>/<rel>.file.json` (ex. `pages/Archives/<nom>/<chemin>.file.json` ou `pages/Build/DJI/<date>/...`).
+
+```json
+{
+  "type": "file",
+  "v": 4,
+  "name": "<basename du fichier>",
+  "rel": "<chemin relatif dans l'archive>",
+  "mime": "<mime deduit de l'extension>",
+  "mode": "chunked",            // TOUJOURS "chunked" en v4 (le mode "raw" n'est plus produit, cf. note retrocompat)
+  "size": <octets>,
+  "sha256": "<sha du fichier ENTIER>",
+  "chunkSize": 19922944,         // 19 Mo
+  "parts": [                     // v4 : multi-shards. Un gros fichier (>5 Go) s'etale sur plusieurs shards <=5 Go
+    { "repo": "zenray-productions-archive-<nom>[-NN]", "commit": "<sha git fige>", "chunks": ["aa/bb/<fid>-000", "aa/bb/<fid>-001", ...] },
+    ...
+  ],
+  "repo":   "<parts[0].repo>",   // MIROIR de la 1re part : retrocompat lecteurs v2/v3 mono-shard
+  "commit": "<parts[0].commit>",
+  "chunks": [<parts[0].chunks>],
+  "versions": [                  // APPEND-ONLY : historique des versions par sha256
+    { "ts": "<ISO>", "size, sha256, chunkSize, parts, repo, commit, chunks" },
+    ...
+  ],
+  "thumb":  "<url jsDelivr>",    // sidecar OPTIONNEL (images), ajoute par archive-thumbs.mjs
+  "poster": "<url jsDelivr>"     // sidecar OPTIONNEL (videos), ajoute par archive-thumbs.mjs
+}
+```
+
+### Identifiants et chemins
+- `fid` = `sha256(rel).slice(0,40)` (archive-folder L119). Determinise -> re-archiver le meme chemin reutilise le meme fid.
+- chunk path = `aa/bb/<fid>-NNN` ou `aa=fid[0:2]`, `bb=fid[2:4]`, NNN = index 3 digits (L120). Aucun nom/extension d'origine sur le repo public.
+- URL d'un chunk : `https://raw.githubusercontent.com/matthieuhuguet/<repo>/<commit>/<chunkpath encode>`.
+
+### Historique de versions du format (retrocompat a preserver)
+- **v2** (pre-versions) : top-level `sha256`+`commit`+`repo`+`chunks`, pas de `versions[]`. Lu via `versionsOf()` (archive-folder L159-164) qui fabrique 1 entree synthetique.
+- **v3** : ajoute `versions[]`.
+- **v4** : ajoute `parts[]` (multi-shards mid-file). Top-level `repo/commit/chunks` = miroir de `parts[0]` pour que les lecteurs v2/v3 mono-shard restent fonctionnels.
+- **mode "raw"** : mentionne dans l'entete de `FileNodeViewer.jsx` L2-6 et gere partout cote lecteur (raw = fichier <95 Mo servi tel quel, download/preview direct). MAIS `archive-folder.mjs` ACTUEL ne produit JAMAIS `mode:'raw'` (tout passe en chunked, L274/L334). Le code lecteur "raw" est donc soit du legacy d'anciennes archives, soit du code mort defensif. **A verifier avant suppression** : peut exister en ligne sur d'anciennes archives.
+
+---
+
+## 2. Chemin d'UPLOAD (ingestion bulk) — `Scripts/archive-folder.mjs` (379 lignes)
+
+Sequentiel, RAM bornee, resilient. Etapes :
+
+1. **Inventaire** (L166-184) : `walk()` recursif, ignore `.DS_Store`/`.git`. Calcule `totalBytes`, `maxFile`. `multiShard = totalBytes>5Go || maxFile>5Go` -> active suffixe `-NN` + rollover.
+2. **Nom du shard** (L59) : `zenray-productions-archive-<nomdossier nettoye lowercase>`. Suffixe `-NN` seulement si multiShard.
+3. **Convention DJI** (L61-78) : dossier sous parent `DJI` ou nom contenant "dji" -> DEST=`pages/Build/DJI/<dossier>`, REFUS si pas de date dans le nom (L69). Sinon DEST=`pages/Archives/<dossier>`.
+4. **openShard()** (L194-233) :
+   - repo existe deja avec commits -> RE-ARCHIVAGE : clone partiel `--filter=blob:none --no-checkout` + `read-tree HEAD` (preserve l'historique = versions, ne re-uploade que les nouveaux chunks).
+   - sinon NOUVEAU : `git init` + `gh repo create --public` (fallback curl REST L221) + push init.
+   - config git anti-OOM (L189-193) : `core.bigFileThreshold 1m`, compression 0, pack.threads 1, HTTP/1.1, postBuffer 500 Mo.
+5. **Boucle fichiers** (L256-312), par fichier :
+   - stat (skip si disparu, ENOENT/EACCES isole, JAMAIS fatal sauf push).
+   - `sha256File` -> compare a la derniere version : si identique, `unchanged++`, on ne re-chunke RIEN (versionning).
+   - sinon : ouvre `fd`, lit par buffer 8 Mo, ecrit des chunks de 19 Mo dans `shardDir/aa/bb/<fid>-NNN`.
+   - **ROLLOVER MID-FILE** (L283-287) : si `shardBytes >= SHARD_CAP (4,5 Go)` AU MILIEU d'un fichier -> push `curPart` dans `rec.parts`, flush+push shard, `shardIdx++`, openShard, nouvelle `curPart`. Garantit shard <=5 Go meme pour un fichier de 16 Go.
+   - push incremental tous les `PUSH_CHUNK` (defaut 150 Mo, surchargeable `ZR_PUSH_CHUNK_MB`).
+6. **pushChunk()** (L234-244) : add+commit+push, jusqu'a 40 retries, backoff plafonne 120 s (survit ~1 h de coupure reseau). Idempotent (work dir persistant `~/.zr-archive-work`, pas /tmp).
+7. **Manifestes** (L321-341) : `commitInline` lots de 600 sur `zenray-data` (arbre git inline, 3 appels API/lot). `versions[]` = prevVersions + version courante.
+8. **Verif 200** (L343-358) : HEAD raw.githubusercontent parallele x16 sur TOUS les chunks de toutes les parts. KO -> "NE PAS PURGER".
+9. **Reindex optionnel** (`--reindex` -> `build-search-index.mjs --apply`) + **vignettes** best-effort (`archive-thumbs.mjs`, L368-373).
+10. Consigne de purge locale affichee mais **JAMAIS auto** (L375-379).
+
+### Constantes cles
+- `CHUNK = 19 Mo` (L37) · `RAW_MAX = 95 Mo` (L36, seuil theorique raw, non utilise pour produire du raw) · `SHARD_CAP = 4,5 Go` (L47) · `SPLIT_AT = 5 Go` (L48) · `WORK = ~/.zr-archive-work` (L52).
+
+---
+
+## 3. Chemin DOWNLOAD / REASSEMBLAGE — cote client
+
+Deux composants partagent une logique IDENTIQUE (duplication a factoriser).
+
+### Helpers communs (dupliques dans FileNodeViewer.jsx ET DownloadsView.jsx)
+- `rawUrl(m,p)` / `refUrl(r)` : construisent l'URL raw.githubusercontent encodee.
+- `chunkRefs(m)` (FileNodeViewer L21-23, DownloadsView L22-24) : **point cle multi-shards**. Si `m.parts[]` -> aplatit toutes les parts en `[{repo,commit,path}]` dans l'ordre. Sinon (v2/v3) -> `m.chunks` avec `m.repo/m.commit`.
+- `chunkCount(m)` : total chunks toutes parts.
+
+### Reassemblage (`downloadFile` FileNodeViewer L27-43 ; `downloadOne`/`assembleBlobUrl` DownloadsView L40-63)
+- `mode:'raw'` -> `<a href=rawUrl download>` direct (pas de reassemblage).
+- `mode:'chunked'` -> boucle `fetch(refUrl(refs[i]))` SEQUENTIELLE, `arrayBuffer()` accumule dans `parts[]`, puis `new Blob(parts, {type:mime})` -> `URL.createObjectURL` -> `<a download>`. `onProgress((i+1)/refs.length)`.
+- **Limite forte** : tout est charge EN MEMOIRE (pas de streaming disque). `PREVIEW_MAX = 500 Mo` cape l'apercu (DownloadsView L38). Le download lui n'a pas de cap -> un fichier de 16 Go fait exploser la RAM du navigateur. Critique sur mobile.
+
+### Versionning cote lecteur
+- `versions[]` -> `eff`/`effM` reconstruit un manifeste effectif depuis la version choisie (FileNodeViewer L77-82, DownloadsView L142-146). Selecteur de version UI dans les deux.
+
+### FileNodeViewer.jsx (140 l) — noeud individuel dans le Finder
+- Charge le manifeste via `/api/page?action=read&path=...`.
+- Apercu inline UNIQUEMENT si `mode:'raw'` (image/video/audio/texte, L122-125). Un chunked n'a PAS d'apercu, juste un encart "N morceaux" + bouton Telecharger (L126-131).
+- Utilise `thumb`/`poster` ? NON dans FileNodeViewer (seulement DownloadsView).
+
+### DownloadsView.jsx (319 l) — vue Drive
+- 2 niveaux : liste des archives (regroupees par RACINE via `ARCHIVE_PARENTS=['pages/Archives','pages/Build/DJI']`, L81), puis tableau des fichiers.
+- **Source de la liste** (L83-110) : UNION de `paths` (action=tree, tronque >30k) + index CDN complet (`getIndexPaths()`, 100k+). Filtre `.file.json` EXCLUSIVEMENT (c'est le marqueur archive).
+- **Cache manifestes** localStorage `zrfm5:` TTL 10 min (L32-34). Prefixe versionne a bumper a chaque evolution de schema.
+- **Vignettes** (L259-266) : affiche `m.thumb || m.poster` en `<img>` direct (sidecar), play overlay si poster. Sinon icone mime.
+- **QuickLook** (Espace) : `assembleBlobUrl` reassemble en memoire (cap 500 Mo) -> apercu image/video/audio/pdf/texte. `playErr` si codec non lisible (.mov ProRes/HEVC) -> message "telecharge".
+- **Tout telecharger** : sequentiel, 350 ms entre fichiers, charge chaque fichier entier en RAM.
+
+---
+
+## 4. Sidecar vignettes — `Scripts/archive-thumbs.mjs` (105 l)
+- Genere depuis les fichiers LOCAUX (zero re-DL). ffmpeg parallele x16, sortie JPEG 420/480px (~20-40 Ko). (Le commentaire dit webp mais le code produit du `.jpg` mjpeg, L52-53.)
+- Pousse sur repo PUBLIC `zenray-archive-thumbs-public` (push -f, derives regenerables).
+- Patche chaque `.file.json` (clone sparse zenray-data) : ajoute `thumb` (image) ou `poster` (video) = URL `jsdelivr@<commit>`.
+- Limites : images+videos seulement (`IMG_EXT`/`VID_EXT`), `--images-only` possible. Pas d'audio, pas de pdf.
+
+## 5. Reorganisation — `Scripts/archive-organize.mjs` (120 l)
+- Deplace/renomme les `.file.json` pour MIROIR une arbo Mac, SANS toucher aux binaires (un manifeste reference repo+commit+chunks de facon absolue).
+- Clone sparse zenray-data, match par NOM de fichier, met a jour le champ `rel`, gere orphelins (range par type) et fichiers Mac sans manifeste. 1 commit + push.
+- **WORK = /tmp/zr-organize** (L32) : incoherence avec archive-folder qui utilise ~/.zr-archive-work pour eviter le nettoyage /tmp. A noter pour le refactor.
+
+---
+
+## 6. Dispatch de TYPE et de VIEWER (point d'accroche central du refactor viewer)
+
+`src/create/node.js` `typeOfPath()` (L6-14) route PAR EXTENSION de fichier :
+```
+.db.json->db · .media.json->media · .img.json->image · .canvas.json->canvas · .embed.json->embed · .file.json->file · .md->page
+```
+`src/create/buildNodes.js` applique `typeOfPath` a chaque feuille de l'arbre.
+
+Cote rendu, chaque type -> son composant :
+- `image` -> `ImageNodeViewer.jsx`
+- `media` -> `MediaViewer.jsx` (lazy `StreamVideo`/`StreamVideoMSE`, HLS)
+- `file`  -> `FileNodeViewer.jsx`
+
+**Consequence pour le refactor viewer unifie** : aujourd'hui le TYPE est porte par l'EXTENSION du manifeste, pas par le mime du contenu. Un viewer unifie devra soit (a) router sur le mime DANS le manifeste quelle que soit son extension, soit (b) garantir que l'ingestion ecrit la bonne extension (.img.json pour une image meme via archive) -> alors le dispatch existant marche deja sans toucher au viewer.
+**Recommandation (b) plus sure** : le refactor d'INGESTION (routeur) suffit a corriger le viewer, sans casser `typeOfPath`.
+
+---
+
+## 7. Routeur d'ingestion IN-APP existant — `src/capture/universalCapture.js` `routeFile()` (L660-708)
+
+C'EST le routeur de reference a partager. Classe par mime puis extension :
+- image (mime image/* ou ext img) -> `captureImage` -> `.img.json` (shards `zenray-media-NN`, vignette webp).
+- audio (mime audio/* ou ext audio) -> `captureAudio` -> `.media.json`.
+- video (mime video/* ou ext video) -> localhost: `captureVideoServerHls` -> `.media.json` HLS ; hors localhost: skip avec message.
+- texte (md/txt) -> `captureText` -> `.md`.
+- pdf -> `captureBinaryMedia` (famille `zenray-pdf-public-NN`) -> `.media.json`.
+- **fallback binaire generique** -> `captureBinaryMedia(octet-stream)` -> `.media.json` chunke 3 Mo.
+
+**Difference majeure avec archive-folder** : `routeFile` ne produit JAMAIS de `.file.json`. Il n'y a AUCUN code partage entre `routeFile` (in-app) et `archive-folder.mjs` (bulk). Le fallback in-app utilise `.media.json` chunke 3 Mo (chiffre AES cote media), l'archive utilise `.file.json` chunke 19 Mo binaire public. Ce sont deux mecanismes paralleles pour "binaire generique".
+
+`captureFiles()` (L739+) = API publique, pool parallele FILE_CONCURRENCY, agrege la progression.
+
+---
+
+## 8. Points d'accroche pour le refactor d'UNIFICATION
+
+### A. Routeur de classification partage (cible : 1 fonction `classify(file) -> 'image'|'video'|'audio'|'binary'`)
+- **Source de verite a extraire** : la cascade mime/ext de `routeFile` L660-708 (universalCapture). C'est la plus complete (gere ogg ambigu, audio sans file.type, etc.).
+- Doit etre consommee par : (a) `captureFiles` in-app (deja le cas via routeFile), (b) `archive-folder.mjs` (aujourd'hui ne classe RIEN, chunk-binarise tout), (c) upload mobile.
+- **Decision a cabler** : seul `classify === 'binary'` (non ouvrable/proprio) doit produire `.file.json` chunke 19 Mo. image -> pipeline img, video/audio -> HLS/media. archive-folder doit appeler ce routeur PAR FICHIER au lieu de tout binariser.
+- Probleme bulk : `archive-folder.mjs` est un script node pur (git push direct), pas un client de l'app. Partager le routeur impose soit un module JS commun importe des deux cotes (extraire la cascade dans `src/capture/classify.js` neutre, importable par node ET par le bundle), soit dupliquer la table mime/ext (risque de derive).
+
+### B. Viewer unifie
+- Le dispatch `typeOfPath` (par extension) marche DEJA si l'ingestion ecrit la bonne extension. Privilegier corriger l'ingestion plutot que reecrire le dispatch.
+- Si on garde `.file.json` pour des medias (transition), `FileNodeViewer` devra router image->inline, video->HLS player, etc. selon `m.mime` — mais c'est moins propre que router en amont.
+- Factoriser `chunkRefs`/`downloadFile`/`assembleBlobUrl` (dupliques FileNodeViewer + DownloadsView) dans un module `src/media/fileChunks.js` partage.
+
+### C. RETROCOMPAT — ce qui DOIT rester (130 Go .file.json DJI en ligne)
+NE JAMAIS casser. Le refactor est ADDITIF :
+1. **Lecture `.file.json` v2/v3/v4** : `chunkRefs` (parts[] + fallback mono-shard), `versionsOf`, `mode raw`+`mode chunked`, `eff`/`effM`. Garder TOUTES ces branches.
+2. **`typeOfPath('.file.json')->'file'`** + `FileNodeViewer` + `DownloadsView` doivent continuer a ouvrir/telecharger les archives existantes bit a bit.
+3. **`DownloadsView` regroupement** par `ARCHIVE_PARENTS` et union index CDN (anti-troncature) : a preserver, sinon les archives DJI "disparaissent".
+4. **Sidecars `thumb`/`poster`** jsDelivr existants : continuent de s'afficher.
+5. **`archive-organize.mjs`** (deplacement de manifestes sans re-upload) : reste valide tel quel pour les archives existantes.
+6. **`mode:'raw'`** : meme si plus produit, du contenu en ligne peut l'utiliser -> garder le chemin lecteur.
+7. **Cache `zrfm5:`** : bumper le prefixe si le schema change, jamais supprimer la lecture des anciens.
+
+### D. Mobile (~390px) — etat actuel et risques
+- Download/preview tout-en-RAM (Blob complet) : INADAPTE mobile pour gros fichiers (cap preview 500 Mo, download non cape). Risque OOM iPhone.
+- `DownloadsView` : tableau large (maxWidth 980, colonnes fixes), QuickLook 88vw/88vh portal — a rendre responsive 390px.
+- HLS (pipeline media) deja adaptatif = bon pour mobile ; raison de plus pour router les videos vers HLS et HORS de l'archive chunked.
+
+### E. Incoherences mineures relevees (a traiter dans le refactor, non bloquantes)
+- archive-thumbs : commentaire "webp" mais sortie `.jpg`.
+- archive-organize : `WORK=/tmp` (risque nettoyage) vs archive-folder `~/.zr-archive-work`.
+- `RAW_MAX`/`mode raw` : seuil defini mais jamais utilise pour produire du raw -> soit l'activer (fichiers <95 Mo servis directs, gros gain), soit documenter qu'il est mort.
+- Duplication des helpers chunk entre FileNodeViewer et DownloadsView.
+
+---
+
+## 9. Fichiers + lignes cles (index)
+- `Scripts/archive-folder.mjs` : format L327-336, fid/chunkPath L119-120, rollover mid-file L283-287, versionning L264-269/L159-164, parts L274/L326, verif L343-358.
+- `Scripts/archive-thumbs.mjs` : gen L55-66, push thumbs L72-85, patch manifeste L94-103.
+- `Scripts/archive-organize.mjs` : match par nom L76-93, suppression anciens L101.
+- `src/components/FileNodeViewer.jsx` : chunkRefs L21-24, downloadFile L27-43, versions eff L77-82, apercu raw L122-131.
+- `src/components/DownloadsView.jsx` : classify archives L87-110, cache L32-34, assembleBlobUrl L40-48, download L50-63, vignette L259-266, QuickLook L294-316.
+- `src/capture/universalCapture.js` : routeFile L660-708 (cascade de classification de reference), captureFiles L739+.
+- `src/create/node.js` : typeOfPath L6-14 (dispatch par extension).
+- `src/create/buildNodes.js` : application du type a l'arbre.

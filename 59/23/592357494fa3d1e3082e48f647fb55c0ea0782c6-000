@@ -1,0 +1,580 @@
+# INDEX ERREURS & FEATURES — ZenRayProgress
+
+Fichier COURT et indexé, à lire AVANT de coder quoi que ce soit ici (PROGRESS.md est l'historique
+complet, trop long pour une relecture systématique — ce fichier est le condensé actionnable).
+Append-only par section : on AJOUTE une ligne, on ne réécrit pas l'histoire.
+
+## Philosophie du projet (stable, ne change pas au fil des sessions)
+
+1. **Demander avant de coder** quand un choix d'architecture existe. Un plan court, Matthieu tranche,
+   PUIS on code. Jamais de pivot silencieux d'une décision déjà prise.
+2. **Vérifier empiriquement avant d'affirmer** : un test réel (curl, repo jetable, ffprobe) bat toute
+   supposition. Toute affirmation "X marche" doit avoir été observée.
+3. **Upload = donner et c'est fini.** Aucune vérification distante, aucun clone, aucun état à
+   maintenir. Repo neuf par lot, nom aléatoire, compteur local seulement.
+4. **Réutiliser l'existant** (fileKinds, pipelines, patterns .media.json) avant d'inventer.
+5. **Manifeste = source de vérité** ; conventions de NOM en repli seulement.
+6. **Tout changement observable se teste dans le navigateur réel avant d'être annoncé.**
+
+## Conventions dures (violer = tout casser)
+
+- **Nommage stockage (2026-07-05)** : `zenrayshards-<type>-<hex12>`, type ∈ vid/img/pdf/doc/blob/
+  archive/backup. Seul `zenrayshards-img-*` est PUBLIC (jsDelivr l'exige) ; tout le reste PRIVÉ,
+  lu via api.github.com Accept:raw + token (/api/raw-token). Parts = 95 Mo (< limite 100 Mo du
+  chemin contents API — c'est LA raison de cette taille).
+- **NE JAMAIS recréer un repo avec un ANCIEN nom** (zenray-vidraw-NN, zenray-img-public-NN, etc.) :
+  313 repos renommés le 2026-07-05, tous les manifestes historiques reposent sur la redirection
+  GitHub ancien→nouveau (vérifiée OK raw.github ET jsDelivr). Recréer l'ancien nom tue la redirection.
+- **Exclusions du rename** : zenray-data, zenray-index-public, zenray-prospects (référencés en dur).
+- **Mapping complet ancien→nouveau** : docs/shard-rename-map.json + zenray-data:pages/_index/storage-repos.json.
+- **PROGRESS.md** append-only strict ; commit après chaque étape cohérente.
+
+## Registre des erreurs (cause racine -> règle). NE PAS REFAIRE.
+
+| Date | Erreur | Cause racine | Règle permanente |
+|---|---|---|---|
+| 2026-07-05 | Vidéo HEVC illisible sur iPhone 15 Pro | remux MP4 sans `-tag:v hvc1` -> tag `hev1`, refusé par Apple/AVFoundation | TOUT remux HEVC->MP4 porte `-tag:v hvc1` (video-raw-lib.mjs). h264 non concerné |
+| 2026-07-05 | Reclone de shards de plusieurs Go ("bug infini qui redl") | modèle "réutiliser le shard existant" + vérifs de place distantes | Repo NEUF par lot, zéro check distant, compteur local anticipé. Modèle définitif |
+| 2026-07-05 | Rollover 5 Go jamais déclenché entre sessions | compteur ctx.bytes remis à zéro à chaque invocation, jamais comparé au réel | Aboli avec le modèle repo-neuf (plus de rollover inter-sessions du tout) |
+| 2026-07-05 | Clone local 9,4 Go qui traîne sur le disque | aucun nettoyage en fin de batch (seulement écrasé au run suivant) | `rm` du clone en fin de batch ENTIER (jamais dans flush(), appelé par vidéo) |
+| 2026-07-05 | Épisodes chiffrés qui ne jouent pas en prod | Service Worker sans règle de cache -> ancienne version servie après déploiement | zr-stream-sw.js en no-cache dans vercel.json (même règle qu'index.html) |
+| 2026-07-05 | Icône volume noire malgré color="#fff" | `currentColor` lit la CSS `color` (le <button> impose noir), pas l'attribut fill | Icon.jsx pose `color` sur le <svg> lui-même — corrigé à la source pour toutes les icônes |
+| 2026-07-05 | .mkv brut poussé injouable | isFaststart() lit des atomes MP4 sur du Matroska (résultat indéfini) | Remux conteneur FORCÉ pour toute extension ≠ mp4/mov/m4v |
+| 2026-07-05 | Batch tué au démarrage par un timeout réseau | fetch sans retry en exception non rattrapée (vu 2x/nuit) | Tout fetch de démarrage de script porte 4 retries backoff |
+| 2026-07-05 | Skills "pas installés" | skills project-scoped invisibles depuis une session rootée ailleurs | Skills custom en GLOBAL ~/.claude/skills/ (copie projet = doc) |
+| 2026-07-04 | Bouton plein écran custom cassé (rond vide) | YT.Player sans width/height explicites + fullscreen maison peu fiable | YouTube garde SES contrôles natifs (controls:1) ; jamais de substitut maison |
+| 2026-07-03 | Écran de pause YouTube par-dessus contrôles custom | controls:0 + API = branding imposé non désactivable | Ne jamais lutter contre la plateforme YouTube |
+| 2026-07-02 | download createWritable() qui crashe après picker OK | permission refusée post-picker (OS) | Toujours retomber sur le repli Blob borné |
+| 2026-06-01 | App blanche après rebuild | index.html caché par le CDN | index.html no-cache, assets hashés immutables (vercel.json) |
+| 2026-06-01 | Fuite de nom média dans un repo public | nom humain dans chemin/commit | Chemins = hash du contenu, jamais de nom humain (P0 anti-fuite) |
+| 2026-07-07 | Image >19 Mo : stockage doublé (original raw.github + dérivé dispPath jsDelivr jamais lu) | dispPath généré pour l'affichage mais aucun viewer ne le lisait ; l'affichage plein écran tapait raw.github à CHAQUE vue, quel que soit dispPath | Images DÉCOUPÉES en morceaux ≤19 Mo (cdnChunks[], toujours présent, même 1 seul élément) -> reconstruction bit-exacte 100% jsDelivr, plus de raw.github ni de dispPath pour les nouveaux uploads. Voir scripts/lib/img-pipeline.mjs (splitIntoChunks/shardChunkPathFor) |
+| 2026-07-12 | Clic sur un média -> `Failed to fetch dynamically imported module: MediaViewer-<ancien-hash>.js` | onglet ouvert avant un redeploy Vercel + second `lazyRetry` local dans UnifiedViewer qui retentait le même chunk 404 mais ne rechargeait jamais l'index courant | Une seule implémentation `src/lib/lazyRetry.js` pour TOUS les imports React paresseux : retry réseau, puis un reload borné par TTL de 30 s pour récupérer le graphe d'assets actuel |
+| 2026-07-12 | Backup déclaré reprenable mais index ignoré, images récentes sautées, risque OOM sur grosse vidéo | index historique stocké littéralement en Base64, resolver image limité à `cdnPath`, `Buffer.concat` de tout le média, et `--path` appliqué après un arbre global tronqué | `backup-mirror.mjs` relit JSON/Base64, couvre `cdnChunks[]`, streame par fichier de staging, résout le sous-arbre ciblé et checkpoint l'index tous les 25 nœuds |
+| 2026-07-12 | Workdirs upload cumulés (130 Go vidéo + 37 Go image observés) | nettoyage limité au dernier `ctx.dir` vidéo et absent côté image ; les rollovers précédents restaient sur disque | Chaque futur lot utilise un `run-<pid>-<date>` isolé et supprime le runWork entier en `finally`. Ne jamais effacer les workdirs historiques pendant un process actif |
+| 2026-07-12 | Vidéo remuxée en MP4 mais manifeste annonce le MIME de la source MKV/AVI | `mimeOf(file)` utilisait toujours le nom original après `remuxFaststart()` | Si `srcFile !== file`, le manifeste annonce `video/mp4`; un MOV/MP4 déjà faststart garde son MIME réel |
+| 2026-07-15 | Player Music aléatoire : même piste parfois muette, pause YouTube et seek instables | une relance identique ne changeait ni index ni clé ; closure YouTube périmée ; range React envoyait `onInput` ET `onChange` pour chaque mouvement ; simple+double clic déclenchaient plusieurs commandes | Toute commande explicite incrémente un nonce provider ; les callbacks dépendent de l’état lu ; un seul commit de seek au pointer/key up ; simple clic sélectionne, double clic lit |
+| 2026-07-25 | Gabarit HTML : `{{role}}`/`{{text}}` vides dans une boucle `{{#beats}}` | moteur qui résolvait les sections d'abord, les champs ensuite contre la portée RACINE | Un moteur de gabarit se écrit en UNE passe qui descend avec sa portée. Voir src/zenraymedia/htmlTemplate.js |
+| 2026-07-25 | Aperçu ≠ export (police Georgia au lieu d'AnthropicSerif) | la page compilée nommait la police sans jamais la déclarer ; l'iframe srcDoc n'hérite d'aucune @font-face du parent | Toute page compilée porte ses @font-face ; l'export les remplace par du base64 (compile.js FONT_FACES + exporters.js embedFonts) |
+| 2026-07-25 | Briefs écrasés en créant depuis la barre de commande | fonctions capturées dans un useMemo qui ne dépendait pas de l'état lu -> liste périmée | Toute action qui ajoute à une liste passe par une mise à jour FONCTIONNELLE `setX(list => …)`, jamais par la variable de portée |
+| 2026-07-25 | Icône muette (mauvais glyphe, zéro erreur) | `Icon.jsx` retombe silencieusement sur 'doc' pour un nom inconnu | Vérifier tout nom d'icône contre la liste réelle de src/components/Icon.jsx avant emploi |
+| 2026-08-14 | ZenRay Plan attendait jusqu’à 8,1 s malgré un index déjà stocké localement | `loadSearchIndex()` lisait IndexedDB puis attendait quand même tous les shards CDN ; `PlanBoard` relisait aussi son manifeste à chaque montage | Rendre l’index réellement stale-while-revalidate ; préchauffer et conserver le petit `.plan.json` localement ; revalider `raw=1&fresh=1` toutes les 30 s seulement quand Plan est ouvert et visible |
+| 2026-10-15 | « Le loader est occupé » : Assets ne répond plus, boutons grisés | 5 572 passes d'archive en 12 jours dont 70 % de 1 à 3 fichiers, chacune avec 26 à 30 s de publication Git (trois sauvegardes, neuf fetch) ; l'inventaire figeait la boucle 1,9 s (instantané de 31 projets recomposé à chaque appel) ; un job automatique grisait Sauvegarder | Mesurer avant d'optimiser (événement `timing` par passe) ; vues dérivées mémoïsées par révision ; passes automatiques fusionnées (240 s) et cédant le writer ; une publication = une transaction Git ; une passe sans nouveauté n'écrit rien. Tests `AssetsFluidity.test.js`, `AssetsPublishTransaction.test.js` |
+| 2026-10-15 | Les sauvegardes Assets du projet japonais étaient toutes refusées par GitHub | Le snapshot `.workspace.json` publié pesait 104,7 Mo, au-dessus de la limite de 100 MiB par fichier | Trois champs que personne ne lit sont retirés du snapshot (-29 %, 80,8 Mo) ; un échec de publication des métadonnées n'est plus une erreur de passe ; événement `snapshot-size-warning` dès 90 Mo (`AssetsConfig.storage.snapshotWarnBytes`) |
+| 2026-10-15 | Le service Assets se figeait 25 s par lot de 2 000 fichiers | Recherche linéaire avec normalisation NFC d'une carte par fichier | Table de correspondance (`cardsByRel`) ; test dans `AssetsFluidity.test.js` |
+| 2026-10-15 | Le lot du jour Freelance pouvait changer d'un rafraîchissement à l'autre | À score, pays, drapeau freelance et nom égaux, l'ordre dépendait de l'ordre reçu du serveur | Départage par rôle puis id dans `pickBatch` ; test « same offers in any input order » |
+| 2026-10-15 | `localhost:3100` servait le bug `demandePages` déjà corrigé en production | Le `dist/` du checkout principal datait du 12 octobre et n'était jamais reconstruit | `Ship.sh` reconstruit ce dist à chaque livraison. Contrôle : l'`index-*.js` de `dist/index.html` du checkout principal égale celui de la production |
+| 2026-10-15 | « Notes » (et dossier, lecteur audio, YouTube, Spotify) depuis une autre vue : la vue change mais rien ne s'ouvre | `App.jsx` recopiait `poserDemandePages` et affectait `demandePages`, variable qu'il ne déclare pas : ReferenceError, demande perdue, depuis l'extraction de Pages | La boîte aux lettres vit dans `Pages.jsx` à côté de ses deux variables et s'exporte ; test `poserDemandePages.test.jsx` |
+| 2026-10-15 | Serveur de dev : app lente, 22 s sur `action=index`, 890 Mo de mémoire, 55 requêtes d'index (FAUX problème) | un worktree n'a pas `.zenray-media-key` (gitignoré) : le serveur en fabrique une au hasard qui ne déchiffre pas l'index public, l'app retombe sur l'ancien index | Toujours exporter `ZENRAY_MEDIA_KEY` du dépôt principal et lancer en `ZR_ASSETS_PASSIVE=1` : `Scripts/dev-server-refine.sh` |
+| 2026-10-15 | Chaque changement de vue retéléchargeait 22 Mo | `refresh()` récupérait `delta.json` en entier juste pour comparer sa date ; les 27 shards étaient redéchiffrés à chaque changement du delta | `peekDeltaBuiltAt` (400 octets) ; `loadShardBase` réutilise les shards. Le delta lui-même (22 Mo, 114 536 chemins dont ~100 000 de projets Assets) se replie par `build-search-index.mjs --apply`, réservé à Matthieu |
+| 2026-10-15 | Une lecture de marqueur de visibilité qui échoue pouvait devenir « pas de marqueur » (donc public) | `readMarker` mémorisait l'absence sur toute erreur | Seul `missing` ou un marqueur lisible est mémorisé ; la persistance de dix minutes ne garde jamais un échec |
+
+## Features (où vit quoi — pointeurs, pas des pavés)
+
+- **Upload local vid/img** : skill `zenray-upload-media` (global) -> scripts/upload-vidraw-list.mjs
+  (vid, privé+chiffré+hvc1) / scripts/upload-img-list.mjs (img, public jsDelivr). Progression :
+  `node scripts/vidraw-progress.mjs`.
+- **Sous-titres ASS sur une vidéo brute (2026-09-30)** : piste ASS restylée rangée DANS le manifeste
+  (`manifest.subtitles[0]`, gzip+base64, `src/lib/subtitleSidecar.js`), rendue par libass (JASSUB, la même
+  bibliothèque que VLC) au-dessus du `<video>` par `SubtitleLayer` ; bouton « captions » dans la capsule de
+  VideoPlayer2. Pose : `GITHUB_TOKEN=.. node scripts/attach-subtitles.mjs <dest> <dossier mkv>` (un commit git).
+  Le pipeline d'upload perd les sous-titres (1re vidéo + 1er audio), d'où ce rangement. Polices : Inter du site
+  + `default.woff2` ; les polices décoratives du fansub ne sont PAS chargées (signs en police de repli).
+- **Lecture vidéo brute** : public/zr-stream-sw.js (range-shim + déchiffrement AES-GCM + auth privé) ;
+  enregistrement src/lib/vidStream.js ; lecteur src/components/VideoPlayer2.jsx.
+- **Lecture privée client** : src/lib/privateFetch.js (raw->api.github.com + /api/raw-token) ;
+  posters <img> via /api/raw-proxy (server/raw-proxy.js).
+- **Index du stockage** : vue sidebar "Index" (src/components/IndexView.jsx) + clic droit
+  "Stockage (Index)" sur toute tuile (App.jsx) ; moteur src/lib/storageInfo.js ; stats depuis
+  pages/_index/storage-repos.json.
+- **Nommage/parsing shards** : server/shard-naming.js (v2 + anciens schémas en lecture).
+- **Rename historique** : scripts/rename-shards.mjs (fait le 2026-07-05, 313 repos).
+- **Détection type média** : src/lib/fileKinds.js (SOURCE UNIQUE upload + viewer).
+- **YouTube liens** : skills zenray-upload-video / zenray-upload-audio ; src/lib/youtubeLink.js.
+- **Music dans Create** : `src/create/CreateMusicPanel.jsx` (trois panneaux redimensionnables/inversibles, player transversal Liquid Glass Normal, drag/drop audio et menus contextuels) + `src/audio/PlayerContext.jsx` (moteur local/YouTube/Spotify et file mixte). Spotify Embed reste contrôlé par Spotify ; le player commun exige Web Playback SDK/Premium.
+- **Backup miroir** : scripts/backup-mirror.mjs + skill zenray-backup-mirror.
+- **Galeries-pointeur (zone Gallery)** : registre UNIQUE `src/config/pointerGalleries.js` (Design,
+  Characters, Environments, Japan, ZenRayShards). Ajouter une galerie = UNE entrée dans ce fichier +
+  le libellé `nav.<key>` dans les 3 dicts ; sidebar, rendu et sous-menu « Ajouter à… » suivent seuls.
+  Vue unique `src/components/GalleryView.jsx`, deux dispositions : Grille (lâcher = REGROUPER) et
+  Alignées (lâcher = RÉORDONNER, mécanique du Shelf). Titre + note descriptive en h3 haut-gauche,
+  AnthropicSerif 350, via `TileCaption`/`TileEditor` — un seul rendu pour les images ET les groupes.
+- **Rendu des nœuds Create (9 October 2026)** : source unique `src/create/registry.jsx` (`REGISTRY`, `NodeRenderer`, `dispatchNodeOpen`). `UnifiedViewer.jsx` reste une façade compatible ; `ResolvedUnifiedViewer.jsx` conserve la résolution Eagle sur les types média concernés. Les exceptions audio restent dans `Pages.jsx`.
+- **Contexte des renderers (9 October 2026)** : page, base et média reçoivent le même contexte `{t, path, title, paths, onOpenPage}` ; chaque adaptateur garde son lecteur spécialisé.
+- **Doc architecture complète** : docs/ZenRayProgress-FINAL-ARCHITECTURE.md.
+- **Images >19 Mo (2026-07-07)** : découpées en morceaux ≤19 Mo (jamais recompressées), reconstruction
+  jsDelivr-only côté client. Écriture : scripts/lib/img-pipeline.mjs (splitIntoChunks/shardChunkPathFor),
+  scripts/img-ingest.mjs (CLI/skill), src/capture/universalCapture.js (in-app). Lecture : src/components/
+  ImageNodeViewer.jsx (hasChunks/fetchChunkedCipher/decryptedObjectUrlChunked, strict jsDelivr + retry, ZÉRO
+  repli raw.github pour ce schéma). Ancien schéma mono-fichier (cdnPath) inchangé, jamais migré (images
+  déjà en ligne avant cette date). Vérif upload : scripts/upload-img-list.mjs teste CHAQUE morceau (200
+  jsDelivr) en plus de la vignette.
+- **Correctif pointeurs upload (2026-07-12, remplace les pointeurs historiques ci-dessus)** : skill unique
+  global `zenrayshards-upload-media`; images groupées par défaut par ~900 Mo (`ZR_IMG_BATCH_MB=0` pour image
+  par image) et vérification d'une URL représentative par `(repo, commit)`, pas de chaque morceau.
+- **Chunks paresseux résilients** : `src/lib/lazyRetry.js`, utilisé par App, UnifiedViewer, MediaViewer,
+  QuickLook et les routes de partage. Toute nouvelle `React.lazy` doit passer par ce helper unique.
+- **Upload image Git-only lots >=100 (2026-07-13)** : scripts/upload-img-list-git.mjs — même ingestion que
+  upload-img-list.mjs (img-ingest inchangé) mais skip local via le clone sparse ~/.zr-thumb-bulk/zdata-clone
+  et manifestes en UN commit/push git ; REST total = 1 appel (création du shard). Validé : 168 images, 0 échec.
+- **Vignette standard q90 (2026-07-14, remplace 1080/q60 puis q95)** : audit SSIM sur 3 frames vidéo + 1 photo
+  iPhone — q95 = SSIM 0,993-0,995 (transparent) ; q100 INTERDIT (mode quasi-lossless, ~10x le poids pour
+  +0,005 SSIM, mur mesuré 4/4 échantillons) ; coude mathématique q85-q90 (SSIM >= 0,991 pour 35-50% moins
+  lourd) — Matthieu a basculé sur q90 le jour même. **Source UNIQUE réelle : `src/config/thumbnail.js`**
+  (THUMB_MAX_SHORT=1080, THUMB_QUALITY_PCT=90 0-100 pour magick/cwebp, THUMB_QUALITY=0.90 0-1 pour
+  canvas.toBlob) — changer une seule ligne (THUMB_QUALITY_PCT) suffit pour TOUT le pipeline (Node ET
+  navigateur ET worker). `scripts/lib/img-pipeline.mjs` ré-exporte `THUMB_QUALITY_PCT as THUMB_QUALITY`
+  (piège d'unité : ne jamais redéfinir ces constantes ailleurs, Node veut un entier 0-100, le navigateur
+  un flottant 0-1). Consommateurs : img-ingest.mjs (ingestion + regenThumbAt), src/capture/thumbnailer.js
+  + thumbWorker.js (client, import direct depuis src/config/thumbnail.js), regen-thumbs-hd/bulk.mjs.
+  Vérifié en prod : purge + réupload complet de House of the Dragon S01E01 (394 frames), vignette de la
+  frame t=300 mesurée à 135906 octets sur jsDelivr vs 135890 octets prévus par l'audit local (écart 16
+  octets, 0,01%) — preuve numérique que le pipeline réel applique bien q90. Anciennes vignettes q60/q95
+  jamais migrées (même doctrine que cdnPath).
+- **Upload CLI invisible en recherche + double bug d'écrasement (2026-07-14, signalé par Matthieu)** : AUCUN
+  script CLI (upload-img-list.mjs, upload-img-list-git.mjs, upload-vidraw-list.mjs) n'appelait le mécanisme
+  d'index de recherche public (`appendPublicDelta`/`thumbsForPaths`, server/page.js) — seul le drop/Ctrl-V
+  in-app (`action=index-add`) le faisait. CE N'ÉTAIT PAS un problème de champ `tags` (absent de toute la
+  logique de scoring, `scripts/build-search-index.mjs` + `src/search/searchIndexClient.js` grepés
+  exhaustivement — la recherche matche chemin normalisé + nom, jamais `tags`). Corrigé : les 3 scripts + un
+  nouveau `scripts/index-add-paths.mjs` (rattrapage manuel, `--dir "<dossier>"` ou liste de chemins stdin)
+  appellent maintenant ce mécanisme après leur commit zenray-data.
+  **2e bug, plus sournois, trouvé en vérifiant le premier** : `appendPublicDelta` lit son état AVANT écriture
+  via `raw.githubusercontent.com`, qui a son propre cache CDN ~5 min (documenté dans le fichier). Plusieurs
+  appels séquentiels rapprochés (un par lot de 200 chemins, comme un upload fait naïvement) lisent TOUS le
+  même instantané périmé → chaque lot ÉCRASE le précédent au lieu de s'accumuler. Mesuré : un rattrapage de
+  4949 chemins rapportait "4949/4949 OK" mais le delta réel n'en contenait que 518. Corrigé DEUX fois : (1)
+  `appendPublicDelta` retry maintenant en interne sur un ref-update rejeté (même patron que sa fonction sœur
+  `commitTree`) ; (2) surtout, les 4 scripts appelants résolvent les vignettes PAR LOTS de 200 (plafond de
+  `thumbsForPaths`) mais fusionnent tout en mémoire et n'appellent `appendPublicDelta` qu'**UNE SEULE FOIS**
+  avec la liste complète — plus aucune lecture-modification-écriture répétée, donc plus aucun risque
+  d'écrasement intra-run. Vérifié par lecture DIRECTE du blob déchiffré (pas par le code retour du script) :
+  5033 chemins dans le delta après fix, dont HOTD=3701 (compte exact) et AKOTSK=1249 (cohérent). Vérifié EN
+  PLUS dans le vrai navigateur (dev local) : recherche "House of the Dragon S01E01" et "A Knight of the Seven
+  Kingdoms S01E03" retournent bien les tuiles. Piège annexe : le CLIENT lit aussi `delta.json` via
+  raw.githubusercontent — même cache ~5 min, donc un test navigateur juste après un fix peut sembler encore
+  cassé pendant quelques minutes ; ce n'est pas une régression, c'est la propagation CDN normale.
+- **ZenRayMedia (2026-07-25)** : studio média, vue `media` de la sidebar (sous Create, avant Skills).
+  Tout vit dans `src/zenraymedia/`. Théorème : `Livrable = Rendu(Brief × Thème × Format)`.
+  Contrats dans `contracts.js` (validateur UNIQUE, `seed` obligatoire, zéro `Math.random`).
+  **Ajouter un thème = déposer un fichier** `T-FF-S-V--slug.html` dans `src/zenraymedia/themes/`
+  (métadonnées lues dans le NOM, chargement paresseux : tient à 1024). Contrat complet dans
+  `src/zenraymedia/themes/README.md`. Conception : `docs/zenraymedia/00..05`.
+  La Forge vidéo est LOCALE (`forge.js` génère le pipeline ffmpeg réel) : ni navigateur, ni Vercel.
+
+- **Score ZenRay Plan (2026-08-01)** : `src/create/planScore.js` dérive le score du Plan ouvert
+  depuis ses tâches terminées (`done` et `late-complete`) : objectif normal = 10, publication = 20.
+  `src/create/PlanBoard.jsx` affiche la capsule ; aucune valeur de score n'est enregistrée dans le JSON.
+- **Animation du score Plan (2026-08-01)** : `scoreRollFrames` produit chaque entier traversé ;
+  `AnimatedScore` déroule les rangs vers le haut ou le bas en 0,35 s. Le dollar jaune rebondit pendant
+  la même durée et la validation d'une tâche applique un rebond local de 0,20 s par Web Animations.
+- **Correction animation score Plan (2026-08-01)** : l'entrée précédente décrit l'approche abandonnée.
+  Le long rail CSS n'était pas un lerp temporel. `interpolatedScore` calcule maintenant la valeur flottante
+  à chaque `requestAnimationFrame` selon la courbe exacte ; chaque rang traduit les deux chiffres adjacents.
+
+## Dette assumée (décidée, pas oubliée)
+
+- Repos EXISTANTS renommés mais visibilité INCHANGÉE (les familles jsDelivr doivent rester
+  publiques pour être lisibles ; le contenu y est chiffré). Migration privé du stock = chantier
+  séparé si Matthieu le demande.
+- /api/raw-token sert GITHUB_TOKEN par défaut : créer un fine-grained PAT lecture-seule limité
+  aux zenrayshards-* et le mettre dans ZENRAY_RAW_TOKEN (Vercel + .env.local) = mieux.
+- Remux vidéo : seule la 1re piste vidéo + 1re piste audio survivent (sous-titres embarqués
+  perdus) — vérifier ffprobe avant d'uploader un mkv multi-pistes.
+- Anciennes parts orphelines (x264 Smoking, hev1 Witch Hat) laissées dans les anciens shards :
+  inoffensif, l'espace GitHub ne se récupère pas au delete de toute façon (historique git).
+
+## Registre des dépréciations (supprimé du chemin actif — NE PAS RÉINTRODUIRE)
+
+Règle de dépréciation du projet (2026-07-13) : un code mort est SUPPRIMÉ du chemin actif (pas
+commenté, pas caché). S'il a une valeur historique, il va dans `scripts/_deprecated/` avec un
+garde `process.exit(1)` en tête (ZR_RUN_DEPRECATED=1 pour forcer, déconseillé). L'historique
+complet reste dans git (`git log -S <symbole>`). Toute entrée ci-dessous dit QUOI, POURQUOI,
+et PAR QUOI c'est remplacé — vérifier ici avant de "réparer" un vieux flux.
+
+- **Vignettes 384px/q72** (supprimé 2026-07-13) : `makeThumbWebp` + `regenThumbOnly`
+  (scripts/img-ingest.mjs) supprimés ; scripts `regen-thumbnails.mjs`, `thumb-backfill.mjs`,
+  `gen-thumbs-git.mjs` déplacés dans `scripts/_deprecated/`. Remplacement : `makeThumbAt`
+  (1080px petit côté / WebP q60, jamais d'upscale) partout — ingestion (`ingestImageBulk`),
+  client (`src/capture/thumbnailer.js`), backfills (`regen-thumbs-bulk.mjs`,
+  `regen-thumbs-oriented.mjs`, `regen-thumbs-hd.mjs`). Les manifestes portent thumbW/thumbH ;
+  le client saute le flou d'attente quand petit côté >= 720. Les VIEILLES vignettes 384px
+  restent sur leurs shards (storage mort, inoffensif) mais plus AUCUN manifeste DJI n'y pointe.
+- **Suffixe ImageMagick `[0]`** (interdit 2026-07-13) : combiné à -resize/identify il casse
+  magick 7.1.2-24/27 (« no decode delegate »). Inutile pour JPEG/PNG mono-frame. Ne pas remettre.
+- **Écritures en masse zenray-data via API REST** (interdit 2026-07-13) : >100 fichiers = clone
+  sparse + commit/push git (hors quota). Deux runs API ont épuisé 2× le quota 5000/h. Référence :
+  `scripts/fix-thumb-manifests-git.mjs`.
+- **Ancien schéma manifeste `cdnPath`/`dispPath`** (gelé 2026-07-07) : LECTURE SEULE pour les
+  images déjà en ligne jamais migrées (décision Matthieu « les anciennes ce n'est pas grave »).
+  Aucune ÉCRITURE ne doit produire ces champs — tout nouvel upload = `cdnChunks[]` uniquement.
+
+- **Progression ZIP (2026-09-03)** : `App.jsx` partage `runZipDownload` entre médias et pages. La notification `notifyProgress` et la capsule Finder suivent le même état jusqu’au `finally`. `bulkZip.js` annonce le fichier avant sa lecture, son écriture, puis la finalisation ; 100 % vient après fermeture du fichier ou remise du Blob au navigateur. Les erreurs disque remontent, les échecs de lecture restent comptés. Tests rejouables : `npx vitest run src/lib/bulkZip.test.js src/components/Notifications.test.jsx src/lib/quotaLectures.test.js tests/hebergement.test.js`.
+
+- **Progress, chronologie vivante (2026-09-23)** : vue `progress` (Craft, entre Create et Assets), `src/progress/`. Source unique = le vrai `~/.claude/PROGRESS.md`. Relais local `relay/journal-relay.mjs` (launchd `com.zenray.journal-relay`, `relay/install.sh`) : sert le fichier sur `127.0.0.1:47831` (`/journal?since=`, `/status`, `/events` SSE) et le pousse octet pour octet dans le dépôt privé `zenray-journal` avec `status.json` (taille + sha256) dans le même commit. `/api/journal` (`server/journal.js`) lit la paire épinglée au commit de tête (304 gratuit). `journalSource.js` choisit local puis distant et recalcule le sha256 dans le navigateur. Domaines et liens : `src/config/progressDomains.js`, couleurs `DOMAIN_COLORS` dans `colors.js`. Horodatages : décalage explicite depuis le 2026-09-23, sinon Tokyo (skill 2026-08-20 → 09-23), legacy Paris avant 2026-06-12. Tests : `npx vitest run src/progress server/journal.test.js` et `node --test relay/`.
+
+
+## Freelance : détail des offres (30 September 2026)
+
+- Offre complète : descriptions sources archivées dans freelance/offers, affichées à l’ouverture de la fiche, avec date et lien officiel. Lecture hors quota via urlLectureAffichage ; seuls les succès sont mis en cache cinq minutes, les erreurs restent visibles et réessayables. (30 September 2026)
+- Enregistrer depuis un ancien onglet fusionne uniquement la modification voulue avec le catalogue actuel ; les nouvelles offres, pièces de source et messages concurrents restent conservés. Un conflit sur le même champ est signalé. (30 September 2026)
+- Vérification : npx vitest run src/lib/freelanceStudios.test.js src/components/FreelanceOfferDetails.test.jsx src/lib/quotaLectures.test.js. (30 September 2026)
+
+
+## Liens Eagle et tri : « aucune-reponse » (2 October 2026)
+
+- **Cause réelle** : `apiPost` LÈVE sur tout corps `{ error }` ou statut non 2xx, et `createEagleLinksInterne` écrivait `apiPost(...).catch(() => null)`. Toute vraie cause (preflight, GitHub, exception Worker répondue `{error:'fetch'}`, HTTP 5xx) devenait `null`, affichée « aucune-reponse ». Règle : `postEagleLinksBatch` (`src/lib/eagleLinksRequest.js`) garde la cause via `causeApi`, retente les causes passagères (3 essais, pauses croissantes) et, avant chaque retry, vérifie par `resolve-link` que le lot n'a pas déjà été commité (jamais deux jeux de liens). (2 October 2026)
+- **Indexation sortie de la création** : `create-eagle-links-batch` accepte `skipIndex:true` (lots de feuilles) et rend `indexPairs`; le client appelle ensuite `index-links` (action serveur, `indexLinkPairs`), en arrière-plan, une requête à la fois et REGROUPÉE (`indexerLiens`). Mesuré le 2 October 2026 : 1 lien = 20 sous-requêtes avant, 12 après; le delta d'index (qui ne fait que grossir) ne peut plus tuer la création. (2 October 2026)
+- **Tri en lot** : `BoutonTri` n'envoie plus une requête par image : un seul travailleur vide la file, tout ce qui attend le même espace part en UNE requête (max 12), et un lot refusé est rejoué image par image. `trier` rend `false` si rien n'a été créé : jamais de « fait » vert sur un échec. (2 October 2026)
+- **Source canonique** : le serveur ne réécrit plus le manifeste source quand il porte déjà son `resourceId` (la copie lue peut être périmée côté raw). (2 October 2026)
+- **Aperçu .MOV (video-raw)** : le Quick Look monte `VideoPlayer2` pour tout manifeste `isUnifiedVideoManifest` (video-raw, dash, hls, youtube) et affiche « Chargement… » ou la cause de l'échec de lecture du manifeste, plus jamais le faux « pas d'aperçu ». (2 October 2026)
+
+## Galerie partagée de liens : visualiseur et aperçu (2 October 2026)
+
+- **Les entrées d'une galerie de liens sont des PLACEMENTS** : le chemin listé est le lien, l'image vit ailleurs. `resolveSharedNode` (SharedFolderPage.jsx) est le seul résolveur (cache + requêtes en vol) ; sélection, focus, flèches et liste parlent en chemins d'ENTRÉE, seules les requêtes d'image utilisent le chemin résolu. Avant : les flèches cherchaient le chemin résolu dans la liste (jamais trouvé), l'image suivante était demandée au chemin du lien (blanc), la sélection mélangeait les deux écritures (ZIP vide). (2 October 2026)
+- **Autorisation d'une cible hors dossier** : un lien placé DANS le dossier partagé donne accès à sa cible (`server/shareReach.js`, preuve = le lien porte le même `resourceId`, paramètre `via=<lien>` ajouté par `src/lib/shareVia.js`). Jamais via le registre `placements` (resynchronisé en arrière-plan, périmé après un renommage de dossier). Les dossiers liés gardent la règle stricte. (2 October 2026)
+- **Clavier du visualiseur** : un seul écouteur en phase de capture, lecture par refs (React réabonne les effets entre capture et bubble d'une même frappe : Espace fermait puis rouvrait). Le RELÂCHEMENT d'Espace est avalé : un bouton focalisé le transforme en clic, qui décochait la photo (« Espace ne marche plus »). Fermeture : retour à la photo regardée (défilement + anneau de focus). Animations 0,2 s (`QUICKLOOK_ANIM_MS`), fondu croisé entre images, balayage tactile. Tests : `SharedFolderPage.test.jsx`. (2 October 2026)
+- **Aperçu du lien (WhatsApp)** : `og:image` = `/api/share-cover`. Chaîne : composition dynamique (WebAssembly, drapeau `ZR_COVER_DYNAMIC=1`) -> couverture stockée `.zr-share-cover.json` -> première vraie photo -> 404. La composition dynamique est ÉTEINTE par défaut : mesuré le 2 October 2026, décoder quatre vignettes 1080x1440 et encoder un JPEG (~0,25 s de CPU) est tué (erreur 1102, sans repli possible) sur 10 à 60 % des requêtes à froid avec les limites actuelles du compte ; sur Workers Paid (30 s de CPU) le même code est fiable. Couverture stockée : écrite à la création du lien par le navigateur (suit désormais les liens jusqu'à leur cible) et par `node scripts/build-share-cover.mjs <dossier> | --all` (rafraîchit tous les partages actifs, saute les galeries inchangées). Images choisies : réparties sur la galerie (`src/lib/coverPick.js`). La date de Date.now() est figée dans un Worker : mesurer le CPU par nombre d'opérations, jamais par durée. (2 October 2026)
+
+## Photos ajoutées par les invités d'un lien partagé (2 October 2026)
+
+- **Ce que c'est** : toute galerie partagée par lien accepte des photos de personnes SANS compte GitHub (bouton « Ajouter mes photos » + glisser-déposer + dossier local). Cœur serveur : `server/guestUploadCore.js` (testé avec un GitHub en mémoire, `server/testing/fakeGithub.js`), adaptateur HTTP `server/guest-upload.js` (route publique `POST /api/guest-upload`), accès 100 % GraphQL `server/githubGraphql.js`. Client : `src/guest/` (cœur indépendant de la plateforme `uploadCore.js`, file IndexedDB, `GuestUploadSheet.jsx`). Constantes : `src/config/guestUpload.js` (1024 photos/jour/lien, 95 Mo/photo, parts de 8 Mio).
+- **Pas de copie locale, pas de carte** : GitHub seul, photos chiffrées AES-GCM (IV déterministe = début du sha256 de la part) en shards `zenrayshards-img-*` créés par UN appel REST, rangées dans le dossier source sous `<Prénom saisi>/…` ; `.zrguest.json` marque un dossier d'invité (un dossier du même nom créé par le propriétaire donne « <Prénom> (invité) »).
+- **Jamais d'écrasement, jamais de suppression** : même nom + contenu différent → `<nom>-<hash8>.<ext>` ; même contenu → « exists » (idempotent). Registre du jour `_guest/ledger/<jour UTC>.json` dans `zenray-data`.
+- **Quota GitHub de Matthieu protégé** : une photo coûte 0 appel REST ; GraphQL a son propre seau (`/api/page?action=ratelimit` rend maintenant `graphql`). Un STALE_DATA (branche déplacée) relit et réessaie ; un 499 vu depuis un lien domestique lent n'existe pas côté Workers.
+- **Les invités ne voient jamais d'erreur** : reprises avec attente croissante, lot coupé en deux après 2 échecs, parts divisées jusqu'à 1 Mio, pause hors-ligne, reçus signés (HMAC) entre requêtes. Seul un plafond (quota du jour, lien désactivé) s'affiche, en douceur.
+- **Lecture** : manifeste frais relu par GraphQL si le CDN de raw retarde (`readFreshText`), jsDelivr 3 essais puis GitHub raw en dernier recours (`fetchCdn`), vignettes qui réessaient en cas d'erreur (`MediaCard`). Les photos multi-parts portent `ivs[]`.
+- **Simulation** : `scripts/simulate-guests.mjs --site … --token … --names Marie,Anne,Léa --extra 8 --photo-mb 4` ; dernière exécution 27/27 photos vérifiées de bout en bout (octets identiques côté public), 2 appels REST pour tout l'envoi.
+
+## Upload trié par fichier : `scripts/upload-mapped-git.mjs` (2 October 2026)
+
+- **Besoin** : ranger EN MÊME TEMPS qu'on envoie (un dossier et un titre par fichier, ici un dossier par auteur de l'album « Mariage C&C », titre `<Auteur> - <nom d'origine>`). Table `plan.json` ; images vers un shard public, vidéos vers un shard privé ; manifestes poussés par lots de 100 dans un clone ISOLÉ de `zenray-data` ; REST = 1 appel par shard neuf + 1 index-add. Mode `--plan` sans réseau. Détail : skill `zenray-upload`, section du 2 October 2026.
+- **Méthode d'attribution des auteurs** (pour un album Google Photos partagé) : les noms ne sont PAS dans les EXIF (vérifié sur 748 fichiers), ils sont dans le texte de chaque vignette de la page du lien ; heure de prise de vue à la seconde pour rapprocher album et fichiers, empreinte dHash des miniatures pour départager, contrôle visuel de paires.
+- **Piège vidéo : un repo privé par vidéo (2 October 2026)** : `ingestVideoRaw` appelle `vctx.beginFile()` pour chaque fichier, qui remet `ctx.repo` à zéro, donc un lot de 179 clips créait 179 repos `zenrayshards-vid-*` (49 créés avant l'arrêt, laissés orphelins, liste dans `~/.claude/tmp/tmp-wedding-authors/orphan-vid-repos.txt`). `upload-mapped-git.mjs` neutralise `beginFile` pour partager UN shard privé (rollover à `SHARD_CAP`). À reprendre pour tout lot de nombreuses petites vidéos ; `upload-vidraw-list.mjs` garde encore un repo par vidéo. (2 October 2026)
+- **Erreur de destination : galerie partagée (2 October 2026)** : les 748 fichiers de l'album « Mariage C&C » ont d'abord été rangés dans `…/09 September/<Auteur>/`, un niveau au-dessus de la racine réelle du lien partagé (`…/09 September/marriage-clea-septembre-2026-uyap/`). Règle : pour toute galerie partagée, résoudre la racine du lien AVANT d'écrire (`/api/share-token?action=resolve`), contrôler ensuite par `/api/page?action=tree&dir=<racine>&share=<jeton>`. Réparé par un déplacement de manifestes (aucun renvoi) et un échange de chemins dans l'index. (2 October 2026)
+
+## Galerie partagée : « Content not found » et lenteur d'affichage (2 October 2026)
+
+- **« Content not found. » sur un lien valide** : la page l'affiche quand la liste du dossier échoue. Cause de CLASSE, jamais reproduite à la demande : un hoquet de GitHub, lu comme « le lien n'existe pas » (`githubReadRecord`, `server/share-token.js`, rendait `null` pour un 503 comme pour une absence, donc un 401). Corrigé des deux côtés : le serveur réessaie 3 fois et ne conclut à l'absence que sur un VRAI 404 de GitHub (`server/shareRecordGraphql.test.js`, deux cas) ; la page redemande sa liste de plus en plus tard, n'affiche l'erreur qu'après 3 échecs de suite et l'efface dès qu'une liste arrive (`SharedFolderPage.jsx`, test « la liste échoue deux fois puis arrive »).
+- **Lenteur, mesure d'abord** : une grille de 40 photos de téléphone téléchargeait 25 Mo (vignette standard, petit côté 1080, q90, 631 Ko en moyenne sur ce lot, médiane 4,5 s, 7 à 9 s au total). Les lectures de manifestes par case, en parallèle, ne pesaient que 1 s : ce n'était PAS le goulot.
+- **Vignette légère de grille `thumbS`** : 520 px de LARGEUR (la case occupe la largeur d'une colonne, en paysage comme en portrait), q80, WebP chiffré comme les autres. Champs du manifeste : `thumbS` (URL jsDelivr épinglée), `thumbSIv`, `thumbSW`, `thumbSH`. `/api/shared-media?kind=thumb-s` la sert, et retombe sur la vignette standard si le manifeste n'en a pas (jamais de case vide). La grille la demande ; la visionneuse garde la vignette standard puis l'original. Mesuré après rattrapage : 3,6 Mo au lieu de 25,2 Mo, médiane 0,5 s au lieu de 4,5 s, 1 s au total pour 40 cases.
+- **Réglage unique** : `THUMB_GRID_MAX_WIDTH` et `THUMB_GRID_QUALITY_PCT` dans `src/config/thumbnail.js`. Production : `scripts/img-ingest.mjs` (chaque nouvel envoi du propriétaire), côté invités un canvas de plus (`src/guest/browserAdapters.js`) et un rôle de part `thumbs` (`server/guestUploadCore.js`, reçu signé comme les autres). `makeThumbAt(..., { maxWidth })` borne par la largeur.
+- **Rattrapage des images déjà en ligne** : `scripts/backfill-grid-thumbs-git.mjs "<dossier>"` (`--plan` d'abord) dérive la vignette légère de la vignette existante (téléchargement, déchiffrement, réduction, chiffrement), suit les liens jusqu'à leur source par le registre, pousse dans UN shard neuf, un commit de manifestes par lot de 100. Relançable : un manifeste qui porte déjà `thumbS` est sauté. Les vignettes des vidéos (`poster`) sont déjà légères.
+- **Essayé puis retiré** : une route de lecture groupée des manifestes (GraphQL, 100 par requête) était PLUS LENTE (2 à 4 s pour 40 manifestes) que 40 lectures parallèles (1 s). Ne pas la refaire sans nouvelle mesure.
+- **Registres de ressources périmés (constat)** : les 119 liens de `Matthieu Huguet` portaient des registres (`pages/.zr-resources/<id>.json`) qui listaient encore l'ancien dossier `tmp-img-selection1` ; les déplacements de manifestes n'ont donc pas pu les mettre à jour. À réparer à part.
+
+## 3 October 2026 : Groupes dans les galeries alignees
+
+- 3 October 2026 : correction du contrat historique des galeries-pointeur : en vue Alignees, deposer au centre d'une tuile cree un groupe ou ajoute l'image au groupe existant ; les quarts lateraux conservent le reordonnancement. Le composant GalleryView est partage par les six galeries. Neuf tests couvrent les six galeries, l'ajout au groupe, le bord droit et le regroupement en grille.
+
+## 3 October 2026 : Vue PostKit (le tableau de bord de ce que PostKit pilote)
+
+- 3 October 2026 : entrée `PostKit` de la barre latérale, zone Create, juste après Plan. Vue paresseuse `src/postkit/PostKitView.jsx` (dix onglets : Overview, Accounts, Posts, Inbox, Comments, Analytics, Campaigns, Webhooks & keys, Platforms, Docs). Elle parle UNIQUEMENT à l'API de PostKit (`http://127.0.0.1:8787` par défaut, adresse et clé réglées dans la vue et gardées dans `localStorage` sous `zr:postkit`) et ne détient aucun jeton de plateforme.
+- 3 October 2026 : le produit vit dans un dépôt à part, `Productions/GithubProductions/ZenRayPostKit` (serveur, API REST de 142 opérations, serveur MCP de 103 outils plus 4, scheduler). Toute la documentation du produit vit dans le skill `zenray-postkit` (références, plan, intégrations), jamais ici. L'onglet Docs la lit par `GET /v1/docs` : aucune copie périmée dans ce dépôt.
+- 3 October 2026 : quand PostKit ne tourne pas, la vue affiche « PostKit is offline » avec la commande exacte de démarrage, jamais un écran blanc. Un échec réseau, un 401 et une erreur d'API sont trois états distincts (`postkitClient.js`).
+- 3 October 2026 : règles d'affichage non négociables, vérifiées par test : une métrique que la plateforme n'expose pas s'affiche `n/a` et JAMAIS `0` ; chaque connecteur porte son niveau de vérification (Live, Mock, Local, Handoff, Sandbox) ; un secret (clé d'API, secret de webhook) s'affiche une seule fois ; les trois ajouts à PlugKit (site, LinkedIn, ArtStation) sont marqués « added » dans la matrice des plateformes.
+- 3 October 2026 : la couleur de chaque plateforme est dans `PLATFORM_COLORS` de `src/config/colors.js` (source unique des couleurs d'interface). Tous les réglages de la vue sont dans `src/postkit/postkitConfig.js`.
+- 3 October 2026 : vérification sans le navigateur de Claude, conformément à la règle du projet : `npx vitest run src/postkit` (client, vue sur fixtures, et un test de CONTRAT qui lance un vrai processus PostKit et rend les dix onglets contre ses vraies réponses ; il saute si le dépôt voisin est absent) puis `npx vite build`. Suite complète du dépôt : 160 fichiers, 1634 tests verts.
+
+
+## 4 October 2026 : ZenRay Freelance, le moteur de recherche d'emploi
+
+- 4 October 2026 : un service local (`com.zenray.freelance`, `scripts/Freelance/`) cherche les annonces toutes les 6 heures, écrit lettres et état dans zenray-data, et la page Freelance les montre avec un bouton « Rechercher maintenant ». Tout est décrit dans `docs/FREELANCE-ENGINE.md` : fichiers, lois, commandes, ajout d'une source, activation de Claude.
+- 4 October 2026 : **un fichier de plus d'1 Mio est lu VIDE par l'API contents de GitHub** (`content: ""`, `encoding: "none"`, sha valide) : une sauvegarde par-dessus l'écrase. `server/page.js` relit alors par le blob (`contentsText`) et lève une erreur plutôt que de rendre un corps vide ; `FreelanceView` refuse de sauvegarder sur un fichier illisible. Avant de réparer une « liste vide » d'un gros JSON, vérifier sa taille.
+
+## 8 October 2026 : La capture du transcript bloquait les nouveaux projets
+
+- 8 October 2026 : Symptôme exact : « Le démarrage Assets bute sur la capture du transcript » ; `BeginProject` pouvait échouer après la création locale du projet si la capture d’une grande session occupait déjà le balayeur. (8 October 2026)
+- 8 October 2026 : Cause prouvée : `AssetsFeedbackCapture.replay()` levait une erreur dès que le verrou global `busy` était pris par `drain()` ; le démarrage attendait cette capture complète au lieu de seulement enregistrer la liaison. (8 October 2026)
+- 8 October 2026 : Correctif : `replay()` met la session en file, la passe suivante reprend ses événements et le writer garde sa déduplication ; `start` rend `transcriptCapture: queued` et finit sans attendre le balayage. (8 October 2026)
+- 8 October 2026 : Le test de capture échoue d’abord sur l’ancienne erreur, puis passe après le correctif ; vérification finale séquentielle : 5 tests de capture et 85 tests service verts. (8 October 2026)
+- 8 October 2026 : Le daemon en mémoire doit encore être rechargé après la fin de toutes les archives actives, puis un vrai démarrage doit confirmer le résultat `queued`. (8 October 2026)
+
+## 8 October 2026 : Démarrage vérifié sur le daemon rechargé
+
+- 8 October 2026 : Correction du dernier point de la section précédente : après la fin des écritures actives et une file vide, le LaunchAgent est rechargé ; son PID passe de `77016` à `54076` et le bridge répond. (8 October 2026)
+- 8 October 2026 : `node scripts/Assets/BeginProject.mjs zenray-assets-v2 --session-id=01a11653-69f5-7492-b80e-dbcc6a785d87` termine avec `sessionBound: true`, `watched: true` et `transcriptCapture: queued`. Le même identifiant de session réel est déjà lié à ce projet. (8 October 2026)
+- 8 October 2026 : Le prompt apparaît une seule fois dans le feedback canonique ; la réponse `queued` confirme que le démarrage ne dépend plus de la fin du balayage. (8 October 2026)
+- 8 October 2026 : Les cinq surveillances suspendues pour le redémarrage sont rétablies ; `agent-conversations` reste arrêté pendant la protection des trois bases locales. (8 October 2026)
+
+## 8 October 2026 : Replay en erreur après la création du projet
+
+- 8 October 2026, 23:31 CEST : Le premier correctif neutralise le verrou `busy`, mais une exception levée directement par `replay()` peut encore remonter après l’écriture des dossiers et de la liaison de session. (8 October 2026)
+- 8 October 2026, 23:31 CEST : `bind-session` absorbe maintenant cette exception sans annuler le projet ; un replay actif garde l’état `queued`, une panne imprévue devient `unavailable`, et un événement local sûr demande une nouvelle passe automatique. (8 October 2026)
+- 8 October 2026, 23:31 CEST : Deux tests reproduisent les échecs avant le patch puis vérifient que projet, feedback, surveillance et liaison restent présents. (8 October 2026)
+- 8 October 2026, 23:31 CEST : La suite complète passe à 87 tests AssetsService ; les 5 tests du capture worker passent aussi. Le daemon doit encore recevoir ce durcissement après vidage de ses archives. (8 October 2026)
+
+## 8 October 2026 : Le replay peut aussi ne jamais répondre
+
+- 8 October 2026, 23:37 CEST : Correction du correctif précédent : gérer l’exception n’empêche pas `start` d’attendre une promesse de replay qui ne se termine jamais. Le test rouge confirme cette seconde forme du blocage après 12 secondes. (8 October 2026)
+- 8 October 2026, 23:37 CEST : `bind-session` ne consomme plus la promesse ; `queued` désigne l’éligibilité persistée de la session au prochain scan, et les échecs asynchrones restent signalés sans effacer le projet. (8 October 2026)
+- 8 October 2026, 23:37 CEST : Le test de worker bloqué passe en 3,9 secondes ; 88 tests AssetsService et 5 tests de capture sont verts. Le daemon doit encore être rechargé avec ce commit après ses archives. (8 October 2026)
+
+## 8 October 2026 : Inventaire Assets sous forme de briques
+
+- 8 October 2026 : La barre latérale de `ProjectWorkspace.jsx` montre le total des projets et de leurs fichiers ; chaque projet affiche son propre compte et reste ouvrable directement. (8 October 2026)
+- 8 October 2026 : La mosaïque de blocs donne le repère visuel Lego sans remplacer les noms ou les chiffres par une image seule. (8 October 2026)
+- 8 October 2026 : La donnée mesurée dans le service est de 20 projets et 44 390 fichiers à 23:11 CEST ; l’interface recalcule ces nombres à partir de chaque réponse plutôt que de les figer. (8 October 2026)
+- 8 October 2026 : Le test `ProjectWorkspace.test.jsx` passe 25/25 et `npx vite build` réussit ; le build conserve ses avertissements préexistants de découpage des modules. (8 October 2026)
+
+## 08 October 2026 : Priorité géographique et filtre pays dans ZenRay Freelance
+
+- 08 October 2026 : Les offres situées en France reçoivent un bonus de score de +20 points pour prioriser le dialogue direct et l'alignement de fuseau horaire, suivies par le Japon (+15), le Royaume-Uni (+10) et les États-Unis (+8). (08 October 2026)
+- 08 October 2026 : Dans le tri et le lot quotidien (pickBatch), les égalités de score se départagent par la priorité géographique : les offres françaises devancent ainsi les offres lointaines (ex : FS Studio en Argentine ou Keywords en Malaisie). (08 October 2026)
+- 08 October 2026 : Un filtre par pays dynamique liste uniquement les pays réellement présents dans les offres actives (aucun pays fantôme comme le Burkina Faso) : boutons rapides pour France, Japon, Royaume-Uni, États-Unis et menu déroulant pour les autres pays présents. (08 October 2026)
+- 08 October 2026 : Chaque fiche studio et lot affiche le drapeau et le pays de l'opportunité (StudioCard, StudioDetail avec panneau zone géographique, FreelanceBatch). (08 October 2026)
+- 08 October 2026 : 74 tests unitaires et de composants passent au vert (Offer.test.js, freelanceEngineModel.test.js, freelanceBatch.test.js, FreelanceView.test.jsx, FreelanceOfferDetails.test.jsx, freelanceStudios.test.js) et le build production est déployé avec succès sur Cloudflare Pages. (08 October 2026)
+
+## 9 October 2026 : Revalidation du démarrage Assets et garde de file
+
+- 9 October 2026 : Le service live rechargé sur `abc4503f` accepte un `BeginProject` idempotent avec la vraie session liée en 1,67 seconde et renvoie `sessionBound=true`, `watched=true`, `transcriptCapture=queued`. (9 October 2026)
+- 9 October 2026 : Quatre tests de démarrage isolé couvrent le replay normal, actif, en échec et suspendu ; les cinq tests du capture worker passent aussi. (9 October 2026)
+- 9 October 2026 : La suite complète `AssetsService.test.js` passe à 89 tests après la correction d’une régression de file, qui annulait tout job `background` lorsque `watched=false`. (9 October 2026)
+- 9 October 2026 : `enqueue` sépare maintenant priorité `background` et annulation `requireWatched` ; seule la sauvegarde automatique reçoit cette dernière option, et le worker la contrôle avant et après le verrou du writer. (9 October 2026)
+- 9 October 2026 : La preuve live utilise le projet existant et sa session réelle ; le parcours réellement neuf est éprouvé en fixture isolée, sans écrire un faux projet dans le registre réel. (9 October 2026)
+
+## 9 October 2026 : Panneau macOS ZenRay Assets en briques
+
+- 9 October 2026 : Le compteur supérieur additionne les projets et fichiers mesurés ; un inventaire inconnu reste signalé, jamais affiché comme vide. (9 October 2026)
+- 9 October 2026 : Les briques de projet indiquent les fichiers Mac et Cloud ; les débits upload et download viennent des octets réellement transmis et sont arrondis à l’unité. (9 October 2026)
+- 9 October 2026 : Les boutons sauvegardent, chargent et déchargent une copie Mac gérée ; le déchargement conserve les originaux et le cloud. (9 October 2026)
+- 9 October 2026 : Ne pas redémarrer le service Assets tant qu’une archive écrit ; l’application de barre peut être rechargée séparément. (9 October 2026)
+
+## 9 October 2026 : Séparer les contenus manuels et cloud dans Gallery
+
+- 9 October 2026 : « Ma sélection » regroupe les projets et images ajoutés à la Gallery ; leurs groupes, leur ordre et leur triage restent dans cette vue. (9 October 2026)
+- 9 October 2026 : « Fichiers cloud » expose les images locales déjà sauvegardées par projet et dossier, sans les recopier dans la Gallery. Le filtre de source et la recherche restent disponibles. (9 October 2026)
+- 9 October 2026 : Le fil d’Ariane cloud repart du projet et remonte au dossier choisi ; le texte de provenance et les chemins de fichiers restent lisibles à 12 px sur desktop. (9 October 2026)
+- 9 October 2026 : Vérification locale dans l’interface : Louisiana Bayou affiche 353 images, réparties entre Atelier (232), Houdini (101) et Unreal (20). Les tests Gallery passent 14/14 et les tests de navigation cloud 1/1. (9 October 2026)
+
+## 10 October 2026 : Les anciens projets Assets plantaient au clic
+
+- 10 October 2026 : Le symptôme est l’écran d’erreur `Invalid source id` lorsqu’un projet historique s’ouvre dans Assets. (10 October 2026)
+- 10 October 2026 : Dans le registre réel, des sources historiques ont `localPath` et `target`, mais pas d’identifiant stable ; les fiches de fichiers archivés n’ont pas toujours de `sourceId`. (10 October 2026)
+- 10 October 2026 : `source.id === file.sourceId` pouvait donc comparer `undefined` à `undefined`, sélectionner la mauvaise source, puis appeler `sourceCloudFolder` avec un identifiant absent. (10 October 2026)
+- 10 October 2026 : `assetsFileLocations` ignore maintenant les identifiants absents ou mal formés et ne lie une source qu’après validation des deux identifiants. Le chemin cloud archivé reste visible, tandis qu’aucun chemin local n’est deviné. (10 October 2026)
+- 10 October 2026 : La régression est couverte par le clic sur Roof Tiles avec une source historique sans identifiant et par deux cas de rendu de fichier, source absente puis identifiant mal formé. Vérification : `npx vitest run src/lib/assetsFileLocations.test.js src/components/assets/ProjectWorkspace.test.jsx --maxWorkers=1`. (10 October 2026)
+
+## 11 October 2026 : Films HLS/DASH publiés sans sous-titres
+
+- Cause (11 October 2026) : `AttachVideoCmafDashHls.mjs` en mode `copy4` ne recopie que vidéo et audio ; le lecteur `VideoPlayer2` lit `manifest.subtitles`, resté vide pour 160 films.
+- Correctif (11 October 2026) : `scripts/AttachSubtitleTracks.mjs --source <original> --manifest <.media.json> --commit` range les pistes texte (fr, ja, en ; PGS ignoré ; `.srt`/`.ass` voisins inclus) dans le manifeste en gzip+base64, sans réupload vidéo. À lancer AVANT la vérification cloud, qui fige l'empreinte du manifeste.
+- Piège (11 October 2026) : les sous-titres de « Hors Normes (2019) » sont une démo codée en dur dans `VideoPlayer2.jsx` (`isHorsNormes`), pas un modèle de données.
+
+## 12 October 2026 : miniatures de films noires, le poster d'un film est TOUJOURS une URL jsDelivr publique
+
+- **Symptôme (12 October 2026)** : dans Create > Movies_Series, environ 190 films affichent une tuile noire avec l'icône d'image cassée (capture de Matthieu).
+- **Cause mesurée (12 October 2026)** : `poster` valait `/api/raw-proxy?u=<raw.githubusercontent.com d'un shard privé zenrayshards-vid-*>`. `server/raw-proxy.js` exige `ZENRAY_RAW_TOKEN`, absent des secrets Cloudflare Pages (`wrangler pages secret list --project-name zenray-progress` : GITHUB_TOKEN, SPOTIFY_*, YOUTUBE_API_KEY, ZENRAY_API_SECRET, ZENRAY_MEDIA_KEY) : chaque poster répondait 503 sans corps.
+- **Piège client (12 October 2026)** : les URL mortes étaient écrites à vie dans `localStorage` (`zrposter:`, `zrfthumb:`, `zrvcard5:`) ; réparer le manifeste ne suffisait donc pas. Les clés sont versionnées (`zrposter2:`, `zrfthumb2:`, `zrvcard6:`) et les anciennes sont purgées une fois au chargement de `src/create/Pages.jsx`.
+- **Règle (12 October 2026)** : le poster d'un film est un fichier clair dans le MÊME shard public que ses segments (`<vidId>/poster.jpg`), URL `https://cdn.jsdelivr.net/gh/<owner>/<repo>@<commit>/…`. Jamais `/api/raw-proxy`, jamais `raw.githubusercontent.com`, jamais une fonctionnalité qui dépend d'un secret serveur non listé par `wrangler pages secret list`.
+- **Code (12 October 2026)** : `scripts/lib/film-poster.mjs` (réglages `FILM_POSTER`, `isPublicPosterUrl`, `verifyPublicPoster`), `scripts/AttachVideoCmafDashHls.mjs` (extrait la frame, la pousse avec les segments, vérifie le CDN AVANT d'écrire le manifeste, et ne court-circuite plus un film dont le poster n'est pas public), `scripts/RepairFilmPosters.mjs` (répare les manifestes existants par Git, dans le dépôt `zenray-poster-public-01`), `scripts/CheckFilmPosters.mjs` (vérificateur rouge/vert, `--json`, code de sortie).
+- **Contrôle avant d'annoncer un lot de films fini (12 October 2026)** : `node scripts/CheckFilmPosters.mjs --manifests <clone zenray-data>` doit rendre OK. Il a été testé dans les deux sens : rouge (193 problèmes) sur les manifestes non réparés, vert après réparation.
+
+## 12 October 2026 : phase de renommage propre AVANT tout upload (le nom local EST le nom cloud)
+
+- **Consigne de Matthieu (12 October 2026)** : un fichier renommé avant d'être uploadé doit être renommé aussi en local, pour que le nom soit identique en local et dans le cloud, et propre. `Under.the.Open.Sky.2020.FR.mkv` devient `Under The Open Sky.mkv`, `Akane-banashi S01E12 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv` devient `Akane Banashi S01E12.mkv`. Chaque futur upload commence par une phase de renommage soumise à sa validation, puis un index mapping après l'upload, avec des sous-dossiers proposés d'emblée.
+- **Règles de nettoyage (12 October 2026)** : `scripts/lib/clean-media-name.mjs` (les règles sont des données dans `CLEAN`) coupe au premier jeton de bruit (résolution, codec, source, langue, groupe, hash), garde `Titre SxxEyy`, met une majuscule à chaque mot, retire l'année sauf doublon. Un numéro d'épisode nu prend sa saison du dossier (`Saison 2`). Les séries vont dans `Titre/Saison NN/`, les films restent à plat.
+- **Les quatre verbes (12 October 2026)** : `node scripts/MediaRename.mjs plan --root <dossier>` (tableau Avant/Après, rien n'est touché), `apply --plan <plan.json> --approved` (SEULEMENT après la validation de Matthieu dans le chat ; refuse une cible existante, deux fichiers au même nom ou un chemin hors racine ; les sous-titres compagnons suivent), `undo --log <dossier>/RenameLog.jsonl`, `check --upload-plan ReadyUploadPlan.json` ou `check --manifests <clone zenray-data>` (rouge si un nom local diffère du nom cloud ou n'est pas propre).
+- **Porte du worker (12 October 2026)** : `ZR_REQUIRE_CLEAN_NAMES=1` fait refuser à `ProcessFilmsSequentially.py` un lot dont les noms ne sont pas propres. À activer pour tout nouveau lot.
+- **État mesuré le 12 October 2026** : `check --manifests` rend ROUGE sur les 195 films déjà dans le cloud (328 problèmes), la proposition de renommage est dans `~/.claude/tmp/tmp-movies-series-upload/RenameProposal.md`, non appliquée tant que Matthieu n'a pas validé.
+
+## 12 October 2026 : noms des pistes audio, sous-titres d'un film déjà déchargé, renommage du cloud
+
+- **Piste audio « audio_1 » (12 October 2026)** : le menu Audio affichait « audio_1 » parce que la playlist HLS des anciens films n'avait ni `NAME` parlant ni `LANGUAGE`. Règle : une piste se nomme par sa LANGUE (`日本語`, `Français`), jamais par son titre technique (`DTS-HD Master Audio 5.1`) ; deux pistes de même langue se distinguent par leur titre ou un numéro (`scripts/lib/cmaf-packaging.mjs`, `collectAudioTracks`). Le lecteur remplace aussi un libellé générique par celui du manifeste (`menuAudioTracks`). Réparation de l'existant : `scripts/RepairAudioNames.mjs` (langue lue dans la sonde source de `Inventory.json`, aucun octet vidéo téléchargé) : 166 films le 12 October 2026.
+- **Reçu de récupération (12 October 2026)** : `video-cloud-recovery.mjs` comparait le SHA du manifeste ENTIER ; ajouter un poster, un nom audio, un sous-titre ou renommer le film cassait donc toute restauration (« Manifest changed since cloud recovery verification »). Le reçu porte maintenant `manifestRecoverySha256`, une empreinte des seuls champs lus à la restauration (`type`, `enc`, `alg`, `size`, `parts`) ; le SHA-256 du fichier restauré reste vérifié. Anciens reçus : `scripts/RefreshRecoveryReceipts.mjs --receipts <dir> [--clone <zenray-data>] [--force]`.
+- **Sous-titres d'un film déjà déchargé (12 October 2026)** : jamais de ré-upload. `scripts/AppendSubtitlesFromCloud.mjs --receipts <dir> --match <texte> --manifests <clone zenray-data> --work-root <dir>` restaure l'original depuis le reçu (Git, sans quota REST), extrait les pistes texte par `AttachSubtitleTracks.mjs`, les ajoute au manifeste puis supprime la copie. À lancer depuis le dépôt principal (la clé média y vit). Débit mesuré : environ 2,3 Mo/s quel que soit le parallélisme, donc environ 8 minutes par épisode de 1,1 Go.
+- **Renommage du cloud (12 October 2026)** : `scripts/RenameCloudMedia.mjs --manifests <clone> --base pages/Movies_Series-yl1x --receipts <dir> [--alias "A=B"]` renomme les manifestes avec les règles de la phase préalable, range les séries en `Titre/Saison NN/`, déplace `.streams/<vidId>` avec le manifeste et réécrit les URI `/api/hls?path=` des playlists ; les reçus suivent. Seuls les manifestes et petites playlists bougent. 197 films le 12 October 2026. Les fichiers frères d'un manifeste (`<nom>.master.m3u8` à côté, cas de « Hors Normes ») ne bougent pas.
+- **Ordre à respecter (12 October 2026)** : arrêter tout job qui écrit dans le clone avant `RenameCloudMedia` (sinon conflits Git), puis relancer ; le `ManifestClone` du worker se met à jour à son prochain push.
+
+## 12 October 2026 : un rebase suspendu dans le clone des manifestes fait abandonner les films un par un
+
+- **Symptôme (12 October 2026)** : le worker abandonnait chaque film après 4 tentatives, `fatal: It seems that there is already a rebase-merge directory`.
+- **Cause mesurée (12 October 2026)** : deux écrivains Git sur zenray-data en même temps. Le renommage du cloud (`RenameCloudMedia.mjs`, poussé depuis un autre clone) a rencontré les commits locaux du worker pendant son `pull --rebase` ; le rebase est resté en suspens dans `ManifestClone` et chaque `upload-mapped-git.mjs` suivant a refusé de démarrer.
+- **Correctif (12 October 2026)** : `ProcessFilmsSequentially.py` termine (`rebase --continue`) ou abandonne (`rebase --abort`) un rebase en suspens avant chaque film. Le moniteur alerte si `.git/rebase-merge` existe.
+- **Règle (12 October 2026)** : avant toute écriture en masse dans zenray-data hors du worker (renommage, réparation de posters, noms audio), créer le fichier `PAUSE` du chantier, attendre qu'aucun `upload-mapped-git`/`AttachVideoCmafDashHls` ne tourne, écrire, vérifier `git rev-list --left-right --count HEAD...origin/main` à `0 0` dans `ManifestClone`, puis supprimer `PAUSE`.
+- **Idempotence du nom propre (12 October 2026)** : un second passage de `RenameCloudMedia` ne doit rien changer. `Titre (2).mkv` (doublon) et `Titre (2020).mkv` (film) restent tels quels ; l'année entre parenthèses est gardée pour un film et retirée pour un épisode.
+
+## 12 October 2026 : l'upload des films en voies parallèles (archive, empaquetage, relecture), un seul écrivain Git
+
+- **Mesure de départ (12 October 2026)** : par film de 1,4 Gio, archive 267 s (5,4 Mo/s), empaquetage CMAF + sous-titres 211 s, relecture SHA-256 de 110 à 1 217 s. Le mode séquentiel donnait 517 à 528 s par film ; mon premier pipeline à une seule relecture en vol et une barrière (`previous.result()`) est tombé à 1 219 s par film, parce que la relecture est limitée PAR FLUX `git fetch` (1,3 à 1,7 Mo/s) alors que la ligne porte 11 Mo/s.
+- **Architecture (12 October 2026)** : trois voies. L'envoi de l'archive (fil principal) du film N+1 se fait pendant l'empaquetage, le transcodage et les sous-titres du film N (une voie d'empaquetage), et pendant la relecture et le déchargement des films précédents (trois relectures de front, fenêtre de 4 films non déchargés, `ZR_VERIFY_FILMS`, `ZR_WINDOW`, `ZR_PACKAGE_LANE=0` pour revenir en arrière). Montée mesurée après le changement : 11 Mo/s (la ligne), contre 5 Mo/s de moyenne.
+- **Un seul écrivain Git (12 October 2026)** : `scripts/lib/clone-lock.mjs` (Node) et `clone_lock()` du worker (Python) prennent le même verrou `<clone>.lock/owner.json` pour toute écriture dans `ManifestClone` : début et commit de `upload-mapped-git.mjs`, commit de `AttachVideoCmafDashHls.mjs`, commit de `AttachSubtitleTracks.mjs`, réparation du clone par le worker. Le compteur d'octets du shard public (`pages/.zr-vid-drive.json`) n'est plus écrit pendant la poussée (plusieurs minutes de clone « sale » qui faisaient refuser les autres écrivains) mais seulement dans la section de commit (`allocatePublicShard(..., { persist: false })`).
+- **Reçu réutilisé (12 October 2026)** : `VerifyVideoCloud.mjs` ne relit plus un film dont le reçu prouve CE manifeste (empreinte de récupération) et CETTE source inchangée ; il écrit aussi `manifestRecoverySha256`. Un redémarrage ne répète donc plus 4 à 15 minutes de relecture.
+- **Limite GitHub (12 October 2026)** : un 403 « secondary rate limit » à la création d'un dépôt est une attente (pause 1, 2, 4 ... 15 minutes), pas une erreur du film : `GitHubThrottled` dans le worker, jamais compté dans les 4 tentatives.
+- **Redémarrage propre (12 October 2026)** : `~/.claude/skills/zenray-progress/scripts/RestartFilmWorker.sh [--wait-upload-end]`. Tuer seulement le Python laisse un `ffmpeg` orphelin qui écrit encore dans `HlsDashWork/current` (ENOTEMPTY au film suivant), un verrou ou un rebase suspendu.
+- **Recherche complète (12 October 2026)** : six rapports dans `~/.claude/tmp/tmp-movies-series-upload/SpeedResearch/agents/` (réseau, profil du code, architecte du pipeline, limites de plateforme, vérification, autres chemins d'upload).
+
+## 12 October 2026 : preuve par identité d'objets (PIO), la relecture intégrale en 4 secondes, décision de Matthieu
+
+- **Constat (12 October 2026)** : la relecture SHA-256 est limitée par flux `git fetch` (1,3 à 1,7 Mo/s) : 4 à 17 minutes par film de 1,4 Gio, et c'est elle qui remplit la fenêtre de films en attente de déchargement et laisse la montée vide.
+- **Protocole (12 October 2026)** : `scripts/VerifyVideoCloudIdentity.mjs <manifeste> <source> <reçu>`. AES-256-GCM est déterministe pour clé + IV + clair : on re-dérive les parts chiffrées depuis la source locale, on compare le SHA-256 de chaque part à son nom dans le manifeste, son identifiant d'objet Git (SHA-1 de `blob <taille>\0<octets>`) à celui que GitHub a calculé et que l'arbre du commit épinglé donne (`git fetch --filter=blob:none --depth=1` puis `git ls-tree -r`, jamais `-l` qui télécharge les blobs), et un aller-retour GCM local au clair. Deux identifiants égaux : mêmes octets.
+- **Mesuré (12 October 2026)** : film de 1 616 906 326 octets, 17 parts, 1 shard épinglé : 3,7 s (17/17 parts sur les trois contrôles), contre 4 à 17 minutes de relecture. Quatre corruptions simulées (IV, clé, un octet, frontière de part) sont toutes détectées (rapport `SpeedResearch/agents/verification.md`).
+- **Ce que la PIO ne couvre pas, et la relecture non plus** : une corruption du stockage APRÈS le contrôle, la perte de la clé maître, la perte du seul exemplaire logique des films.
+- **Modes (12 October 2026)** : `ZR_VERIFY_MODE=full` (relecture intégrale, historique), `shadow` (DÉFAUT : la PIO tourne aussi, seule sa concordance est journalisée, la relecture intégrale décide), `identity` (la PIO décide, un film sur `ZR_VERIFY_FULL_EVERY`=8 est quand même relu en entier). Passer à `identity` est une décision de Matthieu, jamais un défaut.
+
+## 12 October 2026 : la ligne, mesurée par le laboratoire réseau (à ne pas refaire)
+
+- **Plafond de la ligne (12 October 2026)** : environ 10,8 Mo/s utiles dans chaque sens (médiane de 894 échantillons de 2 s ; Wi-Fi 802.11ac). Un flux TCP porte 9,0 à 9,7 Mo/s vers Cloudflare et 8,2 à 9,3 vers GitHub ; 2, 4 ou 8 flux montants plafonnent à 8,9 à 9,4 Mo/s au total. Aucun réglage de lot, de protocole (HTTP/1.1 ou HTTP/2) ou de flux ne dépasse ce plafond.
+- **La montée sature la descente (12 October 2026)** : un flux montant à pleine vitesse fait passer une lecture GitHub concurrente de 6,4 Mo/s à 0,6 Mo/s (médiane). C'est la vraie cause des relectures à 1,3 Mo/s par flux : tant que la montée est pleine, la relecture est affamée. Deux lectures parallèles valent environ 7,95 Mo/s agrégés, quatre 7,3 : plus de flux aide tant que la ligne est partagée.
+- **Plancher de fil par film (12 October 2026)** : environ 280 s (2,87 Go montants par film de 1,5 Go : archive 1,54 + segments 1,33). Le mode séquentiel propre en prenait 555 s ; le seul levier restant hors transport est la preuve sans relecture (PIO, section ci-dessus).
+- **Non établi (12 October 2026)** : si le plafond de 10,8 Mo/s vient du forfait ou du saut Wi-Fi ; un branchement filaire est le seul test, gain non borné.
+- **Incidents du laboratoire (12 October 2026)** : 1,53 Go poussés vers deux dépôts temporaires `zenray-speedlab-tmp-1791761812-a` et `-b` (privés, à supprimer par Matthieu : `gh api -X DELETE repos/matthieuhuguet/zenray-speedlab-tmp-1791761812-a` puis `-b`), jusqu'à 64 processus `git fetch` orphelins qui ont gêné le worker de 01:56 à 02:12 ; ne jamais lancer un test réseau dans la même fenêtre qu'un lot.
+
+## 12 October 2026 : index de recherche différé pendant la file des films (ZR_DEFER_INDEX_ADD)
+
+- Constat (12 October 2026) : chaque film appelait appendPublicDelta, qui relit, réécrit et reposte un delta de 11 à 15 Mo (quatre requêtes REST qui créent du contenu, environ 20 s de montée vide par film), pendant que GitHub répondait HTTP 403 sur la création de dépôt (trois essais vers 03:07 le 12 October 2026).
+- Règle (12 October 2026) : avec ZR_DEFER_INDEX_ADD=1, scripts/upload-mapped-git.mjs n'appelle plus thumbsForPaths ni appendPublicDelta : il ajoute les chemins écrits au fichier IndexAddSpool.txt (ZR_INDEX_SPOOL le déplace, défaut ~/.zr-archive-work-mapped/IndexAddSpool.txt). Sans la variable, rien ne change.
+- Vidage (12 October 2026) : le worker des films (flush_index_spool dans ProcessFilmsSequentially.py) lance scripts/index-add-paths.mjs une fois tous les 8 films et une fois avant la fin, avec les chemins dédupliqués ; un échec garde le fichier pour l'essai suivant ; un chemin ajouté pendant le vidage n'est pas perdu. Vidage à la main : GITHUB_TOKEN=$(gh auth token) node scripts/index-add-paths.mjs ~/.zr-archive-work-mapped/IndexAddSpool.txt
+- Preuves (12 October 2026) : cinq cas du vidage passent avec un script factice (sous le seuil, lot dédupliqué, échec, fichier absent, chemin ajouté pendant le vidage) ; node --check passe sur l'envoi. Pas de preuve en production : le worker en cours n'a pas été redémarré, la variable n'y est donc pas posée.
+
+## 12 October 2026 : casse des dossiers entre le disque et git (House Of The Dragon contre House of the Dragon)
+
+- Incident (12 October 2026) : le worker destinait l'épisode S03E07 au dossier « House of the Dragon » alors que le clone suit « House Of The Dragon ». APFS ignore la casse, git non : `git commit -- <chemin>` répondait « did not match any file(s) known to git », et le nettoyage qui suit supprimait le manifeste suivi du disque (statut ` D`). Le clone sale a ensuite fait échouer cinq films 4K en quelques secondes chacun, et le worker a terminé à 211 sur 230.
+- Règle (12 October 2026) : tout chemin relatif passé à git vient de scripts/lib/canonical-rel.mjs (la casse est prise sur le disque). Le worker passe chaque dossier de destination par canonical_dest (casse du dossier déjà présent dans le clone), et restore_tracked_changes remet à la version commitée tout fichier suivi supprimé ou modifié par un écrivain mort, sans toucher aux fichiers non suivis.
+- Preuves (12 October 2026) : trois tests Node (casse du disque, chemin identique, hors du clone) et deux tests Python (dossier existant, restauration sur un vrai dépôt avec un chemin à crochets) passent ; les cinq films concernés restent sur disque, intacts.
+
+## 12 October 2026 : deux envois d'archive de front (ZR_UPLOAD_FLOWS) et ce que la ligne fait vraiment
+
+- Mesure (12 October 2026) : un seul envoi d'archive laisse la montée vide environ la moitié du temps (14 s de poussée à 11 à 15 Mo/s, puis 15 s de hachage et d'attente du serveur). Une seule poussée sature déjà la ligne : deux poussées en même temps donnent 11 Mo/s au total, et suspendre l'une des deux ne change pas le débit de l'autre.
+- Règle (12 October 2026) : le worker des films envoie `ZR_UPLOAD_FLOWS` archives de front (défaut 2, `1` rend l'ancien comportement). Chaque film a son plan `CurrentSingleUpload-<empreinte>.json`, le fichier d'attente de l'index est pris par un renommage atomique, et le second envoi démarre `ZR_UPLOAD_STAGGER_S` (20) secondes plus tard. Utilisation mesurée : environ 78 % de la ligne, contre 50 % avec un seul envoi.
+- Limite connue (12 October 2026) : les deux envois finissent par se synchroniser (ils se partagent la ligne, donc finissent leurs poussées ensemble et préparent ensemble). Un jeton de poussée relâché à la fin de l'envoi des données (`Writing objects: 100%`) et trois envois porteraient l'utilisation vers 100 % ; non fait, gain estimé 35 minutes sur ce lot.
+- Ordre (12 October 2026) : `ZR_QUEUE_ORDER=large-first` met les plus gros films en premier quand la file n'est faite que de gros films, pour que leur queue (transcodage, relecture) passe sous les autres envois.
+
+## 12 October 2026 : worker des films : reprise des films parqués, statut honnête et manifeste en ligne avant l'effacement
+
+- Constat (12 October 2026) : à 07:27 le worker a écrit « File séquentielle terminée » avec cinq films non envoyés, puis est resté oisif 129 minutes ; et Black Panther 2018 a été effacé du disque alors que ses trois commits de manifeste n'avaient jamais été poussés.
+- Règle (12 October 2026) : tout abandon est gardé (`parked`) et rejoué trois fois (attentes 5, 15 et 45 minutes, `ZR_RETRY_WAITS_S`) ; une file qui finit avec des films parqués écrit le statut `incomplete`, nomme les films et sort avec le code 3 ; deux films différents qui échouent de la même façon en moins de 10 minutes déclenchent un disjoncteur (pause de 300 s, réparation du clone, essais non consommés) ; l'original n'est supprimé que si le manifeste local est identique octet pour octet à celui d'origin/main (`ensure_manifest_online`, qui pousse d'abord ce qui est en avance) ; l'attente d'un blocage GitHub est plafonnée à 300 s sauf `retry-after` plus long ; deux relectures de front au lieu de cinq.
+- Capture (12 October 2026) : `repoCreateFailure` (scripts/video-raw-lib.mjs) garde les en-têtes de réponse et le corps d'un refus de création de dépôt ; le message de l'erreur porte `retry-after`, `ratelimit-remaining` et le texte de GitHub, jamais les en-têtes de la requête.
+- Risque connu (12 October 2026) : l'archive n'est pas reprenable, donc un 403 qui tombe sur un changement de dépôt (tous les 2 Gio) fait repartir le film de zéro. Contournement manuel : suspendre le processus parent de l'envoi (`kill -STOP <pid>`) pendant la vague, la poussée en cours se termine, puis `kill -CONT` quand une création réussit. Remède durable : créer les dépôts avant le premier octet ou `ZR_SHARD_CAP_GO=4`, et rendre l'archive reprenable.
+- Preuves (12 October 2026) : 4 tests Node (`scripts/lib/repo-create-failure.test.mjs`), et les tests Python de `scripts/Films/tests/` (reprises, disjoncteur, sortie 3, porte du manifeste contre un vrai dépôt nu, échelle plafonnée).
+
+## 12 October 2026 : renommage du cloud : les dossiers au nom de release restaient
+
+- Constat (12 October 2026) : dans Create, Movies_Series gardait des noms de release (« [Delivroozzi] Le Rakugo ou la vie… », « 1000.Men.And.Me… », « Confessions (2010) (1080p… », « Black.Panther.2018.4K.mkv », « Mushishi (2005) BDrip… ») alors que le renommage propre des 197 films avait été appliqué. Deux causes : les films arrivés depuis ce passage n'avaient jamais été renommés (le worker envoie sous le nom de release), et l'outil renommait le fichier mais gardait le dossier parent au nom de release.
+- Règle (12 October 2026) : `retargetFolder` (scripts/lib/media-rename.mjs) remonte à la racine un film rangé sous un dossier au nom de release ; `--folder-alias "Dossier brut=Dossier propre"` range un spécial sous sa série ; `--alias "Titre brut=Titre propre"` fusionne deux titres d'une même série. Le plan sec (`--dry`) affiche tout.
+- Commande (12 October 2026) : `node scripts/RenameCloudMedia.mjs --manifests <clone sparse de zenray-data> --base pages/Movies_Series-yl1x --receipts <RecoveryReceipts> --alias ... --folder-alias ...` sur un clone neuf, jamais sur le clone du worker (le script fait `git add -A` sous la base).
+- Preuves (12 October 2026) : 23 manifestes déplacés avec leurs flux et 23 reçus mis à jour (commit sur zenray-data) ; 5 tests Node (`scripts/lib/retarget-folder.test.mjs`). Reste à Matthieu : reconstruire l'index de recherche (les anciens chemins y figurent encore).
+## 12 October 2026 : ZenRay Freelance, le refus d'un studio et le mail « demander un retour »
+
+- 12 October 2026 : feature existante, à réutiliser et jamais à réinventer : une fiche au statut « Refusé » affiche le bloc « Demander un retour » (mail FR ou EN prêt à copier, deux questions courtes). Code : `src/lib/freelanceFeedbackRequest.js`, `src/components/freelance/FreelanceFeedbackRequest.jsx`. (12 October 2026)
+- 12 October 2026 : enregistrer un refus reçu par mail : `node scripts/Freelance/RecordEmail.mjs --studio <id> ...` (voir `docs/FREELANCE-ENGINE.md`, section du 12 October 2026). Toujours donner `--studio` : un studio a souvent plusieurs annonces (Voodoo en avait quatre), et le nom seul ferait refuser la mauvaise. (12 October 2026)
+- 12 October 2026 : piège évité : `processIncomingEmail` coupait le texte reçu à 600 caractères, ce qui aurait perdu la fin d'un refus ; la commande passe `snippetLimit` à 20 000. Aucune boîte mail n'est lue automatiquement ici (le scanner existe mais n'a pas de source de courriels). (12 October 2026)
+
+## 12 October 2026 : onglet Motion Design, service local 3102 et publieur des motions
+
+- Feature (12 October 2026) : entrée « Motion Design » juste après Media (`src/motion/MotionDesignView.jsx`, paresseuse). Galerie façon YouTube lue dans UN catalogue (`pages/ZenRayMotionDesign/catalogue.json`, lecture d'affichage hors quota, jamais une lecture par carte), page d'un motion (`VideoPlayer2` sur le manifeste HLS publié, colonne des versions), demande d'itération, montage local. Valeurs : `src/config/motion.js`.
+- Pont (12 October 2026) : service `com.zenray.motion` sur `127.0.0.1:3102` (code dans `/Users/zenray/.claude/tmp/tmp-zenray-motion-design/ZenRayMotionDesign/service/`), client `src/lib/motionBridge.js`, en-tête `x-zr-motion-client: 1`. Mac absent : la demande s'écrit dans `pages/ZenRayMotionDesign/_requests/<id>.json`, le service seul écrit `<id>.status.json`.
+- Publication (12 October 2026) : `node scripts/Motion/PublishMotions.mjs [--motion <id>] [--push]`, à blanc sans `--push`. Segments et affiche sur un shard `zenrayshards-motion-<hex12>` sous des chemins neutres (`zrmd-0001/v008-16x9/`), puis UN commit privé (playlists, manifeste, fiche, catalogue, carte des identifiants). Refus tant que `motion.json` ne porte pas `rights.cleared: true`. Vérificateur : `node scripts/Motion/CheckCatalogue.mjs --clone <zenray-data>`.
+- Règle (12 October 2026) : les réécritures de playlists vivent dans `scripts/lib/cmaf-rewrite.mjs`, partagées entre les films et les motions ; ne pas les recopier.
+
+## 12 October 2026 : sous-titres du lecteur : un seul rendu, taille en pourcentage, police et fond au choix
+
+- Constat (12 October 2026) : les pistes ASS passaient par libass (JASSUB), qui ignorait la charte (ni Inter, ni fond arrondi) ; la taille « petite » était déjà trop grande ; beaucoup de films n'avaient que l'anglais, ou rien.
+- Règle (12 October 2026) : tous les formats passent par `SubtitleLayer` (libass seulement avec `useAssRenderer`). La taille est un pourcentage de l'ancienne petite (100 % exactement), préréglages 100, 75 et 50, grille de 5 % de 25 à 150 dans le menu « Personnalisé » ; police sans (Inter) ou serif ; fond opaque arrondi désactivable (contour sombre sans fond). Réglages partagés par tous les films (`src/media/subtitles/subtitleSettings.js`, clés `zr-subtitle-size-pct`, `zr-subtitle-font`, `zr-subtitle-bg`).
+- Pistes absentes (12 October 2026) : `scripts/AttachSidecarSubtitles.mjs` range dans le manifeste un fichier de sous-titres déjà dans le cloud, après trois contrôles (SHA-256 du fichier, langue lue dans le texte, dernière réplique dans la durée du film). 20 pistes françaises ajoutées (Twilight Samurai, Under The Open Sky, Smoking Behind The Supermarket), 1 refusée par la durée.
+- Vérificateur (12 October 2026) : `node scripts/CheckSubtitles.mjs --clone <clone> [--json]` décode chaque piste avec le parseur du lecteur ; sorti rouge sur une piste vide ou d'une autre version, vert sinon (testé dans les deux sens). État : 191 films, 375 pistes, 0 problème, 92 films sans français.
+- Reste (12 October 2026) : 3 Gatsu No Lion (44), Le Rakugo (20), Bleach, Akane Banashi, Initial D, Witch Hat, Yomi No Tsugai n'ont aucune piste texte dans le manifeste : le texte est dans l'archive chiffrée, donc restauration (comme Mushishi), décision de Matthieu. Black Panther : seul le `.fr.mks` existe et il contient du PGS (image), qui demande un OCR.
+
+## 12 October 2026 : ZenRay Assets, vue Tube par défaut (Classique conservée)
+
+- Feature (12 October 2026) : la vue Assets s'ouvre en « Tube » (`src/components/assets/AssetsTube.jsx` et `AssetsTube.css`, branchés dans `ProjectWorkspace.jsx`). Accueil = grille de couvertures (titre + une ligne) ; page projet = anneau et barre d'espace en haut, barre latérale « Emplacements » (Brouillons, Notes, Scènes Houdini, Jeu, Archive), vues Icônes, Liste, Colonnes, Galerie, feuille « Télécharger » (carte du ZIP puis arbre). Le bouton Classique / Tube de la barre du haut rend l'ancienne vue ; le choix est dans `localStorage` (`assets.layout`).
+- Réglages (12 October 2026) : toutes les valeurs visuelles sont des variables `--tube-*` en tête de `AssetsTube.css`. Police : Inter seulement, titres en Inter Bold par `--tube-title-weight` (décision de Matthieu, le serif fatigue dans une UI), les variables serif retombent sur le sans dans `.assets-workspace[data-layout="tube"]`.
+- Noms (12 October 2026) : bascule « Simples / Techniques » dans la barre latérale (`assets.sourceNames`), source unique `SOURCE_DEFS` : TMP = Brouillons, Memory = Notes, Houdini = Scènes Houdini, Unreal = Jeu, Cloud = Archive. Une source absente du projet est grisée.
+- Piège (12 October 2026) : un projet de l'ancien registre n'a ni `namespace` ni `sourceId` ni taille par fichier ; tout y est « Archive », et le total de l'anneau retombe sur la somme `sources[].bytes`. Le ZIP garde son arborescence réelle `namespace/sourceId/chemin` et prend le nom `tmp-<id du projet>`.
+- Piège (12 October 2026) : la feuille de téléchargement est portée vers `document.body` et reçoit les variables de thème en ligne (un ancêtre avec `backdrop-filter` ancre sinon un `position: fixed` au cadre). Tests : `src/components/assets/ProjectWorkspace.test.jsx`, section « Tube layout ».
+- Reste (12 October 2026) : panneau d'uploads de films masqué en Tube, à déplacer dans Create ; chargement du catalogue (plusieurs secondes) à traiter dans la passe performance.
+
+## 12 October 2026 : jeton de poussée et attente d'un blocage de création
+
+- Constat (12 October 2026) : la ligne est vide 40 à 50 % du temps entre deux poussées (hachage puis attente du serveur) ; deux envois de front se resynchronisent et se taisent ensemble ; un refus de création de dépôt faisait échouer un film de 19 Gio, qui repartait de zéro (11:31).
+- Règle (12 October 2026) : `scripts/lib/push-token.mjs` : une seule poussée envoie ses données à la fois sur la machine, jeton rendu à « Writing objects: 100% » (archive : `pushWithToken` dans video-raw-lib.mjs ; segments : video-git-shard.mjs). `ZR_PUSH_TOKEN=0` le coupe. La création d'un dépôt attend la fin d'un blocage secondaire (60 minutes au plus, `ZR_REPO_CREATE_WAIT_MIN`).
+- Preuves (12 October 2026) : 3 tests Node du jeton (exclusion, idempotence, désactivation), une poussée réelle vers un dépôt nu rend le code 0 et le jeton au pourcentage 100, 8 tests vitest de la bibliothèque. Gain non mesuré en production : à mesurer au prochain lot (modèle : 78 % vers environ 90 % d'utilisation).
+
+## 12 October 2026 : ZenRay Assets, miniatures de projet, ordre par dernière modification, alignement
+
+- Feature (12 October 2026) : clic droit sur une image dans la vue Tube, « Définir comme miniature du projet » (ou « Retirer cette miniature »). Le choix est dans `pages/.zr-assets-covers.json` (`{ covers: { <id projet>: { file, choice: 'manual'|'auto', reason } } }`) et recopié dans `localStorage` (`assets.covers`). Un choix manuel prime toujours ; à l'ouverture d'un projet sans choix, un fichier nommé thumbnail, cover, poster, icon, miniature ou rangé dans un dossier `Thumbnail` est adopté seul (`src/lib/assetsProjectCover.js`, `src/lib/useProjectCovers.js`).
+- Pourquoi une vignette stockée (12 October 2026) : un fichier archivé par le service (`.file.json`) n'a PAS de vignette dans son manifeste, seulement des chunks bruts ; sans elle, la tuile affichait l'icône de document. La miniature choisie est donc recadrée au centre en 360 x 203 WebP (`src/lib/coverThumbnail.js`) et rangée en data URI (5 à 20 Ko) dans la référence : elle s'affiche sans aucune requête. Limite connue : les tuiles de fichiers d'un projet n'ont toujours pas d'aperçu tant que le service n'écrit pas `thumb` dans chaque manifeste à l'archivage.
+- Commande (12 October 2026) : `node scripts/Assets/ScanProjectCovers.mjs [--apply] [--only=a,b]` balaie tous les projets (index léger et `.workspace.json`), liste dernière modification et miniature trouvée par nom ; `--apply` écrit `lastActivityAt` dans l'index et une miniature par projet dans le fichier des couvertures (un choix manuel n'est jamais touché). Mesuré le 12 October 2026 : 8 projets sur 31 avaient déjà un fichier nommé thumbnail.
+- Ordre (12 October 2026) : l'accueil trie par la dernière vraie modification de fichier (`lastActivityAt` du résumé, sinon `mtimeMs` des fichiers) ; les fichiers générés (`ConversationIndex.*`, `FileMap.md`, `Project.json`) et les heures de publication ne comptent pas. Les projets sans aucune image montrent leurs initiales sur un pastel stable, jamais une boîte vide.
+- Piège (12 October 2026) : un `canvas` ou `img` imbriqué dans le rendu partagé n'était pas recadré et paraissait écrasé ; tout `img`, `canvas` et `video` d'une tuile Tube prend `object-fit: cover`. Le commutateur Classique / Tube vit dans une seule barre (`.assets-layout-bar`) en haut à droite de la colonne, identique dans les deux vues.
+- Piège (12 October 2026) : pendant le chargement du catalogue, un projet demandé par l'URL n'est plus remplacé par le premier de la liste ; `projectConversationLinks` indéfini ne casse plus le rendu.
+
+## 14 October 2026 : le dossier des films s'appelle Anime_Movies_Series (decision de Matthieu)
+
+- 14 October 2026 : `pages/Movies_Series-yl1x` est devenu `pages/Anime_Movies_Series`, et `pages/Anime` y est entre (`Anime_Movies_Series/Anime/Bleach/S17`, etc.). Commit zenray-data 3004b6c1eb, 270 manifestes avant et apres, 396 references de flux verifiees.
+- 14 October 2026 : tout script qui ecrit dans ce dossier utilise le nouveau nom (valeur par defaut des scripts Films, RenameCloudMedia, CheckSubtitles). Les anciens noms `Movies_Series-yl1x` dans ce fichier sont de l'historique.
+- 14 October 2026 : l'index de recherche (`pages/.zr-search-index.json`) et le registre `pages/.zr-assets-workspaces.json` citent encore l'ancien nom : `build-search-index.mjs --apply` reste reserve a Matthieu.
+
+## 14 October 2026 : blocage GitHub « temporarily blocked from content creation » et dépôts réutilisés
+
+- 14 October 2026 : cause mesurée : une RAFALE de créations de dépôts (12 en 4 minutes, un par film), pas leur nombre ni leur taille. Code : `scripts/lib/repo-create-policy.mjs` (voies de réutilisation et porte de création partagée), branché dans `scripts/video-raw-lib.mjs` (`openShard`, `creerDepot`). Tests : `scripts/lib/repo-create-policy.test.js` et la section « repository reuse and creation gate » de `scripts/video-raw-lib.test.js`.
+- 14 October 2026 : un test qui échoue seulement quand la machine est chargée (load average 100 et plus) est un test de temps, pas une régression : le relancer seul avant de conclure.
+
+## Japanese study and canonical chronology (14 October 2026)
+
+- Learn, Japanese now opens Parcours. Source: src/learn/JapaneseStudy.jsx and japaneseStudyModel.js; server/japanese.js handles authenticated atomic Memory commits. Docs: docs/JAPANESE-STUDY.md. (14 October 2026)
+- Japanese1.md remains the only lesson/session chronology. Site/study.json is derived SRS state; historical acquired counts are never inferred from corpus availability. New lessons and their index save together. (14 October 2026)
+- A stale lesson hash, missing review, absent oral example or conflicting revision count blocks saving. A failed write stays visible and retries the same event ID; a Memory race rereads current files instead of replacing another session's append. (14 October 2026)
+- After saving, the lesson index updates immediately and the historical reader pins the new commit; invalidate its old in-memory Japanese1 cache, otherwise the new index would point into an older text. (14 October 2026)
+
+## 14 October 2026 : revue globale de la politique de push (43 scripts qui poussent vers GitHub)
+
+- 14 October 2026 : routés vers le moteur de la politique (6) : `video-raw-lib.mjs` (archives de films), `lib/video-git-shard.mjs` (segments CMAF), `archive-folder.mjs` (archives de dossiers, donc Assets), `img-ingest.mjs` (photos), `upload-audio-list-git.mjs` (audio), `backup-mirror.mjs` (sauvegarde froide). Les quatre derniers poussaient des lots FIXES de 150, 900, 900 et 400 Mio ; ils suivent maintenant la ligne mesurée, jusqu'à 1 900 Mio (`sharedBatchAdapter` dans `lib/push-batch-policy.mjs`).
+- 14 October 2026 : écart trouvé et corrigé : `AttachVideoCmafDashHls.mjs` découpait lui-même les segments CMAF en lots fixes de 350 Mio avant de les confier à la politique (20 pushes de 351 Mio mesurés) ; il confie maintenant la liste entière, un test statique interdit le retour d'une limite fixe.
+- 14 October 2026 : restent hors moteur, avec leur raison écrite dans `PUSH_ALLOWLIST` (`lib/push-policy-guard.mjs`) : manifestes et texte (quelques Kio), migrations uniques d'Eagle et de partitions, pipeline fMP4 historique remplacé. Le test de garde échoue si un script pousse sans être routé ni listé, ou si une entrée de la liste est périmée.
+- 14 October 2026 : plafonds de dépôt par famille, gardés volontairement différents : films 4 096 Mio ; archives de dossiers 2 048 Mio (le dépôt `archive-downloads-30` a refusé tous les pushes à 2,3 Go avec GH013 le 16 August 2026) ; images 4,3 à 4,5 Gio ; audio 4,3 Gio ; sauvegarde froide 4,5 Gio ; segments CMAF publics 4,2 Gio. Des dépôts de films de 9 à 10 Go acceptent pourtant des pushes : les deux faits ne se contredisent que si on les croit de même nature, à vérifier avant d'unifier.
+
+## 14 October 2026 : les films vivent dans Anime_Movies_Series_Documentaries/{Anime,Movies,Series,Documentaries}
+
+- 14 October 2026 : `pages/Anime_Movies_Series` est devenu `pages/Anime_Movies_Series_Documentaries` avec quatre dossiers : `Anime/<Oeuvre>/Saison NN`, `Series/<Oeuvre>/Saison NN`, `Movies/<Film>.media.json` (et `Movies/Hors Normes/` pour ses 14 fichiers), `Documentaries/`. Commit zenray-data `d7b5808ced`, 1 195 fichiers deplaces, 288 manifestes avant et apres, 480 references `/api/hls?path=` et tous les `master`/`mpd` verifies, 0 reference a l'ancien nom. Les doublons de dossiers (`Anime/Bleach` et `Bleach`, `Anime/Smoking...`, `Anime/Witch Hat Atelier`) sont fusionnes ; rien n'est supprime, une collision garde les deux fichiers (le second prend ` (2)`, ` (3)`).
+- 14 October 2026 : la table unique des oeuvres connues est `scripts/Films/WorkCategories.json` (lue par `WorkCategories.py` pour le worker et par `scripts/lib/film-categories.mjs` pour Node). Le dossier d'un film se decide AVANT l'envoi : `resolve_dest()` du worker prend la table ; une oeuvre inconnue n'est PAS envoyee, elle est ecrite dans `NeedsCategory.json` (dossier du lot) et journalisee `NEEDS CATEGORY` : on demande a Matthieu la categorie, on l'ajoute au JSON, on relance.
+- 14 October 2026 : outil de rangement reutilisable et rejouable : `python3 scripts/Films/RestructureCloud.py --clone <clone zenray-data> [--apply] [--report r.json]` (a blanc par defaut). Il fusionne, renomme `S17` en `Saison 17`, reecrit les references (JSON et URL encodees des playlists), valide et sort en code 1 si une reference casse. Test : `python3 scripts/Films/tests/test_restructure.py` (vert sur un cas bon, rouge sur une reference cassee).
+- 14 October 2026 : le clone sparse des manifestes (`tmp-movies-series-upload/ManifestClone`) suit `pages/Anime_Movies_Series_Documentaries`. Le worker se lance avec `ZR_PROGRESS_REPO=<checkout propre>` (sinon le depot qui contient le script, sinon le checkout principal).
+- 14 October 2026 : `pages/.zr-search-index.json` et `pages/.zr-assets-workspaces.json` citent encore `Anime_Movies_Series` : `build-search-index.mjs --apply` reste reserve a Matthieu.
+
+## 14 October 2026 : le skill du site s'appelle zenray-progress et porte les politiques de drive et d'upload
+
+- 14 October 2026 : `zenrayprogress-context` est renomme `zenray-progress` (`/Users/zenray/.claude/skills/zenray-progress/SKILL.md`). Il porte le code du site ET toutes les politiques de drive et d'upload (sections datees integrales dans `references/UploadPolicies.md`). `zenray-assets` ne garde que les projets de production (registre, mapping, feedback, LOAD/UNLOAD, panneau macOS). Les scripts `PrepareSubtitleCopy.py`, `RestartFilmWorker.sh` et `route-method.mjs` vivent maintenant dans `skills/zenray-progress/scripts/`.
+- 14 October 2026 : l'ancien nom n'existe plus comme skill ; il ne reste que dans l'historique (journal, FEEDBACK, transcripts). Ne jamais le recreer.
+
+## 14 October 2026 : streaming seul, une copie par film (décision de Matthieu)
+
+- 14 October 2026 : mode `stream` par défaut du worker (`defaultMode` de `scripts/Films/WorkCategories.json`) : pas d'archive chiffrée, manifeste de base `scripts/CreateStreamManifest.mjs` (type `dash`, `streamOnly: true`, sans `parts`), puis CMAF, sous-titres dans le manifeste, affiche publique, preuve `scripts/VerifyStreamingCloud.mjs` (arbre du dépôt public à son commit : tous les fichiers de toutes les pistes, tailles sommées = `cmafBytes`, échantillon lu par jsDelivr avec reprises, durée, pistes audio et sous-titres de la source), puis `unloadStreamedVideo` (`lib/video-cloud-recovery.mjs`) sur un reçu `streaming-v1`. Tests : `lib/streaming-proof.test.mjs`, `lib/streaming-unload.test.mjs` (9 + 7, dont les cas rouges).
+- 14 October 2026 : `mode: "archive"` reste possible par fichier (explicite) ; un fichier hors table n'est jamais deviné (`NeedsCategory.json`, question dossier + mode). `unload: false` dans le plan garde la source (test).
+- 14 October 2026 : le téléchargement d'un film streamé donne la vidéo, chaque audio et les sous-titres en fichiers séparés (`src/lib/streamFiles.js`, `VideoPlayer2.jsx`, `scripts/DownloadStream.mjs`) ; une archive existante reste l'original octet pour octet (les films « archive + streaming » ne pouvaient pas se télécharger avant : `isRaw` est faux dès qu'une playlist master existe).
+
+## 14 October 2026 : « Loading the catalogue » éternel dans Motion Design, onglet « On this Mac »
+
+- 14 October 2026 : SYMPTÔME : l'onglet affichait « Loading the catalogue… » sans fin. CAUSE MESURÉE : l'action `catalogue` du service com.zenray.motion lançait `zrmd catalog` (22 s : une affiche ffmpeg réessayée à chaque appel pour 79 versions, dont des rendus de 0,5 s sans image à 0,5 s, et un plantage sur les motions dont `canvas` est une liste) ; la page abandonnait à 20 s (`MOTION.bridge.timeoutMs`) et AVALAIT l'échec (`.catch(() => {})`), donc l'état restait `loading`.
+- 14 October 2026 : CORRECTIF : la CLI `catalog` est incrémentale et robuste (signature par fichier, affiche au milieu d'un rendu court, échec mémorisé, un motion illisible listé dans `errors`) ; le service répond PAR PAGES (`offset`, `limit`, `total`, `hasMore`) depuis le fichier en cache avec un rafraîchissement borné à 4 s ; la page charge page après page (`useLocalCatalogue`), dessine par fenêtres de 24 cartes avec squelettes et compteur, et un échec est un état nommé avec « Réessayer ». Tests rouges sur l'ancien code : `src/motion/MotionDesignView.test.jsx` (4 cas), `service/test/e2e.test.mjs`, `tests/test_catalog.py` côté moteur.
+- 14 October 2026 : PIÈGE : après un déploiement, un navigateur peut garder en cache HTTP un chunk renvoyé en `text/html` pendant la propagation (« Failed to fetch dynamically imported module ») ; un rechargement qui force le cache (`fetch(url, { cache: 'reload' })` puis recharger) suffit, le serveur sert bien le JavaScript.
+
+- **Palette Cmd/Ctrl+K (15 October 2026)** : `src/components/SpotlightSearch.jsx`, montée UNE fois à la racine d'`App.jsx`, destinations de `NAV` puis fichiers de l'index, depuis toutes les vues.
+- **Service Assets, ses leviers (15 October 2026)** : `scripts/AssetsConfig.json` : `watch.backupMinIntervalSeconds`, `storage.autoBatchLimit`, `batchFiles`, `batchBytes`, `snapshotConcurrency`, `publishHeartbeatMs`, `indexMinIntervalMs`. Mesures par passe : événements `timing` dans `~/Library/Application Support/ZenRayAssets/Events.jsonl`.
+- **Livraison (15 October 2026)** : `Scripts/Ship.sh` de l'atelier `~/.claude/tmp/tmp-zenray-refine-14oct/` (rebase, suite complète, build, push, déploiement, vérification du bundle servi).
+
+## 15 October 2026 : ZenRay Japanese 1.0.0
+
+- Une fiche dont le contenu change restait à revalider sans action possible : studyCardStatus autorise désormais une nouvelle exposition lorsque l’empreinte précédente est périmée, et le diagnostic réapparaît. Le serveur conserve les anciens événements chronologiques et remet les nouveaux compteurs à zéro. Test réel avec une fiche précédemment acquise. (15 October 2026)
+- Mode d’emploi versionné dans JapaneseRelease.json ; audit de couverture lié à la release dans JapaneseStudy et japaneseCorpusModel. Une panne ou une ancienne preuve affiche son absence, sans cacher les leçons ni inventer un score. Détail docs/JAPANESE-STUDY.md. (15 October 2026)
+
+- **ZenRay Plan <-> Google Calendar (17 October 2026)** : Worker `workers/plan-gcal/` (cron chaque minute, passage rapide ~1,5 ms, complet ~7,5 ms à mesurer chez Cloudflare), tout est décrit dans `docs/PLAN-GCAL.md`. Pièges payés : `Intl.DateTimeFormat` coûte 10 ms à la première utilisation (Paris calculé par règle) ; sans `CLOUDFLARE_ACCOUNT_ID`, wrangler répond « Authentication error [10000] » sur KV ; un changement de format d'empreinte entre deux écrivains ferait patcher tous les événements (un seul écrivain à la fois). (17 October 2026)
+
+## 19 October 2026 : Plan attachments in Create and Calendar
+
+- 19 October 2026 : Plan task details accept any original file via captureAttachment (no text conversion or video transcode), saved under pages/PlanAttachments/<task-id> and indexed in Create. Upload progress and errors stay visible. (19 October 2026)
+- 19 October 2026 : Each attachment has a permanent revocable signed file share, scoped to one .media.json. /api/attachment-download streams decrypted bytes with Content-Disposition attachment and no-store; no drive code or media key appears in its URL. Removal revokes the link and keeps the Create file. (19 October 2026)
+- 19 October 2026 : The Calendar Worker appends download links to descriptions, including imported editable events while preserving their original description. Deploy BOTH Pages and workers/plan-gcal/wrangler.toml. Native Pages route preserves stream backpressure; never replace it with the 4 MiB stream proxy. (19 October 2026)
+- 19 October 2026 : Checks: server/attachment-download.test.js (exact multi-part bytes, corruption, signature/revocation, CDN fallback), src/create/PlanAttachments.test.jsx, workers/plan-gcal/tests/core.test.js. (19 October 2026)
+- 19 October 2026 : production a révélé une différence Node/workerd : createDecipheriv.update exige setAuthTag AVANT les octets dans workerd. Lire les 16 derniers octets par Range sur GitHub raw pinné avant de déchiffrer en flux ; le Range jsDelivr peut viser la représentation compressée (taille constatée +5 octets), donc ne jamais y lire le tag. Vérifié dans workerd local sur 7 299 017 octets. (19 October 2026)
+
+## 19 October 2026 : Attachment limits and honest upload progress
+
+- 19 October 2026 : Plan browser attachment limit is explicitly RAW_THRESHOLD (95 MiB, about 100 MB), imported from the shared chunk policy. This is a Plan product limit, not GitHub's per-file limit. Empty and oversized files fail before network work; batches of 100 or more files are directed to the existing Create bulk Git transfer. Limits live in src/config/attachmentPolicy.js. (19 October 2026)
+- 19 October 2026 : Plan continues to use universalCapture, shared storage chunks, 3 MiB transport fragments, AES-GCM, the existing shard API semaphore, retry and rollover. It does not invoke or replace the Mac Git push controller: its 1900 MiB batches belong to bulk Git transfers. No independent Git uploader is added. (19 October 2026)
+- 19 October 2026 : Attachment UI shows the existing SpinnerApple, a progress bar, elapsed seconds and the real phase (storage, encryption, upload, Create publication, link creation, Plan save). It stays below 100% until the Plan save promise confirms success. persist now resolves an ok/error result while retaining its retries and notifications; existing callers may ignore this result. Parameters are in PLAN_UI.attachments. (19 October 2026)
+
+## 19 October 2026 : Attachments in the creation form and shared Create viewers
+
+- 19 October 2026 : The New goal form and task details use the same PlanAttachments editor, with a visible native file drop target and From Create search/path picker. Creation retains attachments in a stable draft and blocks submission while linking or uploading. PlanBoardAttachments.test.jsx exercises both actual creation paths. (19 October 2026)
+- 19 October 2026 : Existing Create media is referenced without uploading its bytes. Films and images use permanent revocable signed viewer links; encrypted originals use the download route. Normal viewer shares keep their existing expiry unless permanent=true is requested. Streamed film downloads are refused with a visible explanation. (19 October 2026)
+- 19 October 2026 : Create selection searches the shared index locally (96 visible results) and reads only the selected manifest through raw=1. Internal application/zenray-page drops also work. Limits and dimensions live in PLAN_ATTACHMENTS and PLAN_UI. (19 October 2026)

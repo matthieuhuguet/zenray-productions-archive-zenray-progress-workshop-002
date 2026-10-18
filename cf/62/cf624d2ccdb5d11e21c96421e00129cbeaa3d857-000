@@ -1,0 +1,129 @@
+# ZenRay Assets V2 (2 October 2026)
+
+Each project has one stable id, one cloud folder and one canonical feedback file. Local directories remain where the creator works. (2 October 2026)
+
+## Daily protocol (2 October 2026)
+
+1. Open Assets and choose Relier un projet. Enter a name to create a TMP workshop and a Memory project automatically. (2 October 2026)
+2. Work inside TMP without arranging files for the cloud. Add scoped Houdini and Unreal sources when they exist. (2 October 2026)
+3. Files, chronology, prompts and source locations use the same project id. Save all files or a selection; unchanged files are skipped. (2 October 2026)
+4. Load into a separate workspace. SHA256 and byte length independently verify restored originals; the source scene remains intact. (2 October 2026)
+5. Download a single original or several originals in a ZIP that preserves source folders. Never substitute a transcoded stream for the original. (2 October 2026)
+
+## Sources and Unreal exception (2 October 2026)
+
+Cloud layout is `pages/ZenRayAssets/<project-id>/sources/<namespace>/<source-id>/<relative-path>`. Namespaces are tmp, memory, houdini and unreal. (2 October 2026)
+
+ZenRayShards is a shared host project. Config, Plugins and the uproject belong to `zenray-shards-core` once. Ceramic Tiles and Louisiana Bayou link to this host and include only their own Content paths and external world-partition actors. Engine caches, Intermediate and generated temporary files are excluded. (2 October 2026)
+
+Selected Unreal content is not proof of a standalone runnable game: dependency closure must be verified in Unreal before declaring the project portable. (2 October 2026)
+
+## Memory and capture (2 October 2026)
+
+The canonical feedback is `Memory1/Projects/<id>/FEEDBACK.md`. Existing historical files remain intact and link to it. The writer locks, appends, syncs and deduplicates stable event ids. The feedback skill delegates to feedback-stack. (2 October 2026)
+
+The local bridge reads bound Codex or Claude transcripts incrementally, captures human prompts and successful final results, and routes a uniquely scoped working directory. Ambiguous sessions require an explicit project binding; they are never guessed. (2 October 2026)
+
+The chronology reads the existing global PROGRESS.md alongside project feedback and transfer events. It does not create a second global journal. (2 October 2026)
+
+## Runtime and proof (2 October 2026)
+
+Source configuration lives in scripts/AssetsConfig.json. Runtime inventory, hashes, subscriptions, transcript offsets and append-only events live under Library/Application Support/ZenRayAssets. Browser code never imports local filesystem code. (2 October 2026)
+
+Use `node scripts/Assets/Daemon.mjs install` to enable the bridge at login and `node scripts/Assets/Daemon.mjs status` to inspect it. Credentials are read from the existing gh login and remain in process memory. (2 October 2026)
+
+The existing ZenRayCloud watcher implementation supplies filesystem observation, debounce, reconnect and periodic sweep. The bridge compiles that implementation locally rather than duplicating its logic. (2 October 2026)
+
+Unload currently produces a protected plan and does not delete source files. It needs a verified archive and independent successful restore before a future recoverable release operation can proceed. (2 October 2026)
+
+Design controls modify CSS root tokens, persist locally and copy their values for a prompt. The controls are excluded from production builds. (2 October 2026)
+
+Verification: `npm exec vitest run -- scripts/AssetsService.test.js src/lib/assetsWorkspaceViewModel.test.js src/lib/assetsProjects.test.js src/lib/bulkZip.test.js`. Append-only concurrency verification lives in the canonical feedback-stack Tests/TestFeedback.py. (2 October 2026)
+
+## Every new TMP file follows the same route (2 October 2026)
+
+The boundary is the project workshop, created automatically from its stable project id. A creator supplies the project name once, then saves any files inside that workshop, in any subdirectory. No per-file registration or local category sorting is required. (2 October 2026)
+
+A filesystem event marks the project dirty. The watcher waits for edits to settle, inventories regular files, excludes temporary writes and records a source id plus a relative path. A stable snapshot is hashed with SHA256 before upload. (2 October 2026)
+
+The cloud manifest is recorded only after the archive engine verifies the file. An incremental search-index update makes it discoverable. A project snapshot updates the dashboard. Errors preserve the source and retry; local deletions never silently delete cloud history. (2 October 2026)
+
+A queue serializes cloud writes. The initial bulk backup can delay another project; the dashboard must show queued or running rather than claiming a saved file. Daily changes reuse prior fingerprints and do not re-upload unchanged originals. (2 October 2026)
+
+An arbitrary file outside registered sources has no inferred project. It must first be attached through a source mapping. Automatic capture never assigns a file to a project merely because it is the latest project opened. (2 October 2026)
+
+Restart performs a fresh inventory of watched projects. Periodic sweeps catch filesystem notifications missed while the machine sleeps. Original names, relative paths and fingerprints allow exact reconstruction. (2 October 2026)
+
+Verified manifests enter a persistent pending-index list before publication. Each batch drains this list; a crash leaves it available for retry without transferring original bytes again. Dashboard snapshots publish at most once per minute during a bulk job, then once at completion. (2 October 2026)
+
+Restoring exact bytes does not validate absolute Houdini references or Unreal dependencies. A runnable DCC project needs its dependency paths checked against the loaded workspace before claiming portability. (2 October 2026)
+
+## Managed release and immutable recovery (2 October 2026)
+
+The earlier unload-plan limitation is superseded for the active workspace produced by LOAD. Production source folders remain untouched. Unload refuses modified, extra, missing and symbolic files, then proves cloud recovery again before removing managed copies. A complete workspace selection is required. (2 October 2026)
+
+Release records persist before removal and preserve exact backup fingerprints. Recovery selects content by SHA256, including retained older versions. Restart reconciles interrupted releases without deleting data. Reported allocated file blocks are distinct from whole-volume free-space fluctuations. (2 October 2026)
+
+Run `node scripts/Assets/VerifyLifecycle.mjs` for the real cloud witness cycle. Its isolated workspace keeps the source intact and writes Evidence.json. The UI exposes release and recovery as jobs with existing progress notifications. (2 October 2026)
+
+## Bounded automatic passes (2 October 2026)
+
+Automatic backups yield after `storage.autoBatchLimit` verified batches, then append their remaining work to the queue. Queued actions and other projects can progress between passes. A single large file still defines the minimum non-preemptible transfer. Manual full archives remain full jobs. (2 October 2026)
+
+Interactive jobs precede waiting automatic passes, while the active writer finishes its verified batch. Compact rows keep source and cloud state visible, and waiting actions are labelled as queued rather than actively verifying. (2 October 2026)
+
+## Bounded local text previews (2 October 2026)
+
+Registered Markdown, JSON, logs and scripts can be read as inert text in the local preview. `src/lib/projectPreview.js` owns allowed extensions and the byte limit. Unknown paths, symlinks, changing files and binary content are refused; truncation is explicit and never changes the source. (2 October 2026)
+
+## Independent local lifecycle lane (2 October 2026)
+
+LOAD, UNLOAD and recovery serialize per project with a dedicated lifecycle lock while the global cloud writer continues uploads. Per-project JSON saves are ordered to retain both sets of evidence. Live sync states derive from active jobs. Operation indicators follow their project when the user changes the active view. (2 October 2026)
+
+## 2 October 2026 : Suivi automatique des fichiers et des copies de travail
+
+- Les creations et modifications declenchent un inventaire local independant de la file cloud. `watch.inventoryDebounceMs`, actuellement 1000, regroupe les evenements ; la sauvegarde conserve ses 120 secondes de stabilisation. L'interface actualise le projet actif toutes les six secondes. (2 October 2026)
+- Preuve sur le service installe : TrackingAutomatic.md, cree sans appel inventory ni archive, apparait dans l'index local en 1568 ms. Le fichier reste local-only tant que son archive n'est pas verifiee. L'index cloud se publie apres verification, avec reprise persistante si sa publication echoue. (2 October 2026)
+- La copie active LOAD est surveillee : fichiers ajoutes et modifies reutilisent l'identite de leur source. Memory conserve son emplacement canonique. Apres UNLOAD, un original plus ancien et inchange ne remplace pas la nouvelle version cloud. (2 October 2026)
+- Preuve cloud reelle : VerifyLifecycle.mjs --edit archive deux fichiers de travail, decharge et recupere leurs octets exacts, tout en conservant l'original de 70 octets. Evidence.json : LifecycleVerification/b690ead6-dbda-4ff2-93b6-61b729939473 dans le chantier TMP. (2 October 2026)
+- Les 60 tests Assets et les 2 tests du watcher passent. Les instantanes cloud portent les empreintes archivees et ne republient pas les jobs locaux actifs comme un transfert perpetuellement en cours. (2 October 2026)
+- La version est installee dans le service local. Les sauvegardes initiales volumineuses restent en cours ; les dependances Unreal et chemins Houdini ne sont pas encore prouves portables. (2 October 2026)
+
+## 2 October 2026 : Demarrage automatique des projets par Assets V2
+
+- Premiere action de l'agent pour un nouveau chantier : rechercher l'identite existante dans Assets, puis executer `node /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/Assets/BeginProject.mjs <project-id> --name="<nom>" --session-id="<identifiant-reel-fourni-par-hote>"` avec le veritable identifiant de session. Aucun clic de Matthieu n'est requis. (2 October 2026)
+- Nouveau projet : TMP `~/.claude/tmp/tmp-<id>`, memoire `~/.claude/Memory1/Projects/<id>`, FEEDBACK.md canonique, Project.json, instructions locales CLAUDE.md et AGENTS.md, surveillance active. Les instructions deja presentes restent intactes. (2 October 2026)
+- Reprise : conserver l'identite, toutes les sources et dependances deja reliees ; lire le feedback canonique et ses liens historiques ; relier la session actuelle. Un changement de sujet conserve les obligations de prompt-stacking, tout en rattachant les nouveaux fichiers et prompts au bon projet. (2 October 2026)
+- Ne jamais creer automatiquement un nouveau TMP par message, une copie de tout Unreal par texture, ou un nouveau PROGRESS.md par projet. Le registre et les instantanes cloud servent d'index ; CLAUDE.md porte le protocole et ne grossit pas d'une liste complete de tous les nouveaux projets. (2 October 2026)
+- Les fichiers de production restent dans leurs emplacements : l'agent ajoute au registre les sources Houdini et Unreal concernees, avec chemins et perimetres explicites. Les scripts reutilisables restent dans Scripts du projet ou dans le depot concerne ; les liens et references du chantier peuvent rester dans TMP. (2 October 2026)
+- Arret a mi-chemin : rejouer la commande ; les documents existants et les liens de production restent conserves. Les noms de session invalides et les chemins avec liens symboliques sont refuses. (2 October 2026)
+- La commande applique le protocole ; CLAUDE.md seul n'est pas un watcher. Les agents doivent executer le demarrage, et le LaunchAgent local assure ensuite le suivi sans conversation ouverte. Le cloud attend l'archive verifiee avant d'afficher une sauvegarde reussie. (2 October 2026)
+- Autorisation permanente pour les fichiers de travail relies au projet : archivage automatique des sources admises, hors secrets et caches. Un emplacement ambigu est signale au lieu d'etre rattache arbitrairement. (2 October 2026)
+
+- Preuves du demarrage au 2 October 2026 : 66 tests passent ; deux executions reelles de BeginProject sur zenray-assets-v2 renvoient les memes chemins et createdAt, sessionBound=true et watched=true. Project1.md porte la connaissance durable ; les documents crees prennent la date anglaise reelle du jour en Europe/Paris. (2 October 2026)
+
+## 2 October 2026 : Index mapping global et contexte immediat des projets
+
+- Le registre Assets reste la definition des projets ; GlobalProjectIndex.json est son index derive, recalcule automatiquement apres chaque inventaire. Les cles sont les project IDs stables, pas des positions de liste qui changent lorsque les projets sont tries. (2 October 2026)
+- Chaque entree relie les quatre familles tmp, memory, houdini et unreal, leurs source IDs, les perimetres include/exclude, les destinations cloud, le feedback canonique, les fichiers de memoire et les references de dependances partagees. Une famille vide reste visible comme non reliee. (2 October 2026)
+- Consulter l'index : `node /Users/zenray/Create/Build/Productions/GithubProductions/ZenRayProgress/scripts/Assets/Client.mjs global-index`. Lire le contexte : meme commande avec `context <project-id>` ; ajouter le payload JSON `{"cloud":true}` pour une vue sans chemins locaux. (2 October 2026)
+- Copie locale generee : `~/Library/Application Support/ZenRayAssets/GlobalProjectIndex.json` et `contexts/<project-id>.md`. Ces artefacts sont des index reconstruisibles, pas des copies de la connaissance durable ni un second suivi de taches. (2 October 2026)
+- L'index cloud est le champ index du catalogue existant `pages/.zr-assets-workspaces.json`. Chaque projet publie son mapping dans .workspace.json et son point d'entree lisible dans .context.md, sous son dossier cloud. Le catalogue conserve les autres projets lors d'un conflit d'ecriture et ne publie pas les chemins absolus du Mac. (2 October 2026)
+- Les notes de dependances externes restent du texte ; les objets shared-host et source.sharedProjectId se resolvent vers une identite de projet unique. Les cycles et references inconnues sont signales. Lire l'hote Unreal separement, sans dupliquer ses fichiers dans chaque projet. (2 October 2026)
+- Un contexte est une carte pour charger les bonnes sources : commencer par le feedback et la memoire references, puis les fichiers et la chronologie. Il ne pretend pas que le LLM a deja lu tous les documents, ni que toutes les dependances des scenes sont verifiees. (2 October 2026)
+
+## 2 October 2026 : Le skill suit chaque modification du programme
+
+- Apres chaque modification du comportement Assets, ajouter ici sa decision, son fonctionnement courant, les commandes et les preuves reelles, puis utiliser skill-sync. Les anciennes sections restent historiques ; la derniere correction datee gouverne le comportement actuel. Cette maintenance fait partie de la modification, jamais d'une demande supplementaire de Matthieu. (2 October 2026)
+- Le contrat `scripts/Assets/SkillContract.json` relie les empreintes de l'implementation a celle de ce skill canonique. Verifier par `node scripts/Assets/CheckSkillContract.mjs`. Si le code change sans actualiser le skill, le controle echoue. (2 October 2026)
+- Apres actualisation et verification, enregistrer par `node scripts/Assets/CheckSkillContract.mjs --record`, puis reverifier. Le mode record refuse un code change avec une empreinte de skill inchangee. Un skill modifie demande un nouvel enregistrement ; ce controle est explicite et ne reecrit pas le contenu du skill automatiquement. (2 October 2026)
+- Preuves locales : les cinq projets sont indexes sans erreur ; Louisiana mappe 2 TMP, 2 Memory, 2 Houdini et 1 Unreal, avec zenray-shards-core comme hote unique. Les 71 tests cibles passent, dont publication avec conflit, absence de chemins locaux cloud, cycles et mise a jour automatique du fichier d'index. (2 October 2026)
+
+## Large registry readback (2 October 2026)
+
+- GitHub Contents can omit a large file body while retaining its SHA. The publisher fetches fresh raw bytes before merging, keeps the original SHA for conflict detection, and refuses to overwrite an unreadable existing catalogue. (2 October 2026)
+- Verification: 73 targeted tests pass, including retained projects across a large catalogue read and rejected writes when its body is unavailable. (2 October 2026)
+
+## Immutable registry read correction (2 October 2026)
+
+- Correction to the previous fallback: branch raw reads remain stale during the observed CDN cache. The publisher now fetches git/blobs/<sha>, validates the returned SHA and base64 body, and preserves that SHA for conflict detection. Missing credentials or unreadable bytes stop the merge. (2 October 2026)

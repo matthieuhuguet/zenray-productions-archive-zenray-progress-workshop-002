@@ -1,0 +1,53 @@
+# ZenRay Plan <-> Google Calendar (17 October 2026)
+
+Synchronisation dans les deux sens entre le fichier du Plan (`pages/Calendar-76ct/Matthieu2026-l8at.plan.json`) et l'agenda `matth.huguet@gmail.com`.
+Elle tourne dans un **Worker Cloudflare** (`workers/plan-gcal/`, nom `zenray-plan-gcal`), déclenché **toutes les minutes**, sans le Mac. (17 October 2026)
+
+## Comment ça marche
+
+- Le Worker lit et écrit le Plan par **l'API du site** (`/api/page`, même protocole read-sha-write que `PlanBoard.jsx`, même en-tête `x-zr-auth` = code du drive). Il ne détient aucun jeton GitHub. (17 October 2026)
+- **Chaque tâche a un lien** : `task.gcal = { id, hash, origin }`. `origin:'plan'` = créée dans le Plan (identifiant d'événement `plan` + sha256, marques ✓ et ✦, description = note) ; `origin:'gcal'` = importée de l'agenda (`source:'gcal'`, aucun point au score : `src/create/planScore.js`). `board.gcalSync.links` garde la table lien → tâche. (17 October 2026)
+- **Un côté modifié = propagé, les deux = le Plan gagne** (signalé). Événement supprimé dans l'agenda = tâche `dropped` ; tâche supprimée du Plan = événement supprimé (plafond `maxDeletesPerRun` = 10) ; événements d'autrui (invitations, `fromGmail`) jamais modifiés. (17 October 2026)
+- **Import** : événements de l'agenda à partir de `importFrom` (11 July 2026), passés marqués `done`. (17 October 2026)
+- Toutes les valeurs sont dans `workers/plan-gcal/src/params.js` (surcharge possible par la variable `PLAN_GCAL_PARAMS`, JSON). (17 October 2026)
+
+## Budget de calcul (plan gratuit Cloudflare : 10 ms de CPU et 50 sous-requêtes par passage)
+
+Un Worker du site a déjà été tué par l'erreur 1102 sur ce compte (2 October 2026), donc le cas courant est presque gratuit. (17 October 2026)
+
+| Passage | Quand | Coût mesuré (Node, à froid, hors réseau) | Sous-requêtes |
+|---|---|---|---|
+| Rapide | rien n'a changé (sha du Plan identique et aucun événement modifié depuis 3 min) | ~1,5 ms | 3 |
+| Complet | sha du Plan changé, événement modifié, ou minute multiple de 10 | ~7,5 ms | 3 à ~45 |
+
+- Le passage rapide ne parse pas le Plan : il compare le `sha` du fichier à celui rangé dans KV (`STATE`, une seule clé, écrite seulement quand le sha change) et demande à Google « événements modifiés depuis 3 minutes » (`updatedMin`). (17 October 2026)
+- Gains obtenus : formateur `Intl` supprimé pour Paris (règle de l'heure d'été européenne, vérifiée contre `Intl` sur 20 000 instants), hachage non cryptographique (`hashCanon`), pas de `structuredClone`. (17 October 2026)
+- **Mesures réelles chez Cloudflare (17 October 2026, `wrangler tail`, champ `cpuTime`)** : passage rapide **4 et 6 ms**, 3 sous-requêtes, aucun écart ; passage complet **11 à 32 ms** (une vingtaine de relevés, les plus lourds étant ceux qui écrivent). Les passages complets dépassent donc les 10 ms nominaux du plan gratuit, et AUCUN n'a été tué (tous `outcome: ok`). Cloudflare peut durcir cette tolérance : si des passages complets se mettent à échouer (`exceededCpu`, erreur 1102), la synchronisation s'arrête sans rien casser et la solution est Workers Paid (5 $ par mois). (17 October 2026)
+- **La mesure qui fait foi est celle de Cloudflare** (`cpuTime` des journaux, `npx wrangler tail`), pas celle de Node. Les passages complets de la minute 0, 10, 20... fournissent la mesure réelle. Si un passage complet dépasse 10 ms, il est tué (1102) et recommence à chaque minute sans rien synchroniser : passer alors le compte sur Workers Paid (5 $ par mois, 30 s de CPU). (17 October 2026)
+
+## Test réel de bout en bout (17 October 2026)
+
+`scripts/e2e-cloud.mjs` attend le cron (il ne lance aucune synchro) : tâche du Plan vers agenda en **28 s**, modification du Plan vers agenda **59 s**, modification de l'agenda vers Plan **60 s**, événement créé « depuis le téléphone » vers Plan **59 s**, suppression propagée en **59 s** ; aucune tâche de test restante. Délai maximal attendu : une minute plus la durée d'un passage. (17 October 2026)
+
+## Sécurité
+
+- Secrets du Worker (`wrangler secret bulk`, jamais dans un fichier du dépôt) : `ZR_API_SECRET` (code du drive), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` (portée `calendar.events`). Aucune URL publique (`workers_dev = false`). (17 October 2026)
+- Mode `DRY_RUN = "true"` (variable de `wrangler.toml`) : lit tout, décide, n'écrit RIEN. `"false"` = actif. (17 October 2026)
+- Un échec Google annule l'écriture du Plan (le passage suivant adopte ce qui existe déjà) ; un conflit de sauvegarde ne réessaie pas (la minute suivante recommence) ; une lecture du Plan qui échoue n'est JAMAIS un Plan vide ; le Plan n'est jamais écrit au-delà de 950 ko (GitHub lit vide au-delà de 1 Mio). (17 October 2026)
+
+## Commandes
+
+```
+npx vitest run workers/plan-gcal                                            # 35 tests
+ZR_API_SECRET=<code du drive> node workers/plan-gcal/scripts/e2e-cloud.mjs  # test réel de bout en bout contre le Worker déployé (5 contrôles, ~5 min, se nettoie)
+ZR_API_SECRET=<code du drive> node workers/plan-gcal/scripts/run-local.mjs  # essai à blanc réel, depuis le Mac
+node workers/plan-gcal/scripts/cpu-bench.mjs <plan-response.json> <events.json> [fast]
+CLOUDFLARE_ACCOUNT_ID=7b3e813da5c495fe8e3b1ec5a37ce75f npx wrangler deploy --config workers/plan-gcal/wrangler.toml
+CLOUDFLARE_ACCOUNT_ID=7b3e813da5c495fe8e3b1ec5a37ce75f npx wrangler tail zenray-plan-gcal --format json
+```
+
+(17 October 2026) Sans `CLOUDFLARE_ACCOUNT_ID`, `wrangler kv namespace create` a répondu « Authentication error [code: 10000] » alors que la connexion était valide.
+
+## Ancienne version (Mac)
+
+`~/.claude/skills/zenray-plan-publish/scripts/PlanGcalSync.mjs` (LaunchAgent `com.zenray.plan-gcal-sync`) est **arrêtée** depuis le passage au Worker : elle compare des empreintes sha1, le Worker des empreintes `h…` ; les deux écrivains ne doivent jamais tourner ensemble. (17 October 2026)

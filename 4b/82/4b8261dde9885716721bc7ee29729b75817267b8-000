@@ -1,0 +1,124 @@
+# TODO SAFE-AUTO restants — codage séquentiel (loop 2026-06-06)
+
+- [ ] **H/load-perf/M** marked library (14 KB) bundled in entry chunk, blocking first paint for Markdown rendering
+      @ `src/safeMarked.js line 17, imported from App.jsx line 51`
+      fix: Lazy-load the marked library: convert safeMarked.js to a factory function that imports marked dynamically. In App.jsx, where safeMarkedParse is used (search results, article previews, page notes), wrap the call in lazy-loaded import('~/safe
+- [ ] **H/load-perf/M** tldraw (v5, ~900 KB) imported directly in RefBoard.jsx, not lazy-loaded despite being optional view
+      @ `src/ref/RefBoard.jsx lines 2-3`
+      fix: Move tldraw import inside RefBoard to dynamic import at component mount time. Pattern: const [Tldraw, setTldraw] = useState(null); useEffect(() => { import('tldraw').then(m => setTldraw(() => m.Tldraw)) }, []); render Tldraw lazily. Alterna
+- [ ] **H/load-perf/S** hls.js dynamic import exists but is called on every HLS play, no caching of the module
+      @ `src/components/HlsVideo.jsx line 113`
+      fix: Create a singleton lazy-loaded hls.js module: export const getHlsModule = (() => { let mod; return async () => { if (!mod) mod = await import('hls.js'); return mod } })(); Call this in HlsVideo.jsx instead of importing directly. Ensures hls
+- [ ] **H/load-perf/M** BlockNote dependencies (@blocknote/core, @blocknote/react, @blocknote/mantine) bundled in the entry chunk via import of focusPageBody.js, though PageEditorBN itself is lazy
+      @ `package.json, src/App.jsx line 31 (app entry point import analysis needed)`
+      fix: Run `npm run build` and inspect the generated chunks in dist/assets/. Verify that all @blocknote/* libraries are in the same chunk as PageEditorBN, not in the entry chunk. If they appear in the entry chunk, trace the import chain: likely a 
+- [ ] **H/load-perf/M** BlockNote dependencies (@blocknote/core, @blocknote/react, @blocknote/mantine) bundled in the entry chunk, needs verification
+      @ `package.json, src/App.jsx line 31 (app entry point import analysis needed)`
+      fix: Run `npm run build` and inspect the generated chunks in dist/assets/. Verify that all @blocknote/* libraries are in the same chunk as PageEditorBN, not in the entry chunk. If they appear in the entry chunk, trace the import chain: likely a 
+- [ ] **H/render-perf/M** Gallery.addFiles processes images sequentially with no parallelization
+      @ `src/components/Gallery.jsx L55-75`
+      fix: Use Promise.all or a bounded pool (4-6 parallel) to process files concurrently. Create a queue like `const results = await Promise.all(imgs.map(f => processImage(f)))` then accumulate results before the single saveJsonWithRetry call. Update
+- [ ] **H/render-perf/M** Marquee selection (rubber-band) fires recompute on every mousemove without throttling
+      @ `src/App.jsx L2029-2064`
+      fix: Throttle or debounce the recompute function: use requestAnimationFrame to limit recompute to once per frame (already partially done via rAF, but setMarquee/setSelected should batch). Or batch state updates: collect all selected IDs in a loc
+- [ ] **H/render-perf/M** Marquee selection (rubber-band) fires recompute on every mousemove without batching
+      @ `src/App.jsx L2029-2064`
+      fix: Batch state updates: collect selected IDs in a local array/ref during drag and only update state once per rAF tick (already partially done via rAF in recompute, but the function is called on EVERY move). Or debounce setSelected calls to onc
+- [ ] **M/load-perf/S** Gallery.jsx imported as const Gallery = ... in App.jsx, not lazy-loaded despite large masonic dependency
+      @ `src/App.jsx line 15`
+      fix: Change App.jsx line 15 to: `const LazyGallery = React.lazy(() => import('./components/Gallery.jsx'))` (following the pattern already used for PageEditor, Articles, DriveDashboard, etc.). Wrap the render at App.jsx line ~650 in `<Suspense fa
+- [ ] **M/load-perf/S** No critical CSS extraction; all CSS deferred via JS, causing layout shift and style flashing on cold load
+      @ `index.html <head> section`
+      fix: Extract critical CSS (grid/layout variables, @font-face, color palette, zr-glass frosted effect base) into a <style> tag in index.html head, before the <script>. Vite doesn't ship a built-in critical CSS extractor, so either: (a) manually c
+- [ ] **M/load-perf/S** Web fonts (AnthropicSerif, AnthropicSans, AnthropicMono) not preloaded; FOUT/FOIT on all text
+      @ `index.html <head> section (before <script>)`
+      fix: Add to index.html <head>, after <meta charset>: `<link rel=preload as=font type=font/woff2 crossorigin href=/fonts/AnthropicSerif-Romans.woff2>` and repeat for AnthropicSans-Regular.woff2 and AnthropicMono-Regular.woff2. This signals the br
+- [ ] **M/render-perf/S** Shelf.PosterCard re-renders on parent state changes despite stable items
+      @ `src/components/Shelf.jsx L360, L351`
+      fix: Wrap PosterCard export with React.memo and implement a shallow comparison function for drag prop (since drag object is recreated). Example: `React.memo(PosterCard, (a,b) => a.item.id === b.item.id && a.onOpen === b.onOpen && a.t === b.t && 
+- [ ] **M/render-perf/S** Shelf filtered list re-computed without useMemo on every parent render
+      @ `src/components/Shelf.jsx L274-281, L215-219`
+      fix: Memoize the per-status filtered lists: `const filteredByStatus = useMemo(() => STATUS_ORDER.map(g => ({g, list: filtered.filter(x => x.status === g)})), [filtered])` and use that in the map. StatusSection can then be wrapped with React.memo
+- [ ] **M/render-perf/S** Audio component re-renders filtered music list without memoization on state changes
+      @ `src/components/Audio.jsx L75-101, L38-39, L83`
+      fix: Memoize the filtered list: wrap L38-39 in `useMemo(() => { const list = tracks || []; return q.trim() ? list.filter(...) : list }, [tracks, q])`. Extract the row render logic into a memoized RowComponent with useCallback handlers for play/h
+- [ ] **M/render-perf/S** Databases component recomputes filtered/sorted rows inline without useMemo
+      @ `src/components/Databases.jsx L104-109`
+      fix: Wrap rows derivation in useMemo: `const rows = useMemo(() => { let rs = filters.length ? db.rows.filter(...) : db.rows; if (sort) rs = [...rs].sort(...); return rs }, [db.rows, filters, sort, db.columns])`. This ensures the rows array only 
+- [ ] **M/render-perf/M** App.jsx shownEntries useMemo depends on many values, re-computes on unrelated changes
+      @ `src/App.jsx L1734-1753`
+      fix: Stabilize the dependencies: memoize the tags Map (use a per-path getter instead of a full object), stabilize eagleIdx via useMemo, and ensure sort.key/sort.dir are only updated when explicitly changed (not recreated on parent renders). Or s
+- [ ] **M/render-perf/S** Shelf PosterCard defines drag/drop handlers inline without useCallback
+      @ `src/components/Shelf.jsx L380-386`
+      fix: Move drag handlers to useCallback memoized functions: `const handleDragStart = useCallback((e) => { setDragging(true); drag.start(item.id, e) }, [item.id, drag])`. Ensure the custom comparator for PosterCard memo (if added) ignores function
+- [ ] **M/render-perf/M** App.jsx shownEntries useMemo has too many dependencies, re-computes frequently
+      @ `src/App.jsx L1734-1753`
+      fix: Stabilize dependencies: instead of passing the entire `tags` object, pass a derived value like `tags[folder]` or memoize a selector. For eagleIdx, ensure it's only recreated when the actual index data changes, not on navigation. Split the m
+- [ ] **M/render-perf/M** App.jsx shownEntries useMemo has excessive dependencies, re-computes frequently
+      @ `src/App.jsx L1734-1753`
+      fix: Stabilize dependencies: instead of passing the entire `tags` object, derive a stable selector like tags count or memoize the tags Map itself. For eagleIdx, ensure it's only recreated when actual index data changes, not on navigation. Consid
+- [ ] **M/render-perf/S** Shelf filtered list re-computed without memoization on every parent render
+      @ `src/components/Shelf.jsx L274-281`
+      fix: Memoize the per-status split: `const filteredByStatus = useMemo(() => STATUS_ORDER.map(g => ({g, list: filtered.filter(x => x.status === g)})), [filtered])`. StatusSection can then use React.memo since its list prop won't change reference u
+- [ ] **M/robustness/S** PropertiesBlock (App.jsx) sauvegarde à chaque frappe = 1 commit GitHub/caractère
+      @ `src/App.jsx PropertiesBlock, lignes 789-843 (spécif pas visible, cf AUDIT-2026-06-03.md ligne 333)`
+      fix: Ajouter debounce 800ms sur le save de .props.json. Utiliser un useRef(timer) + clearTimeout() pattern comme PageEditorBN:201 fait pour le markdown. Ou centraliser via saveJsonWithRetry qui expose déjà un timeout configurable.
+- [ ] **M/ux-daily/S** Absence de feedback visuel immédiat lors de la sauvegarde auto
+      @ `src/components/PageEditorBN.jsx src/components/PageEditorBN.jsx:156, 199, 201, 184 (setStatus + setTimeout)`
+      fix: Ajouter une animation subtile de 500ms sur le container du statut (pulse/fade-in) lors du passage à 'enregistré ✓', puis fade-out. Ou un petit badge vert (~8px) au-dessus du titre qui clignet 1 fois au save réussi. L'objet est que l'utilisa
+- [ ] **M/ux-daily/S** Messages de statut qui restent orphelins après fermeture d'une action longue
+      @ `src/components/Gallery.jsx src/components/Gallery.jsx:43, 74 / src/components/Audio.jsx:142, 160 / src/components/Databases.jsx:22, 55`
+      fix: Ajouter setStatus('') après 5000ms ou un bouton [×] sur les messages de type erreur/conflit. Utiliser le pattern de PageEditorBN qui ajoute setTimeout(() => setStatus('')) après le succès.
+- [ ] **M/ux-daily/S** Pas de barre de progression lors des uploads longs (galerie multi-fichiers)
+      @ `src/components/Gallery.jsx src/components/Gallery.jsx:58-75 (addFiles boucle sans counter)`
+      fix: Afficher un compteur live : setStatus(`upload…`) puis dans la boucle for, setStatus(`image ${i+1}/${imgs.length}`) à chaque itération. Ou mieux : utiliser notifyProgress({kind:'image'}) pour une barre visuelle.
+- [ ] **M/ux-daily/M** Chaque composant redéveloppe sa propre gestion de conflit 409 sans pattern unifié
+      @ `src/components/Gallery.jsx:69 (saveJsonWithRetry), Audio.jsx:153, Databases.jsx:54, Articles.jsx:29`
+      fix: Créer un hook useSaveWithConflict() dans src/lib/saveJson.js qui wrappe saveJsonWithRetry et expose {save, status, lastError}. Tous les composants l'utilisent, ce qui assure UI cohérente et messages unifiés.
+- [ ] **M/ux-daily/M** Pas de possibilité d'annuler une action longue (upload, save, publish) après démarrage
+      @ `src/components/Gallery.jsx src/components/Gallery.jsx:55-75 / src/components/Articles.jsx:82-98`
+      fix: Stocker la requête dans un AbortController. Afficher un bouton [Annuler] à côté du message 'upload…' qui appelle abort(). Même pour Articles publish.
+- [ ] **M/ux-daily/S** Messages de statut orphelins ne s'effacent pas après erreurs
+      @ `src/components/Gallery.jsx Gallery.jsx:43, 74`
+      fix: Ajouter setStatus('') après 5000ms ou un bouton [×] sur les messages d'erreur/conflit.
+- [ ] **M/ux-daily/S** Pas de barre de progression lors des uploads multi-fichiers
+      @ `src/components/Gallery.jsx Gallery.jsx:55-75`
+      fix: Afficher un compteur live dans la boucle for : setStatus(`image ${i+1}/${imgs.length}`). Ou utiliser notifyProgress() pour une barre visuelle.
+- [ ] **M/ux-daily/M** Chaque composant gère les conflits 409 différemment
+      @ `src/lib/saveJson.js Gallery.jsx:69, Audio.jsx:153, Databases.jsx:54`
+      fix: Créer un hook useSaveWithConflict() dans src/lib/saveJson.js qui unifie la gestion et les messages pour tous les composants.
+- [ ] **M/ux-daily/M** Pas de possibilité d'annuler une action longue après démarrage
+      @ `src/components/Gallery.jsx Gallery.jsx:55-75, Articles.jsx:82-98`
+      fix: Stocker la requête dans un AbortController. Afficher bouton [Annuler] à côté du message de progression qui appelle abort().
+- [ ] **L/drive-jsdelivr/S** cdnCommit stored in manifest lacks format validation — invalid SHA accepted silently
+      fix: (1) Add a validator isValidCommitSha(s) that checks for /^[0-9a-f]{7,}$/ (at least 7 hex chars). (2) In buildJsDelivrUrl, return null if commit does not match this pattern. (3) In universalCapture.js, validate commitShard response: if the r
+- [ ] **L/drive-jsdelivr/S** readMediaManifest in ImageNodeViewer.jsx does not validate manifest format before use
+      fix: (1) Add schema validation in readMediaManifest: assert m.type === 'chunked-media', m.vis === 'public', m.count >= 0, Array.isArray(m.ivs), m.ivs.length === m.count, etc. (2) In downloadChunkedMedia, check before loop: if (!m || m.type !== '
+- [ ] **L/drive-jsdelivr/S** cdnCommit lacks format validation — invalid SHA accepted silently
+      fix: (1) Add validator isValidCommitSha(s): /^[0-9a-f]{7,}$/ (min 7 hex chars). (2) buildJsDelivrUrl returns null if commit invalid. (3) universalCapture.js validates commitShard response before manifest write. (4) Runtime assertion in ImageNode
+- [ ] **L/drive-jsdelivr/S** downloadChunkedMedia does not validate manifest schema before use
+      fix: (1) Schema validation in readMediaManifest: assert m.type, m.count >= 0, Array.isArray(m.ivs), m.ivs.length === m.count. (2) downloadChunkedMedia: validate before loop 'if (!m || m.type !== "chunked-media" || m.ivs.length !== m.count) throw
+- [ ] **L/load-perf/S** No preconnect hints for GitHub/jsDelivr API; DNS and TLS handshake adds 500+ ms latency on first fetch
+      @ `index.html <head> section`
+      fix: Add to index.html <head>: `<link rel=preconnect href=https://cdn.jsdelivr.net crossorigin>` and `<link rel=dns-prefetch href=https://api.github.com>`. These are cheap (a few bytes in HTML) and save the user 300-500 ms on the critical image 
+- [ ] **L/load-perf/S** shownEntries sorted and copied on every render without memoization; O(n log n) sort waste on status/uploadProgress changes
+      @ `src/App.jsx line 1634`
+      fix: Wrap shownEntries computation in useMemo with deps [shownRaw, keepRelevanceOrder, sortFn]: `const shownEntries = useMemo(() => keepRelevanceOrder ? shownRaw : shownRaw.slice().sort(sortFn), [shownRaw, keepRelevanceOrder, sortFn])`. The sort
+- [ ] **L/load-perf/S** renderIconTile called in a map on every Pages render; React.memo missing, causes full tile list re-render on status/drag changes
+      @ `src/App.jsx line 1852 (renderIconTile definition)`
+      fix: Extract renderIconTile into a memoized child component `const IconTile = React.memo(({ dir, thumbUrl, ...props }) => { return /* tile JSX */ }, (prev, next) => prev.dir === next.dir && prev.selOn === next.selOn)`. This is a standard React o
+- [ ] **L/render-perf/S** IconTile React.memo comparator excludes eagleSrc and copiedThumb from identity checks
+      @ `src/App.jsx L835-841, L1977-1978`
+      fix: For copiedThumb, compare the actual URL string (copiedThumbRef.current[e.dir]) instead of trusting reference equality. For eagleSrc, stabilize the Map or use a derived selector function that returns the same object reference when the URL ha
+- [ ] **L/render-perf/S** VirtualIconGrid onWindow effect re-fires on every column/cols recalculation
+      @ `src/App.jsx L807-811, L799`
+      fix: Memoize cols computation or detect actual changes: `const cols = useMemo(() => Math.max(1, Math.floor((width + GAP) / (zoom + GAP))) || 1, [width, zoom])`. This ensures the dependency array in the onWindow effect only includes truly changed
+- [ ] **L/render-perf/S** VirtualIconGrid onWindow effect re-runs on viewport changes, triggering expensive prefetch
+      @ `src/App.jsx L1767-1775, L799`
+      fix: Memoize VirtualIconGrid's cols calculation and ensure onWindow only fires when the actual start/lastRow values change (not just cols). Or debounce the prefetch effect to avoid thrashing on rapid width changes: `const id = setTimeout(() => p
+- [ ] **L/ux-daily/S** Latence imperceptible entre 'enregistrement…' et la vraie écriture réseau
+      @ `src/components/PageEditorBN.jsx src/components/PageEditorBN.jsx:162-184 / Databases.jsx:50-57`
+      fix: Retarder setStatus('enregistrement…') au-delà du délai de debounce (débat : on peut attendre 200ms avant l'affichage du message). Ou ajouter une badge 'en attente' différent de 'enregistrement…' tant que le fetch n'est pas en vol.
+- [ ] **L/ux-daily/S** Messages de statut avant que le réseau soit réellement en vol
+      @ `src/components/PageEditorBN.jsx PageEditorBN.jsx:162-184`
+      fix: Retarder setStatus() de 200ms ou ajouter une badge 'en attente' différente de 'enregistrement…'.

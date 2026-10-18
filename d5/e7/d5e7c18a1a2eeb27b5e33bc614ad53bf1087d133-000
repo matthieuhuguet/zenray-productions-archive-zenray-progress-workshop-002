@@ -1,0 +1,84 @@
+# ZenRayProgress sur iPhone — l'app installée, sans App Store
+
+Écrit le 2026-08-21, après la question de Matthieu : « un raccourci qui pointe directement vers
+ZenRayProgress, la solution la plus simple possible ».
+
+## Installer (30 secondes, à faire une fois)
+
+1. Ouvrir **Safari** sur l'iPhone — pas Chrome, la raison est plus bas.
+2. Aller sur **https://zenray-progress.pages.dev**
+3. Bouton **Partager** (le carré avec la flèche, en bas au centre).
+4. Faire défiler, toucher **« Sur l'écran d'accueil »**.
+5. Le nom proposé est déjà « ZenRay ». Toucher **Ajouter**.
+
+L'icône apparaît sur l'écran d'accueil. Elle se lance **sans barre d'adresse, sans onglets** : plein
+écran, comme une app native. Elle vit dans le sélecteur d'apps, elle a sa propre carte, elle se
+range dans un dossier.
+
+**À prévoir la première fois** : le code du drive est redemandé. Ce n'est pas un bug — depuis iOS 14,
+une app d'écran d'accueil possède son propre espace de stockage, séparé de celui de Safari. Une fois
+saisi, il y reste (et contrairement à un site ordinaire, cet espace échappe à la purge des sept jours
+d'inactivité de WebKit).
+
+## Pourquoi cette voie, et pas une autre
+
+**Electron n'existe pas sur iOS.** Il embarque Chromium et Node ; Apple interdit tout moteur de
+rendu tiers. Il n'y a pas de version iPhone et il n'y en aura pas.
+
+**Sur iOS, tous les navigateurs sont WebKit.** Chrome iOS, Firefox iOS, Brave iOS sont des habillages
+autour du moteur de Safari, imposé par Apple. Une `WKWebView`, Chrome iOS et Safari rendent donc la
+même page à la même vitesse. Chercher « le navigateur le plus puissant » à embarquer n'a pas d'objet :
+il n'y en a qu'un.
+
+| Voie | Compte Apple | Contrainte | Mise à jour |
+|---|---|---|---|
+| **PWA écran d'accueil** | aucun | aucune | instantanée, au déploiement |
+| Wrapper WKWebView (Capacitor, Xcode) | 99 €/an — ou gratuit mais à **resigner tous les 7 jours**, Mac + câble | recompilation | à chaque build |
+| React Native / natif | 99 €/an | réécriture complète | à chaque build |
+
+Les deux dernières coûtent de l'argent et une réinstallation régulière **pour rendre exactement le
+même WebKit**. Elles ne se justifieraient que pour une capacité que le web n'a pas (Bluetooth, HealthKit,
+widgets, arrière-plan long). Ce n'est pas le besoin ici.
+
+## Ce qui rend l'app installable (déjà en place)
+
+Rien n'a eu à être construit le 2026-08-21 : tout était câblé depuis juin. Pour mémoire, les pièces et
+leur rôle exact, parce qu'en retirer une casse l'installation en silence.
+
+| Pièce | Où | Rôle |
+|---|---|---|
+| `manifest.webmanifest` | `public/` | `display: standalone` — c'est LUI qui retire la barre d'adresse |
+| `apple-touch-icon.png` 180×180 | `public/` | l'icône de l'écran d'accueil ; iOS la préfère à celles du manifeste |
+| `apple-mobile-web-app-capable` | `index.html` | nom historique, le seul que **Safari** lit encore |
+| `mobile-web-app-capable` | `index.html` | nom standardisé, celui que Chrome lit — les deux coexistent exprès |
+| `apple-mobile-web-app-title` | `index.html` | « ZenRay », le nom sous l'icône |
+| `viewport-fit=cover` | `index.html` | laisse la page passer sous l'encoche, à charge du CSS de gérer les `safe-area-inset` |
+
+**Aucun service worker n'a été ajouté pour la PWA, et c'est délibéré.** iOS n'en exige pas pour
+installer une app d'écran d'accueil : le manifeste et l'icône suffisent. Or un service worker qui
+mettrait `index.html` en cache rejouerait exactement l'incident d'écran blanc du 2026-06-01, où l'app
+servait un vieux HTML pointant des assets hachés disparus. Le seul service worker du projet
+(`zr-stream-sw.js`) ne fait que servir les flux vidéo chiffrés et ne touche jamais au document.
+
+## Vérifier que ça sert toujours
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" https://zenray-progress.pages.dev/manifest.webmanifest
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" https://zenray-progress.pages.dev/apple-touch-icon.png
+```
+
+Attendu : `200 application/manifest+json` et `200 image/png`. Si le manifeste sort en `text/html`,
+c'est une règle de réécriture qui l'a avalé, et l'app s'installera alors comme un simple marque-page,
+avec la barre d'adresse.
+
+## Les pièges, pour ne pas les redécouvrir
+
+**Il faut Safari pour installer.** Depuis Chrome iOS, « Ajouter à l'écran d'accueil » crée un
+marque-page qui rouvre Chrome, barre d'adresse comprise — pas une app autonome. Seul Safari produit le
+mode `standalone`.
+
+**Le stockage est séparé.** L'app installée ne partage ni les cookies ni le `localStorage` de Safari.
+Se connecter dans l'une ne connecte pas l'autre.
+
+**Mettre à jour ne demande rien.** L'icône pointe une URL : un `wrangler pages deploy` suffit, l'app
+sert la nouvelle version au lancement suivant. Il n'y a jamais rien à réinstaller.
